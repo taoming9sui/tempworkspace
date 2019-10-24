@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace SocketClient
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            SocketClient client = new SocketClient(8888);
+            client.StartClient();
+            Console.ReadKey();
+        }
+    }
+}

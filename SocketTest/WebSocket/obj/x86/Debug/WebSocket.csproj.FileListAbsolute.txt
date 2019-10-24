@@ -1,0 +1,13 @@
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\WebSocket.exe.config
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\obj\x86\Debug\WebSocket.csprojResolveAssemblyReference.cache
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\WebSocket.exe
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\WebSocket.pdb
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\websocket-sharp.dll
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\websocket-sharp.xml
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\obj\x86\Debug\WebSocket.exe
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\obj\x86\Debug\WebSocket.pdb
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\Unity.Newtonsoft.Json.dll
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\Unity.Newtonsoft.Json.xml
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\System.Data.SQLite.dll
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\System.Data.SQLite.EF6.dll
+C:\Users\admin\Desktop\test\CShartTest\SocketTest\WebSocket\bin\Debug\System.Data.SQLite.Linq.dll
