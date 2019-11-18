@@ -35,5 +35,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-//为项目注册Log4Net.config配置文件
+//注册Log4Net.config配置文件
 [assembly: log4net.Config.XmlConfigurator(ConfigFileExtension = "config", Watch = true)]

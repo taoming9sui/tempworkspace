@@ -40,7 +40,7 @@ namespace WebSocket
 
             string md5 = MD5Encoder.CreateMD5("奶茶");
             Console.WriteLine(md5);
-            LogHelper.LogInfo(md5);
+            LogHelper.LogError(md5);
 
             Console.ReadKey(true);
         }
