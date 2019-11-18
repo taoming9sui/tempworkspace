@@ -6,9 +6,9 @@ using WebSocketSharp.Server;
 
 namespace WebSocket
 {
-    public class QueueEventArgs: EventArgs
+    public class CenterQueueEventArgs : EventArgs
     {
-        public enum MessageType { None, Client_Server, Client_Hall, Client_Room };
+        public enum MessageType { None, Client_Center, Client_Hall, Client_Room };
 
         public GameSocket Socket { get; set; }
         public MessageType Type { get; set; }

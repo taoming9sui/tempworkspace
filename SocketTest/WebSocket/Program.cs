@@ -5,12 +5,13 @@ using System.Text;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.Data.SQLite;
+using WebSocket.Utils;
 
 namespace WebSocket
 {
     public class Program
     {
-        private static string DBConnStr = "data source=C:\\Users\\admin\\Desktop\\test\\CShartTest\\SocketTest\\db\\db.db;version=3;";
+        
 
         public static void Main(string[] args)
         {
@@ -20,7 +21,7 @@ namespace WebSocket
 
         private static void Test1()
         {
-            GameServer.Instance.Start();
+            GameCenter.Instance.Start();
             Console.ReadKey(true);
 
             var wssv = new WebSocketServer("ws://localhost:8888");
@@ -30,17 +31,16 @@ namespace WebSocket
             wssv.Stop();
 
             Console.ReadKey(true);
-            GameServer.Instance.Stop();
+            GameCenter.Instance.Stop();
         }
 
         private static void Test2()
         {
             Console.ReadKey(true);
 
-            SQLiteConnection conn = new SQLiteConnection(DBConnStr);
-            conn.Open();
-            conn.Close();
-
+            string md5 = MD5Encoder.CreateMD5("奶茶");
+            Console.WriteLine(md5);
+            LogHelper.LogInfo(md5);
 
             Console.ReadKey(true);
         }

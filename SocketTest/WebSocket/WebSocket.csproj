@@ -34,7 +34,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net40-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SQLite">
       <HintPath>..\libraries\System.Data.SQLite.dll</HintPath>
@@ -59,18 +64,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GameServer\ClientSocketEventArgs.cs" />
     <Compile Include="GameServer\GamePlayer.cs" />
     <Compile Include="GameServer\GameRoom.cs" />
     <Compile Include="GameServer\GameSocket.cs" />
-    <Compile Include="GameServer\GameServer.cs" />
-    <Compile Include="GameServer\ServerQueueEventArgs.cs" />
+    <Compile Include="GameServer\GameCenter.cs" />
+    <Compile Include="GameServer\CenterQueueEventArgs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\LogHelper.cs" />
+    <Compile Include="Utils\MD5Encoder.cs" />
+    <Compile Include="Utils\SQLiteHelper.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
