@@ -5,53 +5,63 @@ using System.Text;
 using System.Collections.Concurrent;
 using System.Threading;
 using Newtonsoft.Json.Linq;
+using WebSocket.Utils;
 
-namespace WebSocket
+namespace WebSocket.GameServer
 {
     public class GameCenter
     {
-
         static public GameCenter Instance = new GameCenter();
 
-        private ConcurrentQueue<CenterQueueEventArgs> m_eventQueue;
+        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
-        private IDictionary<string, GameSocket> m_socketSet;
         private IDictionary<string, GamePlayer> m_playerSet;
         private IDictionary<string, GameRoom> m_roomSet;
         private IDictionary<string, string> m_mapperSocketIdtoPlayerId;
 
-        #region 线程主控制
+        /// <summary>
+        /// 队列消息类
+        /// </summary>
+        public class QueueEventArgs : EventArgs
+        {
+            public enum MessageType { None, Client_Center, Client_Hall, Client_Room };
+    
+            public MessageType Type { get; set; }
+            public string Data { get; set; }
+            public Object Param1;
+            public Object Param2;
+        }
+
         public GameCenter()
         {
-            Init();
         }
-
-        private void Init()
-        {
-            m_eventQueue = new ConcurrentQueue<CenterQueueEventArgs>();
-            m_loopThread = new Thread(Run);
-
-        }
-
+        #region 消息队列循环
         public void Start()
         {
+            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
+            m_loopThread = new Thread(Run);
             m_loopThreadExit = false;
             m_loopThread.Start();
         }
-
         public void Stop()
         {
             m_loopThreadExit = true;
         }
-
         /// <summary>
         /// 接收队列消息
         /// </summary>
         /// <param name="eventArgs"></param>
-        public void PushSocketMessage(CenterQueueEventArgs eventArgs)
+        public void PushMessage(QueueEventArgs eventArgs)
         {
-            m_eventQueue.Enqueue(eventArgs);
+            if (m_eventQueue != null)
+            {
+                m_eventQueue.Enqueue(eventArgs);
+            }
+            else
+            {
+                throw new Exception("当前部门尚未启动！");
+            }  
         }
 
         /// <summary>
@@ -61,19 +71,19 @@ namespace WebSocket
         {
             while (!m_loopThreadExit)
             {
-                CenterQueueEventArgs eventArgs;
-                if (m_eventQueue.TryDequeue(out eventArgs))
+                QueueEventArgs eventArgs;
+                while (m_eventQueue.TryDequeue(out eventArgs))
                 {
                     switch (eventArgs.Type)
                     {
-                        case CenterQueueEventArgs.MessageType.Client_Center:
-                            this.OnClient_Center(eventArgs.Data, eventArgs.Socket);
+                        case QueueEventArgs.MessageType.Client_Center:
+                            this.OnClient_Center(eventArgs.Data, (string)eventArgs.Param1);
                             break;
-                        case CenterQueueEventArgs.MessageType.Client_Hall:
-                            this.OnClient_Hall(eventArgs.Data, eventArgs.Socket);
+                        case QueueEventArgs.MessageType.Client_Hall:
+                            this.OnClient_Hall(eventArgs.Data, (string)eventArgs.Param1);
                             break;
-                        case CenterQueueEventArgs.MessageType.Client_Room:
-                            this.OnClient_Room(eventArgs.Data, eventArgs.Socket);
+                        case QueueEventArgs.MessageType.Client_Room:
+                            this.OnClient_Room(eventArgs.Data, (string)eventArgs.Param1);
                             break;
                     }
                 }
@@ -84,53 +94,47 @@ namespace WebSocket
      
 
         #region 游戏平台工作
-        private void OnClient_Center(string data, GameSocket socket)
+        private void OnClient_Center(string data, string socketId)
         {
-            
+
             try
             {
                 JObject jsonObj = JObject.Parse(data);
                 string action = jsonObj.GetValue("Action").ToString();
                 switch (action)
                 {
-                    case "Connect":
+                    case "Login":
+                        GameClientAgent.QueueEventArgs evt = new GameClientAgent.QueueEventArgs();
+                        evt.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
+                        evt.Data = "fuck you!!";
+                        evt.Param1 = socketId;
+                        GameClientAgent.Instance.PushMessage(evt);
                         break;
-                    case "Disconnect":
+                    case "Logout":
                         break;
                 }
             }
-            catch { }
-        }
-        private void SocketConnect(GameSocket socket)
-        {
-            string id = socket.ID;
-            if(!m_socketSet.ContainsKey(id))
-                m_socketSet[id] = socket;
-        }
-        private void SocketDisconnect(GameSocket socket)
-        {
-            string id = socket.ID;
-            if (m_socketSet.ContainsKey(id))
-                m_socketSet.Remove(id);
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
         #endregion
+
         #region 大厅工作
-        private void OnClient_Hall(string data, GameSocket socket)
+        private void OnClient_Hall(string data, string socketId)
         {
             try
             {
             }
-            catch { }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
         #endregion
 
         #region 转发至房间
-        private void OnClient_Room(string data, GameSocket socket)
+        private void OnClient_Room(string data, string socketId)
         {
             try
             {
             }
-            catch { }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
         #endregion
 

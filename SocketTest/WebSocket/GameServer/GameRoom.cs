@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace WebSocket
+namespace WebSocket.GameServer
 {
     public class GameRoom
     {
+
     }
 }

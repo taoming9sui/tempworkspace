@@ -6,6 +6,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.Data.SQLite;
 using WebSocket.Utils;
+using WebSocket.GameServer;
 
 namespace WebSocket
 {
@@ -15,30 +16,34 @@ namespace WebSocket
 
         public static void Main(string[] args)
         {
-            Test2();
+            Test1();
         }
 
 
         private static void Test1()
-        {
-            GameCenter.Instance.Start();
+        {     
             Console.ReadKey(true);
 
+            GameCenter.Instance.Start();
+            GameClientAgent.Instance.Start();
             var wssv = new WebSocketServer("ws://localhost:8888");
-            wssv.AddWebSocketService("/Fuck", new Func<GameSocket>(GameSocket.GetSocket));
+            wssv.AddWebSocketService("/Fuck", new Func<PlayerSocket>(PlayerSocket.GetSocket));
             wssv.Start();
             Console.WriteLine("websocket server started at [localhost:8888]");
-            wssv.Stop();
+
 
             Console.ReadKey(true);
+            wssv.Stop();
+            GameClientAgent.Instance.Stop();
             GameCenter.Instance.Stop();
+
         }
 
         private static void Test2()
         {
             Console.ReadKey(true);
 
-            string md5 = MD5Encoder.CreateMD5("奶茶");
+            string md5 = SecurityHelper.CreateMD5("奶茶");
             Console.WriteLine(md5);
             LogHelper.LogError(md5);
 
