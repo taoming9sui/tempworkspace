@@ -21,21 +21,13 @@ namespace WebSocket
 
 
         private static void Test1()
-        {     
-            Console.ReadKey(true);
-
-            GameCenter.Instance.Start();
-            GameClientAgent.Instance.Start();
-            var wssv = new WebSocketServer("ws://localhost:8888");
-            wssv.AddWebSocketService("/Fuck", new Func<PlayerSocket>(PlayerSocket.GetSocket));
-            wssv.Start();
+        {
+            GameServerContainer container = new GameServerContainer();
+            container.Start();
             Console.WriteLine("websocket server started at [localhost:8888]");
-
-
             Console.ReadKey(true);
-            wssv.Stop();
-            GameClientAgent.Instance.Stop();
-            GameCenter.Instance.Stop();
+            container.Stop();
+            Console.WriteLine("websocket server stoped at [localhost:8888]");
 
         }
 

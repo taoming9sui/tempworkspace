@@ -5,7 +5,7 @@ using System.Text;
 
 namespace WebSocket.GameServer
 {
-    public class GameRoom
+    public class ServerRoom
     {
 
     }

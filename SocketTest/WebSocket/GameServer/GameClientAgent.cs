@@ -11,9 +11,7 @@ namespace WebSocket.GameServer
 {
     public class GameClientAgent
     {
-        static public GameClientAgent Instance = new GameClientAgent();
-
-        private GameCenter m_gameCenter = GameCenter.Instance; 
+        private GameServerContainer m_serverContainer; 
 
         private ConcurrentQueue<QueueEventArgs> m_eventQueue;
         private Thread m_loopThread;
@@ -33,23 +31,27 @@ namespace WebSocket.GameServer
             public Object Param2;
         }
 
-
-        public GameClientAgent()
+        public GameClientAgent(GameServerContainer container)
         {
+            m_serverContainer = container;
+
+            m_socketSet = new Dictionary<string, PlayerSocket>();
+            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
+            m_loopThread = new Thread(Run);
         }
+
         #region 消息队列循环
         public void Start()
         {
-            if (m_loopThread == null || !m_loopThread.IsAlive)
+            if (!m_loopThread.IsAlive)
             {
-                m_socketSet = new Dictionary<string, PlayerSocket>();
-                m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
-                m_loopThread = new Thread(Run);
                 m_loopThreadExit = false;
                 m_loopThread.Start();
             }
-
-
+            else
+            {
+                throw new Exception("当前部门正在运作！");
+            }
         }
         public void Stop()
         {
@@ -116,7 +118,7 @@ namespace WebSocket.GameServer
                 jsonObj.Add("Action", "Connect");
                 eventArgs.Data = jsonObj.ToString();
                 eventArgs.Param1 = socket.ID;
-                m_gameCenter.PushMessage(eventArgs);
+                m_serverContainer.Center.PushMessage(eventArgs);
 
                 if (!m_socketSet.ContainsKey(id))
                     m_socketSet[id] = socket;
@@ -134,7 +136,7 @@ namespace WebSocket.GameServer
                 jsonObj.Add("Action", "Disconnect");
                 eventArgs.Data = jsonObj.ToString();
                 eventArgs.Param1 = socket.ID;
-                m_gameCenter.PushMessage(eventArgs);
+                m_serverContainer.Center.PushMessage(eventArgs);
 
                 if (m_socketSet.ContainsKey(id))
                     m_socketSet.Remove(id);
@@ -166,7 +168,7 @@ namespace WebSocket.GameServer
                 }
                 eventArgs.Data = data;
                 eventArgs.Param1 = socket.ID;
-                m_gameCenter.PushMessage(eventArgs);
+                m_serverContainer.Center.PushMessage(eventArgs);
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
@@ -184,9 +186,6 @@ namespace WebSocket.GameServer
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
         #endregion
-
-
-
 
     }
 }

@@ -21,7 +21,7 @@
 
                 ws.onopen = function () {
                     // Web Socket 已连接上，使用 send() 方法发送数据
-                    ws.send(JSON.stringify({ "Type": "Client_Center", "Data": { "Action":  "Login" }  }));
+                    ws.send(JSON.stringify({ "Type": "Client_Center", "Data": { "Action":  "Register" , "PlayerId": "a545300730", "Password": "taoming"}  }));
                     alert("数据发送中...");
                 };
 

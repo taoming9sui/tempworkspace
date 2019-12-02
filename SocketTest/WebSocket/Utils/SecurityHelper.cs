@@ -30,5 +30,21 @@ namespace WebSocket.Utils
             return guid.ToString();
         }
 
+        public static string CreateRandomString(int size, char[] charset = null)
+        {
+            if (charset == null)
+                charset = new char[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+
+            StringBuilder builder = new StringBuilder();
+            Random random = new Random();
+            char ch;
+            for (int i = 0; i < size; i++)
+            {
+                ch = charset[Convert.ToInt32(Math.Floor(charset.Length * random.NextDouble()))];
+                builder.Append(ch);
+            }
+            return builder.ToString();
+        }  
+
     }
 }
