@@ -7,9 +7,9 @@ namespace WebSocket.GameServer
 {
     public class ServerPlayer
     {
-        string PlayerId { get; set; }
-        string InRoomId { get; set; }
-        string SocketId { get; set; }
-        PlayerInfo Info { get; set; }
+        public string PlayerId { get; set; }
+        public string InRoomId { get; set; }
+        public string SocketId { get; set; }
+        public PlayerInfo Info { get; set; }
     }
 }

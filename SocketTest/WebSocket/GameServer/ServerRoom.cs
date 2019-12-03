@@ -7,6 +7,7 @@ namespace WebSocket.GameServer
 {
     public class ServerRoom
     {
+        private IDictionary<string, PlayerInfo> m_playerSet;
 
     }
 }

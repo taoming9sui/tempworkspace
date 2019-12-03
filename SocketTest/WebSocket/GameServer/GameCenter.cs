@@ -39,6 +39,8 @@ namespace WebSocket.GameServer
         public GameCenter(GameServerContainer container)
         {
             m_serverContainer = container;
+            m_playerSet = new Dictionary<string, ServerPlayer>();
+            m_roomSet = new Dictionary<string, ServerRoom>();
 
             m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
             m_loopThread = new Thread(Run);
@@ -121,7 +123,7 @@ namespace WebSocket.GameServer
                         PlayerRegister(jsonObj.GetValue("PlayerId").ToString(), jsonObj.GetValue("Password").ToString());
                         break;
                     case "Login":
-
+                        PlayerLogin(jsonObj.GetValue("PlayerId").ToString(), jsonObj.GetValue("Password").ToString(), socketId);
                         break;
                     case "Logout":
 
@@ -157,7 +159,7 @@ namespace WebSocket.GameServer
                     cmd1.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
                     cmd1.Parameters[0].Value = playerId;
                     SQLiteDataReader reader = cmd1.ExecuteReader();
-                    bool hasOne = reader.NextResult();
+                    bool hasOne = reader.HasRows;
                     reader.Close();
                     if (hasOne)
                     {
@@ -192,6 +194,88 @@ namespace WebSocket.GameServer
                 }
             }
         }
+        private void PlayerLogin(string playerId, string password, string socketId)
+        {
+            bool login_flag = false;
+
+            using (SQLiteConnection conn = SQLiteHelper.GetConnection())
+            {
+                conn.Open();
+                try
+                {
+                    //检查用户是否存在
+                    SQLiteCommand cmd1 = new SQLiteCommand(conn);
+                    cmd1.CommandText = "select * from player_register where player_id=@p0";
+                    cmd1.CommandType = System.Data.CommandType.Text;
+                    cmd1.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
+                    cmd1.Parameters[0].Value = playerId;
+                    SQLiteDataReader reader = cmd1.ExecuteReader();
+                    bool hasOne = reader.Read();
+                    if (!hasOne)
+                    {
+                        reader.Close();
+                        throw new InfoException("用户名密码错误");
+                    }
+                    string password_salt = reader["password_salt"].ToString();
+                    string password_md5 = reader["password_md5"].ToString();
+                    string input_md5 = SecurityHelper.CreateMD5(password + password_salt);
+                    reader.Close();
+                    //验证是否成功
+                    if (input_md5.Equals(password_md5))
+                    {
+                        login_flag = true;
+                    }
+                    else
+                    {
+                        throw new InfoException("用户名密码错误");
+                    }
+                }
+                catch (InfoException ex)
+                {
+                    LogHelper.LogInfo(ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
+                }
+            }
+
+            if (login_flag)
+            {
+                if (m_playerSet.ContainsKey(playerId))
+                {
+                    //玩家留存在游戏中心
+                    ServerPlayer player = m_playerSet[playerId];
+                    player.SocketId = socketId;
+                }
+                else
+                {
+                    //为新登录玩家
+                    ServerPlayer player = new ServerPlayer();
+                    player.PlayerId = playerId;
+                    player.InRoomId = null;
+                    player.SocketId = socketId;
+                    player.Info = new PlayerInfo();
+                    m_playerSet[playerId] = player;
+                }           
+            }
+        }
+        private void PlayerLogout(string playerId, string password, string socketId)
+        {
+            RemovePlayer(playerId);
+        }
+        private void RemovePlayer(string playerId)
+        {
+            ServerPlayer player = null;
+            m_playerSet.TryGetValue(playerId, out player);
+            if (player != null)
+            {
+                //1 通知大厅
+                PlayerLeaveRoom(player);
+                //2 移除
+                m_playerSet.Remove(player.PlayerId);
+            }
+        }
         private void CenterResponse(string socketId, string data)
         {
 
@@ -206,6 +290,20 @@ namespace WebSocket.GameServer
             {
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
+        }
+        private void PlayerLeaveRoom(ServerPlayer player)
+        {
+            if (player.InRoomId == null)
+                return;
+            //1 通知房间
+            ServerRoom room = null;
+            m_roomSet.TryGetValue(player.InRoomId, out room);
+            if (room != null)
+            {
+
+            }
+            //2 移除
+            player.InRoomId = null;
         }
         #endregion
 

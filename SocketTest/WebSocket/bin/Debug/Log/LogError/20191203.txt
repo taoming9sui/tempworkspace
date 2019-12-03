@@ -1,0 +1,26 @@
+Date:2019-12-03 09:35:20,251 
+Level:ERROR 
+Content:No current row|   在 System.Data.SQLite.SQLiteDataReader.CheckValidRow()
+   在 System.Data.SQLite.SQLiteDataReader.VerifyForGet()
+   在 System.Data.SQLite.SQLiteDataReader.GetValue(Int32 i)
+   在 System.Data.SQLite.SQLiteDataReader.get_Item(String name)
+   在 WebSocket.GameServer.GameCenter.PlayerLogin(String playerId, String password, String socketId) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameCenter.cs:行号 217
+
+Date:2019-12-03 09:36:03,773 
+Level:ERROR 
+Content:No current row|   在 System.Data.SQLite.SQLiteDataReader.CheckValidRow()
+   在 System.Data.SQLite.SQLiteDataReader.VerifyForGet()
+   在 System.Data.SQLite.SQLiteDataReader.GetValue(Int32 i)
+   在 System.Data.SQLite.SQLiteDataReader.get_Item(String name)
+   在 WebSocket.GameServer.GameCenter.PlayerLogin(String playerId, String password, String socketId) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameCenter.cs:行号 217
+
+Date:2019-12-03 09:38:24,060 
+Level:ERROR 
+Content:未将对象引用设置到对象的实例。|   在 WebSocket.GameServer.GameCenter.PlayerLogin(String playerId, String password, String socketId) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameCenter.cs:行号 244
+   在 WebSocket.GameServer.GameCenter.OnClient_Center(String data, String socketId) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameCenter.cs:行号 124
+
+Date:2019-12-03 09:38:51,030 
+Level:ERROR 
+Content:未将对象引用设置到对象的实例。|   在 WebSocket.GameServer.GameCenter.PlayerLogin(String playerId, String password, String socketId) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameCenter.cs:行号 244
+   在 WebSocket.GameServer.GameCenter.OnClient_Center(String data, String socketId) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameCenter.cs:行号 124
+

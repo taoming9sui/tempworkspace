@@ -13,7 +13,6 @@ namespace WebSocket
     public class Program
     {
         
-
         public static void Main(string[] args)
         {
             Test1();
@@ -22,13 +21,14 @@ namespace WebSocket
 
         private static void Test1()
         {
-            GameServerContainer container = new GameServerContainer();
+            GameServerContainer container = new GameServerContainer(8888, "/Fuck");
             container.Start();
-            Console.WriteLine("websocket server started at [localhost:8888]");
-            Console.ReadKey(true);
-            container.Stop();
-            Console.WriteLine("websocket server stoped at [localhost:8888]");
+            Console.WriteLine("websocket server started");
 
+            Console.ReadKey(true);
+
+            container.Stop();
+            Console.WriteLine("websocket server stoped");
         }
 
         private static void Test2()

@@ -8,37 +8,48 @@
 
 <body>
     <div>
-        <button onclick="javascript:WebSocketTest()">运行 WebSocket</button>
+        <button onclick="javascript:SocketConnect()">连接</button>
     </div>
+    <div>
+        <button onclick="">注册</button>
+    </div>	
+    <div>
+        <button onclick="javascript:t2()">登录</button>
+    </div>	
 
     <script type="text/javascript">
-        function WebSocketTest() {
+		var ws;
+        function SocketConnect() {
             if ("WebSocket" in window) {
+			    // 浏览器支持 WebSocket
                 alert("您的浏览器支持 WebSocket!");
-
-                // 打开一个 web socket
-                var ws = new WebSocket("ws://localhost:8888/Fuck");
-
-                ws.onopen = function () {
-                    // Web Socket 已连接上，使用 send() 方法发送数据
-                    ws.send(JSON.stringify({ "Type": "Client_Center", "Data": { "Action":  "Register" , "PlayerId": "a545300730", "Password": "taoming"}  }));
-                    alert("数据发送中...");
-                };
-
-                ws.onmessage = function (evt) {
-                    var received_msg = evt.data;
-                    alert(received_msg);
-                };
-
-                ws.onclose = function () {
-                    // 关闭 websocket
-                    alert("连接已关闭...");
-                };
+				
+                ws = new WebSocket("ws://localhost:8888/Fuck");
+                ws.onopen = OnSocketOpen;
+                ws.onmessage = OnSocketMsg;
+                ws.onclose = OnSocketClose;
             } else {
                 // 浏览器不支持 WebSocket
                 alert("您的浏览器不支持 WebSocket!");
             }
         }
+		
+		function OnSocketOpen(){
+		
+		}
+		function OnSocketClose(){
+			
+		}			
+		function OnSocketMsg(evt){
+			var received_msg = evt.data;
+			alert(received_msg);
+		}		
+		
+		function t1(){
+		}
+		function t2(){
+			ws.send(JSON.stringify({ "Type": "Client_Center", "Data": { "Action":  "Login" , "PlayerId": "a545300730", "Password": "taoming"}  }));
+		}
         
     </script>
 
