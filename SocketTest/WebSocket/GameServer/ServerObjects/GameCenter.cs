@@ -10,7 +10,7 @@ using System.Data.SQLite;
 using WebSocket.Exceptions;
 using System.Text.RegularExpressions;
 
-namespace WebSocket.GameServer
+namespace WebSocket.GameServer.ServerObjects
 {
     public class GameCenter
     {
@@ -41,6 +41,7 @@ namespace WebSocket.GameServer
             m_serverContainer = container;
             m_playerSet = new Dictionary<string, ServerPlayer>();
             m_roomSet = new Dictionary<string, ServerRoom>();
+            m_mapperSocketIdtoPlayerId = new Dictionary<string, string>();
 
             m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
             m_loopThread = new Thread(Run);
@@ -291,6 +292,14 @@ namespace WebSocket.GameServer
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
+        private void PlayerJoinRoom(ServerPlayer player, string roomId)
+        {
+            if (player.InRoomId != null)
+            {
+                return;
+            }
+                
+        }
         private void PlayerLeaveRoom(ServerPlayer player)
         {
             if (player.InRoomId == null)
@@ -300,9 +309,13 @@ namespace WebSocket.GameServer
             m_roomSet.TryGetValue(player.InRoomId, out room);
             if (room != null)
             {
-
+                room.PlayerLeave(player.PlayerId);
+                if (room.PlayerCount == 0)
+                {
+                    m_roomSet.Remove(room.RoomId);
+                }
             }
-            //2 移除
+            //2 更改玩家引用
             player.InRoomId = null;
         }
         #endregion

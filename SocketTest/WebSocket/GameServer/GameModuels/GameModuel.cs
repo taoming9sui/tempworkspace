@@ -4,16 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Collections.Concurrent;
 using System.Threading;
+using WebSocket.GameServer.ServerObjects;
 
-namespace WebSocket.GameServer.Games
+namespace WebSocket.GameServer.GameModuels
 {
-    public class GameInstance
+    public abstract class GameModuel
     {
+        abstract public string GameName { get; }
         abstract public int MaxPlayerCount { get ; }
+        abstract public bool isOpened { get; }
         protected IDictionary<string, PlayerInfo> m_playerSet;
         private ServerRoom m_room;
 
-        public GameInstance(ServerRoom room)
+        public GameModuel(ServerRoom room)
         {
             m_playerSet = new Dictionary<string, PlayerInfo>();
         }

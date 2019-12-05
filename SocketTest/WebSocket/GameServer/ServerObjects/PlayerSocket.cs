@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WebSocket.Utils;
 
-namespace WebSocket.GameServer
+namespace WebSocket.GameServer.ServerObjects
 {
     public class PlayerSocket : WebSocketBehavior
     {

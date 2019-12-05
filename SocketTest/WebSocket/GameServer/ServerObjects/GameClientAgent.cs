@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using WebSocket.Utils;
 
-namespace WebSocket.GameServer
+namespace WebSocket.GameServer.ServerObjects
 {
     public class GameClientAgent
     {

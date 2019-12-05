@@ -66,13 +66,13 @@
   <ItemGroup>
     <Compile Include="Exceptions\InfoException.cs" />
     <Compile Include="GameServer\GameServerContainer.cs" />
-    <Compile Include="GameServer\Games\GameInstance.cs" />
-    <Compile Include="GameServer\ServerPlayer.cs" />
-    <Compile Include="GameServer\ServerRoom.cs" />
-    <Compile Include="GameServer\GameClientAgent.cs" />
+    <Compile Include="GameServer\GameModuels\GameModuel.cs" />
+    <Compile Include="GameServer\ServerObjects\ServerPlayer.cs" />
+    <Compile Include="GameServer\ServerObjects\ServerRoom.cs" />
+    <Compile Include="GameServer\ServerObjects\GameClientAgent.cs" />
     <Compile Include="GameServer\PlayerInfo.cs" />
-    <Compile Include="GameServer\PlayerSocket.cs" />
-    <Compile Include="GameServer\GameCenter.cs" />
+    <Compile Include="GameServer\ServerObjects\PlayerSocket.cs" />
+    <Compile Include="GameServer\ServerObjects\GameCenter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\LogHelper.cs" />

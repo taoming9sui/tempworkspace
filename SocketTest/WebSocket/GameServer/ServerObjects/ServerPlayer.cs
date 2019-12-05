@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace WebSocket.GameServer
+namespace WebSocket.GameServer.ServerObjects
 {
     public class ServerPlayer
     {

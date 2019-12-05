@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using WebSocketSharp.Server;
+using WebSocket.GameServer.ServerObjects;
+using WebSocket.GameServer.GameModuels;
 
 namespace WebSocket.GameServer
 {
