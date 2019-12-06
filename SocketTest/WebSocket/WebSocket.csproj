@@ -65,10 +65,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Exceptions\InfoException.cs" />
+    <Compile Include="GameServer\GameModuels\GameModuelLoader.cs" />
+    <Compile Include="GameServer\GameModuels\TetrisGame.cs" />
     <Compile Include="GameServer\GameServerContainer.cs" />
     <Compile Include="GameServer\GameModuels\GameModuel.cs" />
-    <Compile Include="GameServer\ServerObjects\ServerPlayer.cs" />
-    <Compile Include="GameServer\ServerObjects\ServerRoom.cs" />
+    <Compile Include="GameServer\ServerObjects\CenterPlayer.cs" />
+    <Compile Include="GameServer\ServerObjects\CenterRoom.cs" />
     <Compile Include="GameServer\ServerObjects\GameClientAgent.cs" />
     <Compile Include="GameServer\PlayerInfo.cs" />
     <Compile Include="GameServer\ServerObjects\PlayerSocket.cs" />

@@ -7,16 +7,27 @@ using WebSocket.Exceptions;
 
 namespace WebSocket.GameServer.ServerObjects
 {
-    public class ServerRoom
+    public class CenterRoom
     {
         public enum Status { Default, Vacant , Full, Playing };
 
-        private GameClientAgent m_clientAgent;
         private IDictionary<string, PlayerInfo> m_playerSet;
+        private GameCenter m_center;
         private GameModuel m_game;
         private string m_roomId;
         private string m_title;
         private string m_password;
+
+        public CenterRoom(GameCenter center, string roomId, string gameId, string title, string password = null)
+        {
+            m_center = center;
+            m_roomId = roomId;
+            m_game = GameModuelLoader.GetGameInstance(gameId, this);
+            m_title = title;
+            m_password = password;
+
+            m_playerSet = new Dictionary<string, PlayerInfo>();
+        }
 
         #region 面向大厅调用
         public int MaxPlayerCount
@@ -37,7 +48,7 @@ namespace WebSocket.GameServer.ServerObjects
         {
             get
             {
-                if (!m_game.isOpened)
+                if (!m_game.IsOpened)
                     return Status.Playing;
                 if (m_playerSet.Count >= m_game.MaxPlayerCount)
                     return Status.Full;
@@ -89,7 +100,7 @@ namespace WebSocket.GameServer.ServerObjects
             if (m_playerSet.ContainsKey(playerId))
                 m_playerSet.Remove(playerId);
         }
-        public void PlayerDisconnect(string playerId)
+        public void PlayerOffline(string playerId)
         {
         }
         public void PlayerReConnect(string playerId)
@@ -101,13 +112,16 @@ namespace WebSocket.GameServer.ServerObjects
         #endregion
 
         #region 面向游戏调用
-        protected void GameMessageResponse(string playerId, string data)
+        public void GameMessageResponse(string playerId, string data)
         {
-
+            m_center.RoomResponse(playerId, data);
         }
-        protected void GameMessageBroad(string data)
+        public void GameMessageBroad(string data)
         {
-
+            foreach(string playerId in m_playerSet.Keys)
+            {
+                m_center.RoomResponse(playerId, data);
+            }
         }
         #endregion
 

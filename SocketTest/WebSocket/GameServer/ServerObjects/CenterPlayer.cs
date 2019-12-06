@@ -5,7 +5,7 @@ using System.Text;
 
 namespace WebSocket.GameServer.ServerObjects
 {
-    public class ServerPlayer
+    public class CenterPlayer
     {
         public string PlayerId { get; set; }
         public string InRoomId { get; set; }

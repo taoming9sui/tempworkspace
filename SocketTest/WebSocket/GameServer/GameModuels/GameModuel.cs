@@ -12,13 +12,18 @@ namespace WebSocket.GameServer.GameModuels
     {
         abstract public string GameName { get; }
         abstract public int MaxPlayerCount { get ; }
-        abstract public bool isOpened { get; }
-        protected IDictionary<string, PlayerInfo> m_playerSet;
-        private ServerRoom m_room;
+        abstract public bool IsOpened { get; }
 
-        public GameModuel(ServerRoom room)
+        protected IDictionary<string, PlayerInfo> m_playerSet;
+        private CenterRoom m_room;
+
+        public GameModuel(CenterRoom room)
         {
+            m_room = room;
             m_playerSet = new Dictionary<string, PlayerInfo>();
+
+            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
+            m_loopThread = new Thread(Run);
         }
 
         /// <summary>
@@ -93,31 +98,30 @@ namespace WebSocket.GameServer.GameModuels
                             break;
                     }
                 }
-                Thread.Sleep(20);
+                LogicUpdate();
+                Thread.Sleep(1);
             }
         }
         #endregion
 
         #region 内置事件
-        virtual protected void OnPlayerMessage()
-        {
-        }
-        virtual protected void OnPlayerJoin()
-        {
-        }
-        virtual protected void OnPlayerLeave()
-        {
-        }
-        virtual protected void OnPlayerConnect()
-        {
-        }
-        virtual protected void OnPlayerDisconnect()
-        {
-        }
+        abstract protected void OnPlayerMessage();
+        abstract protected void OnPlayerJoin();
+        abstract protected void OnPlayerLeave();
+        abstract protected void OnPlayerConnect();
+        abstract protected void OnPlayerDisconnect();
+        abstract protected void LogicUpdate();
         #endregion
 
         #region 可供调用接口
-
+        protected void SendMessage(string playerId, string data)
+        {
+            m_room.GameMessageResponse(playerId, data);
+        }
+        protected void BroadMessage(string data)
+        {
+            m_room.GameMessageBroad(data);
+        }
         #endregion
 
 
