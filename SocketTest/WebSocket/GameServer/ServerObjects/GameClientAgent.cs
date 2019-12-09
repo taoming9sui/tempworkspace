@@ -11,11 +11,11 @@ namespace WebSocket.GameServer.ServerObjects
 {
     public class GameClientAgent
     {
-        private GameServerContainer m_serverContainer; 
-
         private ConcurrentQueue<QueueEventArgs> m_eventQueue;
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
+
+        private GameServerContainer m_serverContainer; 
         private IDictionary<string, PlayerSocket> m_socketSet;
 
         /// <summary>
@@ -33,9 +33,11 @@ namespace WebSocket.GameServer.ServerObjects
 
         public GameClientAgent(GameServerContainer container)
         {
+            //服务容器引用
             m_serverContainer = container;
-
+            //客户端会话集
             m_socketSet = new Dictionary<string, PlayerSocket>();
+            //消息队列进程对象
             m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
             m_loopThread = new Thread(Run);
         }
@@ -93,10 +95,10 @@ namespace WebSocket.GameServer.ServerObjects
                             this.SocketDisconnect((PlayerSocket)eventArgs.Param1);
                             break;
                         case QueueEventArgs.MessageType.Socket_Message:
-                            this.ForwardCenter((PlayerSocket)eventArgs.Param1, eventArgs.Data);
+                            this.ReceiveMessage((PlayerSocket)eventArgs.Param1, eventArgs.Data);
                             break;
                         case QueueEventArgs.MessageType.Server_Client:
-                            this.ForwardClient((string)eventArgs.Param1, eventArgs.Data);
+                            this.SendMessage((string)eventArgs.Param1, eventArgs.Data);
                             break;      
                     }
                 }
@@ -143,7 +145,7 @@ namespace WebSocket.GameServer.ServerObjects
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
-        private void ForwardCenter(PlayerSocket socket, string jsonData)
+        private void ReceiveMessage(PlayerSocket socket, string jsonData)
         {
             try
             {
@@ -176,12 +178,12 @@ namespace WebSocket.GameServer.ServerObjects
 
 
         #region 服务端->客户端
-        private void ForwardClient(string socketId, string data)
+        private void SendMessage(string socketId, string jsonData)
         {
             try
             {
                 PlayerSocket socket = this.m_socketSet[socketId];
-                socket.SocketSend(data);
+                socket.SocketSend(jsonData);
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }

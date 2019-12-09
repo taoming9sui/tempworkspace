@@ -12,11 +12,10 @@ namespace WebSocket.GameServer
     {
         private int socketPort = 8888;
         private string socketPath = "/Fuck";
-
-
         private GameCenter m_center;
         private GameClientAgent m_clientAgent;
         private WebSocketServer m_socketServer;
+
 
         public GameCenter Center { get { return m_center; } }
         public GameClientAgent ClientAgent { get { return m_clientAgent; } }
@@ -39,7 +38,6 @@ namespace WebSocket.GameServer
             m_socketServer = new WebSocketServer(String.Format("ws://localhost:{0}", socketPort.ToString()));
             m_socketServer.AddWebSocketService(socketPath, new Func<PlayerSocket>(this.GetSocket));
             m_socketServer.Start();
-
         }
 
         public void Stop()

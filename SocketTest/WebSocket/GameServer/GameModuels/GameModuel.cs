@@ -10,18 +10,23 @@ namespace WebSocket.GameServer.GameModuels
 {
     public abstract class GameModuel
     {
-        abstract public string GameName { get; }
-        abstract public int MaxPlayerCount { get ; }
-        abstract public bool IsOpened { get; }
+        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
+        private Thread m_loopThread;
+        private bool m_loopThreadExit = false;
 
-        protected IDictionary<string, PlayerInfo> m_playerSet;
         private CenterRoom m_room;
+        protected IDictionary<string, PlayerInfo> m_playerSet;
+        abstract public string GameName { get; }
+        abstract public int MaxPlayerCount { get; }
+        abstract public bool IsOpened { get; }
 
         public GameModuel(CenterRoom room)
         {
+            //所在房间对象引用
             m_room = room;
+            //玩家ID集
             m_playerSet = new Dictionary<string, PlayerInfo>();
-
+            //消息队列进程对象
             m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
             m_loopThread = new Thread(Run);
         }
@@ -37,10 +42,6 @@ namespace WebSocket.GameServer.GameModuels
             public Object Param1;
             public Object Param2;
         }
-
-        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
-        private Thread m_loopThread;
-        private bool m_loopThreadExit = false;
 
         #region 消息队列循环
         public void Start()

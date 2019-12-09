@@ -13,7 +13,7 @@ namespace WebSocket.GameServer.GameModuels
             switch (gameId)
             {
                 default:
-                    return new TetrisGame(room);
+                    return new Wolfman(room);
             }
         }
     }

@@ -6,18 +6,18 @@ using WebSocket.GameServer.ServerObjects;
 
 namespace WebSocket.GameServer.GameModuels
 {
-    public class TetrisGame : GameModuel
+    public class Wolfman : GameModuel
     {
-        public TetrisGame(CenterRoom room) : base(room)
+        public Wolfman(CenterRoom room) : base(room)
         {
 
         }
 
-        public override string GameName => throw new NotImplementedException();
+        public override string GameName { get { throw new NotImplementedException(); } }
 
-        public override int MaxPlayerCount => throw new NotImplementedException();
+        public override int MaxPlayerCount { get { throw new NotImplementedException(); } }
 
-        public override bool IsOpened => throw new NotImplementedException();
+        public override bool IsOpened { get { throw new NotImplementedException(); } }
 
         protected override void LogicUpdate()
         {
