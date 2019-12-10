@@ -58,6 +58,13 @@ namespace WebSocket.GameServer.ServerObjects
                 return Status.Default;
             }
         }
+        public string GameId
+        {
+            get
+            {
+                return this.m_game.GameId;
+            }
+        }
         public string RoomId
         {
             get
@@ -78,6 +85,14 @@ namespace WebSocket.GameServer.ServerObjects
             {
                 return m_password;
             }
+        }
+        public void StartGame()
+        {
+            m_game.Start();
+        }
+        public void StopGame()
+        {
+            m_game.Stop();
         }
         public void PlayerJoin(string playerId, PlayerInfo playerInfo)
         {
@@ -102,12 +117,25 @@ namespace WebSocket.GameServer.ServerObjects
         }
         public void PlayerOffline(string playerId)
         {
+            GameModuel.QueueEventArgs eventArgs = new GameModuel.QueueEventArgs();
+            eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Disconnect;
+            eventArgs.Param1 = playerId;
+            m_game.PushMessage(eventArgs);
         }
         public void PlayerReConnect(string playerId)
         {
+            GameModuel.QueueEventArgs eventArgs = new GameModuel.QueueEventArgs();
+            eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Connect;
+            eventArgs.Param1 = playerId;
+            m_game.PushMessage(eventArgs);
         }
         public void GameMessageReceive(string playerId, string data)
         {
+            GameModuel.QueueEventArgs eventArgs = new GameModuel.QueueEventArgs();
+            eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Message;
+            eventArgs.Data = data;
+            eventArgs.Param1 = playerId;
+            m_game.PushMessage(eventArgs);
         }
         #endregion
 

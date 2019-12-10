@@ -13,6 +13,8 @@ namespace WebSocket.GameServer.GameModuels
 
         }
 
+        public override string GameId { get { throw new NotImplementedException(); } }
+
         public override string GameName { get { throw new NotImplementedException(); } }
 
         public override int MaxPlayerCount { get { throw new NotImplementedException(); } }
@@ -24,27 +26,27 @@ namespace WebSocket.GameServer.GameModuels
             throw new NotImplementedException();
         }
 
-        protected override void OnPlayerConnect()
+        protected override void OnPlayerConnect(string playerId)
         {
             throw new NotImplementedException();
         }
 
-        protected override void OnPlayerDisconnect()
+        protected override void OnPlayerDisconnect(string playerId)
         {
             throw new NotImplementedException();
         }
 
-        protected override void OnPlayerJoin()
+        protected override void OnPlayerJoin(string playerId)
         {
             throw new NotImplementedException();
         }
 
-        protected override void OnPlayerLeave()
+        protected override void OnPlayerLeave(string playerId)
         {
             throw new NotImplementedException();
         }
 
-        protected override void OnPlayerMessage()
+        protected override void OnPlayerMessage(string playerId, string msgData)
         {
             throw new NotImplementedException();
         }

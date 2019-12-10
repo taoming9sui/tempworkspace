@@ -10,8 +10,9 @@ namespace WebSocket.GameServer
 {
     public class GameServerContainer
     {
-        private int socketPort = 8888;
-        private string socketPath = "/Fuck";
+        private int m_socketPort;
+        private string m_socketPath;
+        private string m_sqliteConnStr;
         private GameCenter m_center;
         private GameClientAgent m_clientAgent;
         private WebSocketServer m_socketServer;
@@ -20,23 +21,24 @@ namespace WebSocket.GameServer
         public GameCenter Center { get { return m_center; } }
         public GameClientAgent ClientAgent { get { return m_clientAgent; } }
 
-        public GameServerContainer(int port, string path)
+        public GameServerContainer(int port, string path, string connStr)
         {
-            socketPort = port;
-            socketPath = path;
+            m_socketPort = port;
+            m_socketPath = path;
+            m_sqliteConnStr = connStr;
         }
 
         public void Start()
         {
             //开启GameCenter
-            m_center = new GameCenter(this);
+            m_center = new GameCenter(this, m_sqliteConnStr);
             m_center.Start();
             //开启GameClientAgent
             m_clientAgent = new GameClientAgent(this);
             m_clientAgent.Start();
             //开启WebSocket监听
-            m_socketServer = new WebSocketServer(String.Format("ws://localhost:{0}", socketPort.ToString()));
-            m_socketServer.AddWebSocketService(socketPath, new Func<PlayerSocket>(this.GetSocket));
+            m_socketServer = new WebSocketServer(String.Format("ws://localhost:{0}", m_socketPort.ToString()));
+            m_socketServer.AddWebSocketService(m_socketPath, new Func<PlayerSocket>(this.GetSocket));
             m_socketServer.Start();
         }
 

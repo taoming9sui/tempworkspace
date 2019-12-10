@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Configuration;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.Data.SQLite;
@@ -21,7 +22,8 @@ namespace WebSocket
 
         private static void Test1()
         {
-            GameServerContainer container = new GameServerContainer(8888, "/Fuck");
+            string connStr = ConfigurationManager.ConnectionStrings["SQLite"].ConnectionString;
+            GameServerContainer container = new GameServerContainer(8888, "/Fuck", connStr);
             container.Start();
             Console.WriteLine("websocket server started");
 

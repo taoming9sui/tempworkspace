@@ -66,7 +66,7 @@
   <ItemGroup>
     <Compile Include="Exceptions\InfoException.cs" />
     <Compile Include="GameServer\GameModuels\GameModuelLoader.cs" />
-    <Compile Include="GameServer\GameModuels\TetrisGame.cs" />
+    <Compile Include="GameServer\GameModuels\Wolfman.cs" />
     <Compile Include="GameServer\GameServerContainer.cs" />
     <Compile Include="GameServer\GameModuels\GameModuel.cs" />
     <Compile Include="GameServer\ServerObjects\CenterPlayer.cs" />

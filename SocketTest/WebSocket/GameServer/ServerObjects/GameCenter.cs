@@ -15,20 +15,6 @@ namespace WebSocket.GameServer.ServerObjects
 {
     public class GameCenter
     {
-        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
-        private Thread m_loopThread;
-        private bool m_loopThreadExit = false;
-
-        private GameServerContainer m_serverContainer;
-        private IDictionary<string, CenterPlayer> m_playerSet;
-        private IDictionary<string, CenterRoom> m_roomSet;
-        private IDictionary<string, string> m_mapperSocketIdtoPlayerId;
-        private IDictionary<string, int> m_updateTimerSet;
-        private DataTable m_roomListInfo;
-
-        /// <summary>
-        /// 队列消息类
-        /// </summary>
         public class QueueEventArgs : EventArgs
         {
             public enum MessageType { None, Client_Center, Client_Hall, Client_Room };
@@ -38,54 +24,56 @@ namespace WebSocket.GameServer.ServerObjects
             public Object Param1;
             public Object Param2;
         }
+        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
+        private Thread m_loopThread;
+        private bool m_loopThreadExit = false;
 
-        public GameCenter(GameServerContainer container)
+        private GameServerContainer m_serverContainer;
+        private string m_sqliteConnStr;
+        private IDictionary<string, CenterPlayer> m_playerSet;
+        private IDictionary<string, CenterRoom> m_roomSet;
+        private IDictionary<string, string> m_mapperSocketIdtoPlayerId;
+        private IDictionary<string, int> m_updateTimerSet;
+        private string m_roomListJsonData;
+
+        public GameCenter(GameServerContainer container, string sqliteConnStr)
         {
             //服务容器引用
             m_serverContainer = container;
+            //sqlite连接字符串
+            m_sqliteConnStr = sqliteConnStr;
             //玩家对象集
             m_playerSet = new Dictionary<string, CenterPlayer>();
             //房间集
             m_roomSet = new Dictionary<string, CenterRoom>();
             //客户端会话id到玩家id的关系集
             m_mapperSocketIdtoPlayerId = new Dictionary<string, string>();
-            //房间信息列表
-            m_roomListInfo = new DataTable();
-            m_roomListInfo.Columns.Add("RoomId", typeof(string));
-            m_roomListInfo.Columns.Add("RoomTitle", typeof(string));
-            m_roomListInfo.Columns.Add("RoomStatus", typeof(string));
-            m_roomListInfo.Columns.Add("HasPassword", typeof(bool));
-            m_roomListInfo.Columns.Add("MaxPlayerCount", typeof(int));
-            m_roomListInfo.Columns.Add("PlayerCount", typeof(int));
-            //计时器集
-            m_updateTimerSet = new Dictionary<string, int>();
-            m_updateTimerSet.Add("RoomListUpdate", 0);
-            //消息队列进程对象
-            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
-            m_loopThread = new Thread(Run);    
+            //计时器
+            InitTimer();
         }
-
-        #region 消息队列循环
         public void Start()
         {
-            if (!m_loopThread.IsAlive)
+            if (m_loopThread != null)
             {
-                m_loopThreadExit = false;
-                m_loopThread.Start();
+                if (m_loopThread.IsAlive)
+                {
+                    throw new Exception("当前部门正在运作！");
+                }
             }
-            else
-            {
-                throw new Exception("当前部门正在运作！");
-            }
+
+            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
+            m_loopThread = new Thread(Run);
+            m_loopThreadExit = false;
+            m_loopThread.Start();
         }
         public void Stop()
         {
             m_loopThreadExit = true;
+            //停止所有游戏房间
+            StopHallRooms();
         }
-        /// <summary>
-        /// 接收队列消息
-        /// </summary>
-        /// <param name="eventArgs"></param>
+
+        #region 消息队列循环
         public void PushMessage(QueueEventArgs eventArgs)
         {
             if (m_eventQueue != null)
@@ -97,10 +85,6 @@ namespace WebSocket.GameServer.ServerObjects
                 throw new Exception("当前部门尚未启动！");
             }
         }
-
-        /// <summary>
-        /// 服务器逻辑主循环
-        /// </summary>
         private void Run()
         {
             while (!m_loopThreadExit)
@@ -121,9 +105,48 @@ namespace WebSocket.GameServer.ServerObjects
                             break;
                     }
                 }
-                HallLogicUpdate();
+                LogicUpdate();
                 Thread.Sleep(1);
             }
+        }
+        #endregion
+
+
+        #region 计时器
+        private void InitTimer()
+        {
+            m_updateTimerSet = new Dictionary<string, int>();
+            m_updateTimerSet.Add("RoomListUpdate", 0);
+        }
+        private void LogicUpdate()
+        {
+            string[] keys = m_updateTimerSet.Keys.ToArray();
+            foreach (string key in keys)
+                m_updateTimerSet[key]++;
+
+            //间隔一秒更新房间列表
+            {
+                int t = m_updateTimerSet["RoomListUpdate"];
+                if (t > 1000)
+                {
+                    m_updateTimerSet["RoomListUpdate"] = 0;
+                    JArray jsonArray = new JArray();
+                    foreach (CenterRoom room in m_roomSet.Values)
+                    {
+                        JObject jobj = new JObject();
+                        jobj.Add("RoomId", room.RoomId);
+                        jobj.Add("RoomTitle", room.RoomTitle);
+                        jobj.Add("GameId", room.GameId);
+                        jobj.Add("RoomStatus", (int)room.RoomStatus);
+                        jobj.Add("PlayerCount", room.PlayerCount);
+                        jobj.Add("MaxPlayerCount", room.MaxPlayerCount);
+                        jobj.Add("HasPassword", !String.IsNullOrEmpty(room.RoomPassword));
+                        jsonArray.Add(jobj);
+                    }
+                    m_roomListJsonData = jsonArray.ToString();
+                }
+            }
+
         }
         #endregion
 
@@ -155,7 +178,7 @@ namespace WebSocket.GameServer.ServerObjects
         }
         private void ClientRegister(string playerId, string password, string socketId)
         {
-            using (SQLiteConnection conn = SQLiteHelper.GetConnection())
+            using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
             {
                 conn.Open();
                 try
@@ -215,7 +238,7 @@ namespace WebSocket.GameServer.ServerObjects
         {
             bool login_flag = false;
 
-            using (SQLiteConnection conn = SQLiteHelper.GetConnection())
+            using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
             {
                 conn.Open();
                 try
@@ -259,11 +282,7 @@ namespace WebSocket.GameServer.ServerObjects
 
             if (login_flag)
             {
-                //1客户端返回登录成功
-                JObject jsonObj = new JObject();
-                jsonObj.Add("Action", "LoginSuccess");
-                CenterResponse(socketId, jsonObj.ToString());
-                //2管理玩家对象
+                //1管理玩家对象
                 if (m_playerSet.ContainsKey(playerId))
                 {
                     //挂起玩家重连
@@ -287,10 +306,15 @@ namespace WebSocket.GameServer.ServerObjects
                     //通知大厅有玩家上线
                     PlayerOnline(player);
                 }
+                //2客户端返回登录成功
+                JObject jsonObj = new JObject();
+                jsonObj.Add("Action", "LoginSuccess");
+                CenterResponse(socketId, jsonObj.ToString());
             }
         }
         private void ClientLogout(string socketId)
         {
+            //1管理玩家对象
             string playerId = null;
             m_mapperSocketIdtoPlayerId.TryGetValue(socketId, out playerId);
             if (playerId != null)
@@ -304,6 +328,10 @@ namespace WebSocket.GameServer.ServerObjects
                 }
             }
             m_mapperSocketIdtoPlayerId.Remove(socketId);
+            //2客户端返回登出成功
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "LogoutSuccess");
+            CenterResponse(socketId, jsonObj.ToString());
         }
         private void ClientDisconnect(string socketId)
         {
@@ -355,10 +383,6 @@ namespace WebSocket.GameServer.ServerObjects
 
 
         #region 大厅工作
-        private void HallLogicUpdate()
-        {
-
-        }
         private void OnClient_Hall(string data, string socketId)
         {
             try
@@ -384,10 +408,18 @@ namespace WebSocket.GameServer.ServerObjects
                     case "LeaveRoom":
                         PlayerLeaveRoom(player);
                         break;
+                    case "RequestRoomList":
+                        PlayerRequestRoomList(player);
+                        break;
                 }
 
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
+        }
+        private void StopHallRooms()
+        {
+            foreach (CenterRoom room in m_roomSet.Values)
+                room.StopGame();
         }
         private void PlayerOnline(CenterPlayer player)
         {
@@ -417,17 +449,34 @@ namespace WebSocket.GameServer.ServerObjects
                 HallUserTip(player, "已经在一个房间中");
                 return;
             }
+            {
+                Regex roomTitle_reg = new Regex(@"^[\u4E00-\u9FA5A-Za-z0-9_]{3,16}$");  //3-16位汉字数字字母
+                if (!roomTitle_reg.IsMatch(roomTitle))
+                {
+                    HallUserTip(player, "房间名格式错误");
+                    return;
+                }             
+            }
+            {
+                Regex roomPassword_reg = new Regex(@"^.{0,16}$");  //3-16位
+                if (!roomPassword_reg.IsMatch(roomPassword))
+                {
+                    HallUserTip(player, "房间密码格式错误");
+                    return;
+                }
+            }
 
             {
                 string roomId = SecurityHelper.CreateGuid();
                 while (m_roomSet.ContainsKey(roomId))
                     roomId = SecurityHelper.CreateGuid();
                 CenterRoom room = new CenterRoom(this, roomId, gameId, roomTitle, roomPassword);
+                room.StartGame();
                 room.PlayerJoin(player.PlayerId, player.Info);
                 player.InRoomId = room.RoomId;
                 //向客户端返回信息
                 JObject jsonObj = new JObject();
-                jsonObj.Add("Action", "BeInRoom");
+                jsonObj.Add("Action", "InRoom");
                 JObject content = new JObject();
                 content.Add("RoomId", room.RoomId);
                 jsonObj.Add("Content", content);
@@ -469,7 +518,7 @@ namespace WebSocket.GameServer.ServerObjects
                 player.InRoomId = room.RoomId;
                 //向客户端返回信息
                 JObject jsonObj = new JObject();
-                jsonObj.Add("Action", "BeInRoom");
+                jsonObj.Add("Action", "InRoom");
                 JObject content = new JObject();
                 content.Add("RoomId", room.RoomId);
                 jsonObj.Add("Content", content);
@@ -488,6 +537,7 @@ namespace WebSocket.GameServer.ServerObjects
                 room.PlayerLeave(player.PlayerId);
                 if (room.PlayerCount == 0)
                 {
+                    room.StopGame();
                     m_roomSet.Remove(room.RoomId);
                 }
             }
@@ -502,6 +552,15 @@ namespace WebSocket.GameServer.ServerObjects
             content.Add("Sender", player.Info.Name);
             jsonObj.Add("Content", content);
             HallBroadcast(jsonObj.ToString());
+        }
+        private void PlayerRequestRoomList(CenterPlayer player)
+        {
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "ResponseRoomList");
+            JObject content = new JObject();
+            content.Add("RoomList", m_roomListJsonData);
+            jsonObj.Add("Content", content);
+            HallResponse(player, jsonObj.ToString());
         }
         private void HallNotice(string notice, int level)
         {

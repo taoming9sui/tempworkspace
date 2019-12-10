@@ -10,30 +10,6 @@ namespace WebSocket.GameServer.GameModuels
 {
     public abstract class GameModuel
     {
-        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
-        private Thread m_loopThread;
-        private bool m_loopThreadExit = false;
-
-        private CenterRoom m_room;
-        protected IDictionary<string, PlayerInfo> m_playerSet;
-        abstract public string GameName { get; }
-        abstract public int MaxPlayerCount { get; }
-        abstract public bool IsOpened { get; }
-
-        public GameModuel(CenterRoom room)
-        {
-            //所在房间对象引用
-            m_room = room;
-            //玩家ID集
-            m_playerSet = new Dictionary<string, PlayerInfo>();
-            //消息队列进程对象
-            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
-            m_loopThread = new Thread(Run);
-        }
-
-        /// <summary>
-        /// 队列消息类
-        /// </summary>
         public class QueueEventArgs : EventArgs
         {
             public enum MessageType { None, Message, Join, Leave, Connect, Disconnect };
@@ -42,28 +18,45 @@ namespace WebSocket.GameServer.GameModuels
             public Object Param1;
             public Object Param2;
         }
+        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
+        private Thread m_loopThread;
+        private bool m_loopThreadExit = false;
 
-        #region 消息队列循环
+        private CenterRoom m_room;
+
+        abstract public string GameId { get; }
+        abstract public string GameName { get; }
+        abstract public int MaxPlayerCount { get; }
+        abstract public bool IsOpened { get; }
+
+
         public void Start()
         {
-            if (!m_loopThread.IsAlive)
+            if (m_loopThread != null)
             {
-                m_loopThreadExit = false;
-                m_loopThread.Start();
+                if (m_loopThread.IsAlive)
+                {
+                    throw new Exception("当前部门正在运作！");
+                }
             }
-            else
-            {
-                throw new Exception("当前部门正在运作！");
-            }
+
+            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
+            m_loopThread = new Thread(Run);
+            m_loopThreadExit = false;
+            m_loopThread.Start();
         }
         public void Stop()
         {
             m_loopThreadExit = true;
         }
-        /// <summary>
-        /// 接收队列消息
-        /// </summary>
-        /// <param name="eventArgs"></param>
+        public GameModuel(CenterRoom room)
+        {
+            //所在房间对象引用
+            m_room = room;
+        }
+
+
+        #region 消息队列循环
         public void PushMessage(QueueEventArgs eventArgs)
         {
             if (m_eventQueue != null)
@@ -75,9 +68,6 @@ namespace WebSocket.GameServer.GameModuels
                 throw new Exception("当前部门尚未启动！");
             }
         }
-        /// <summary>
-        /// 游戏逻辑主循环
-        /// </summary>
         private void Run()
         {
             while (!m_loopThreadExit)
@@ -88,14 +78,19 @@ namespace WebSocket.GameServer.GameModuels
                     switch (eventArgs.Type)
                     {
                         case QueueEventArgs.MessageType.Message:
+                            OnPlayerMessage((string)eventArgs.Param1, eventArgs.Data);
                             break;
                         case QueueEventArgs.MessageType.Join:
+                            OnPlayerJoin((string)eventArgs.Param1);
                             break;
                         case QueueEventArgs.MessageType.Leave:
+                            OnPlayerLeave((string)eventArgs.Param1);
                             break;
                         case QueueEventArgs.MessageType.Connect:
+                            OnPlayerConnect((string)eventArgs.Param1);
                             break;
                         case QueueEventArgs.MessageType.Disconnect:
+                            OnPlayerDisconnect((string)eventArgs.Param1);
                             break;
                     }
                 }
@@ -106,11 +101,11 @@ namespace WebSocket.GameServer.GameModuels
         #endregion
 
         #region 内置事件
-        abstract protected void OnPlayerMessage();
-        abstract protected void OnPlayerJoin();
-        abstract protected void OnPlayerLeave();
-        abstract protected void OnPlayerConnect();
-        abstract protected void OnPlayerDisconnect();
+        abstract protected void OnPlayerMessage(string playerId, string msgData);
+        abstract protected void OnPlayerJoin(string playerId);
+        abstract protected void OnPlayerLeave(string playerId);
+        abstract protected void OnPlayerConnect(string playerId);
+        abstract protected void OnPlayerDisconnect(string playerId);
         abstract protected void LogicUpdate();
         #endregion
 

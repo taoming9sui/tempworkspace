@@ -11,16 +11,6 @@ namespace WebSocket.GameServer.ServerObjects
 {
     public class GameClientAgent
     {
-        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
-        private Thread m_loopThread;
-        private bool m_loopThreadExit = false;
-
-        private GameServerContainer m_serverContainer; 
-        private IDictionary<string, PlayerSocket> m_socketSet;
-
-        /// <summary>
-        /// 队列消息类
-        /// </summary>
         public class QueueEventArgs : EventArgs
         {
             public enum MessageType { None, Socket_Connect, Socket_Disconnect, Socket_Message, Server_Client };
@@ -30,40 +20,41 @@ namespace WebSocket.GameServer.ServerObjects
             public Object Param1;
             public Object Param2;
         }
+        private ConcurrentQueue<QueueEventArgs> m_eventQueue;
+        private Thread m_loopThread;
+        private bool m_loopThreadExit = false;
 
+        private GameServerContainer m_serverContainer; 
+        private IDictionary<string, PlayerSocket> m_socketSet;
+
+        public void Start()
+        {
+            if (m_loopThread != null)
+            {
+                if (m_loopThread.IsAlive)
+                {
+                    throw new Exception("当前部门正在运作！");
+                }
+            }
+
+            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
+            m_loopThread = new Thread(Run);
+            m_loopThreadExit = false;
+            m_loopThread.Start();
+        }
+        public void Stop()
+        {
+            m_loopThreadExit = true;
+        }
         public GameClientAgent(GameServerContainer container)
         {
             //服务容器引用
             m_serverContainer = container;
             //客户端会话集
             m_socketSet = new Dictionary<string, PlayerSocket>();
-            //消息队列进程对象
-            m_eventQueue = new ConcurrentQueue<QueueEventArgs>();
-            m_loopThread = new Thread(Run);
         }
 
         #region 消息队列循环
-        public void Start()
-        {
-            if (!m_loopThread.IsAlive)
-            {
-                m_loopThreadExit = false;
-                m_loopThread.Start();
-            }
-            else
-            {
-                throw new Exception("当前部门正在运作！");
-            }
-        }
-        public void Stop()
-        {
-            m_loopThreadExit = true;
-        }
-
-        /// <summary>
-        /// 接收队列消息
-        /// </summary>
-        /// <param name="eventArgs"></param>
         public void PushMessage(QueueEventArgs eventArgs)
         {
             if (m_eventQueue != null)
@@ -75,10 +66,6 @@ namespace WebSocket.GameServer.ServerObjects
                 throw new Exception("当前部门尚未启动！");
             }
         }
-
-        /// <summary>
-        /// 服务器逻辑主循环
-        /// </summary>
         private void Run()
         {
             while (!m_loopThreadExit)

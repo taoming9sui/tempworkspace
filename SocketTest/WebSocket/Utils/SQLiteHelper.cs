@@ -2,26 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Configuration;
 using System.Data.SQLite;
 
 namespace WebSocket.Utils
 {
     public class SQLiteHelper
     {
-        static private string DBConnStr = "";
-
-        static SQLiteHelper()
+        public static SQLiteConnection GetConnection(string connStr)
         {
-            DBConnStr = ConfigurationManager.ConnectionStrings["SQLite"].ConnectionString;
-        }
-
-        public static SQLiteConnection GetConnection()
-        {
-            SQLiteConnection conn = new SQLiteConnection(DBConnStr);
+            SQLiteConnection conn = new SQLiteConnection(connStr);
             return conn;
         }
-
 
     }
 }
