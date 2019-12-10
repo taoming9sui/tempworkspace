@@ -28,8 +28,9 @@ namespace WebSocket.GameServer.ServerObjects
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
 
-        private GameServerContainer m_serverContainer;
         private string m_sqliteConnStr;
+        private GameServerContainer m_serverContainer;
+        private IDictionary<string, bool> m_socketIdSet;
         private IDictionary<string, CenterPlayer> m_playerSet;
         private IDictionary<string, CenterRoom> m_roomSet;
         private IDictionary<string, string> m_mapperSocketIdtoPlayerId;
@@ -42,6 +43,8 @@ namespace WebSocket.GameServer.ServerObjects
             m_serverContainer = container;
             //sqlite连接字符串
             m_sqliteConnStr = sqliteConnStr;
+            //客户端会话id集
+            m_socketIdSet = new Dictionary<string, bool>();
             //玩家对象集
             m_playerSet = new Dictionary<string, CenterPlayer>();
             //房间集
@@ -168,6 +171,9 @@ namespace WebSocket.GameServer.ServerObjects
                         break;
                     case "Logout":
                         ClientLogout(socketId);
+                        break;
+                    case "Connect":
+                        ClientConnect(socketId);
                         break;
                     case "Disconnect":
                         ClientDisconnect(socketId);
@@ -333,6 +339,10 @@ namespace WebSocket.GameServer.ServerObjects
             jsonObj.Add("Action", "LogoutSuccess");
             CenterResponse(socketId, jsonObj.ToString());
         }
+        private void ClientConnect(string socketId)
+        {
+            m_socketIdSet[socketId] = true;
+        }
         private void ClientDisconnect(string socketId)
         {
             string playerId = null;
@@ -347,6 +357,7 @@ namespace WebSocket.GameServer.ServerObjects
                 }
             }
             m_mapperSocketIdtoPlayerId.Remove(socketId);
+            m_socketIdSet.Remove(socketId);
         }
         private void CenterUserTip(string socketId, string tip)
         {
@@ -371,7 +382,7 @@ namespace WebSocket.GameServer.ServerObjects
             jsonObj.Add("Type", "Server_Center");
             jsonObj.Add("Data", JObject.Parse(data));
             string jsonStr = jsonObj.ToString();
-            foreach (string socketId in m_mapperSocketIdtoPlayerId.Keys)
+            foreach (string socketId in m_socketIdSet.Keys)
             {
                 GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
                 eventArgs.Data = jsonStr;
