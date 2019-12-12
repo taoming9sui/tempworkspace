@@ -1,9 +1,0 @@
-Date:2019-11-27 15:30:42,371 
-Level:ERROR 
-Content:Unexpected character encountered while parsing value: 发. Path '', line 0, position 0.|   在 Newtonsoft.Json.JsonTextReader.ParseValue()
-   在 Newtonsoft.Json.JsonTextReader.ReadInternal()
-   在 Newtonsoft.Json.JsonTextReader.Read()
-   在 Newtonsoft.Json.Linq.JObject.Load(JsonReader reader)
-   在 Newtonsoft.Json.Linq.JObject.Parse(String json)
-   在 WebSocket.GameServer.GameClientAgent.ForwardCenter(PlayerSocket socket, String jsonData) 位置 D:\tm\mygit\SocketTest\WebSocket\GameServer\GameClientAgent.cs:行号 143
-

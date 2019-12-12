@@ -42,7 +42,7 @@ namespace GamePlatformServer.GameServer
             m_clientAgent = new GameClientAgent(this);
             m_clientAgent.Start();
             //开启WebSocket监听
-            m_socketServer = new WebSocketServer(String.Format("ws://localhost:{0}", m_socketPort.ToString()));
+            m_socketServer = new WebSocketServer(String.Format("ws://0.0.0.0:{0}", m_socketPort.ToString()));
             m_socketServer.AddWebSocketService(m_socketPath, new Func<PlayerSocket>(this.GetSocket));
             m_socketServer.Start();
         }
