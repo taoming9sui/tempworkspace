@@ -16,10 +16,12 @@ namespace GamePlatformServer.GameServer
         private GameCenter m_center;
         private GameClientAgent m_clientAgent;
         private WebSocketServer m_socketServer;
+        private GamePlayerDBAgent m_playerDBAgent;
 
 
         public GameCenter Center { get { return m_center; } }
         public GameClientAgent ClientAgent { get { return m_clientAgent; } }
+        public GamePlayerDBAgent PlayerDBAgent { get { return m_playerDBAgent; } }
 
         public GameServerContainer(int port, string path, string connStr)
         {
@@ -30,8 +32,11 @@ namespace GamePlatformServer.GameServer
 
         public void Start()
         {
+            //开启GamePlayerDBAgent
+            m_playerDBAgent = new GamePlayerDBAgent(m_sqliteConnStr);
+            m_playerDBAgent.Start();
             //开启GameCenter
-            m_center = new GameCenter(this, m_sqliteConnStr);
+            m_center = new GameCenter(this);
             m_center.Start();
             //开启GameClientAgent
             m_clientAgent = new GameClientAgent(this);
@@ -50,6 +55,8 @@ namespace GamePlatformServer.GameServer
             m_clientAgent.Stop();
             //关闭GameCenter
             m_center.Stop();
+            //关闭GamePlayerDBAgent
+            m_playerDBAgent.Stop();
 
         }
 

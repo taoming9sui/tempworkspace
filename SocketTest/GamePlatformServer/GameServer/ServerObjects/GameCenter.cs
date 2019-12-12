@@ -28,7 +28,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
 
-        private string m_sqliteConnStr;
         private GameServerContainer m_serverContainer;
         private IDictionary<string, bool> m_socketIdSet;
         private IDictionary<string, CenterPlayer> m_playerSet;
@@ -37,12 +36,10 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private IDictionary<string, int> m_updateTimerSet;
         private string m_roomListJsonData;
 
-        public GameCenter(GameServerContainer container, string sqliteConnStr)
+        public GameCenter(GameServerContainer container)
         {
             //服务容器引用
             m_serverContainer = container;
-            //sqlite连接字符串
-            m_sqliteConnStr = sqliteConnStr;
             //客户端会话id集
             m_socketIdSet = new Dictionary<string, bool>();
             //玩家对象集
@@ -184,109 +181,49 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void ClientRegister(string playerId, string password, string socketId)
         {
-            using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
+            bool flag = false;
+
+            try
             {
-                conn.Open();
-                try
-                {
-                    //检查输入格式
-                    Regex playerId_reg = new Regex(@"^[a-zA-Z0-9]{8,20}$");  //8-20数字大小写字母
-                    Regex password_reg = new Regex(@"^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$"); //至少有一个数字 至少有一个小写字母 至少有一个大写字母 8-20位密码
-                    if (!playerId_reg.IsMatch(playerId))
-                        throw new InfoException("用户名格式错误");
-                    if (!password_reg.IsMatch(password))
-                        throw new InfoException("密码格式错误");
-                    //检查用户是否重复
-                    SQLiteCommand cmd1 = new SQLiteCommand(conn);
-                    cmd1.CommandText = "select player_id from player_register where player_id=@p0";
-                    cmd1.CommandType = System.Data.CommandType.Text;
-                    cmd1.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
-                    cmd1.Parameters[0].Value = playerId;
-                    SQLiteDataReader reader = cmd1.ExecuteReader();
-                    bool hasOne = reader.HasRows;
-                    reader.Close();
-                    if (hasOne)
-                        throw new InfoException("该用户已被注册");
-                    //填写注册表单
-                    string player_id = playerId;
-                    string password_salt = SecurityHelper.CreateRandomString(16);
-                    string password_md5 = SecurityHelper.CreateMD5(password + password_salt);
-                    long register_date = Convert.ToInt64(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds);
-                    //执行入库操作
-                    SQLiteCommand cmd2 = new SQLiteCommand(conn);
-                    cmd2.CommandText = "insert into player_register (player_id,password_md5,password_salt,register_date) values (@p0,@p1,@p2,@p3)";
-                    cmd2.CommandType = System.Data.CommandType.Text;
-                    cmd2.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
-                    cmd2.Parameters[0].Value = playerId;
-                    cmd2.Parameters.Add(new SQLiteParameter("@p1", System.Data.DbType.String));
-                    cmd2.Parameters[1].Value = password_md5;
-                    cmd2.Parameters.Add(new SQLiteParameter("@p2", System.Data.DbType.String));
-                    cmd2.Parameters[2].Value = password_salt;
-                    cmd2.Parameters.Add(new SQLiteParameter("@p3", System.Data.DbType.Int64));
-                    cmd2.Parameters[3].Value = register_date;
-                    cmd2.ExecuteNonQuery();
-                    //客户端返回注册成功
-                    JObject jsonObj = new JObject();
-                    jsonObj.Add("Action", "RegisterSuccess");
-                    CenterResponse(socketId, jsonObj.ToString());
-                }
-                catch (InfoException ex)
-                {
-                    CenterUserTip(socketId, ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
-                }
+                m_serverContainer.PlayerDBAgent.PlayerRegister(playerId, password);
+                flag = true;
+            }
+            catch (InfoException ex)
+            {
+                CenterUserTip(socketId, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
+            }
+
+            if (flag)
+            {
+                //2客户端返回注册成功
+                JObject jsonObj = new JObject();
+                jsonObj.Add("Action", "RegisterSuccess");
+                CenterResponse(socketId, jsonObj.ToString());
             }
         }
         private void ClientLogin(string playerId, string password, string socketId)
         {
-            bool login_flag = false;
+            bool flag = false;
 
-            using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
+            try
             {
-                conn.Open();
-                try
-                {
-                    //检查用户是否存在
-                    SQLiteCommand cmd1 = new SQLiteCommand(conn);
-                    cmd1.CommandText = "select * from player_register where player_id=@p0";
-                    cmd1.CommandType = System.Data.CommandType.Text;
-                    cmd1.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
-                    cmd1.Parameters[0].Value = playerId;
-                    SQLiteDataReader reader = cmd1.ExecuteReader();
-                    bool hasOne = reader.Read();
-                    if (!hasOne)
-                    {
-                        reader.Close();
-                        throw new InfoException("用户名密码错误");
-                    }
-                    string password_salt = reader["password_salt"].ToString();
-                    string password_md5 = reader["password_md5"].ToString();
-                    string input_md5 = SecurityHelper.CreateMD5(password + password_salt);
-                    reader.Close();
-                    //验证是否成功
-                    if (input_md5.Equals(password_md5))
-                    {
-                        login_flag = true;
-                    }
-                    else
-                    {
-                        throw new InfoException("用户名密码错误");
-                    }
-                }
-                catch (InfoException ex)
-                {
-                    CenterUserTip(socketId, ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
-                }
+                m_serverContainer.PlayerDBAgent.PlayerLogin(playerId, password);
+                flag = true;
+            }
+            catch (InfoException ex)
+            {
+                CenterUserTip(socketId, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
             }
 
-            if (login_flag)
+            if (flag)
             {
                 //1管理玩家对象
                 if (m_playerSet.ContainsKey(playerId))
@@ -438,7 +375,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void PlayerOffline(CenterPlayer player)
         {
-            if(player.InRoomId != null)
+            if (player.InRoomId != null)
             {
                 CenterRoom room = null;
                 m_roomSet.TryGetValue(player.InRoomId, out room);
@@ -473,7 +410,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 {
                     HallUserTip(player, "房间名格式错误");
                     return;
-                }             
+                }
             }
             {
                 Regex roomPassword_reg = new Regex(@"^.{0,16}$");  //3-16位
@@ -621,7 +558,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 if (player.SocketId == null)
                     continue;
 
-                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();;
+                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs(); ;
                 eventArgs.Data = jsonStr;
                 eventArgs.Param1 = player.SocketId;
                 m_serverContainer.ClientAgent.PushMessage(eventArgs);
@@ -651,7 +588,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 if (player != null && room != null)
                 {
                     RoomReceive(player, room, data);
-                }             
+                }
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }

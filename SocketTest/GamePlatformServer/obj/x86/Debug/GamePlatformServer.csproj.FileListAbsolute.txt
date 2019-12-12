@@ -1,6 +1,3 @@
-D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\WebSocket.exe.config
-D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\WebSocket.exe
-D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\WebSocket.pdb
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\log4net.dll
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\System.Data.SQLite.dll
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\System.Data.SQLite.EF6.dll
@@ -13,5 +10,8 @@ D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\websocket-sharp.
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.csprojAssemblyReference.cache
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.csproj.CoreCompileInputs.cache
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.csproj.CopyComplete
-D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\WebSocket.exe
-D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\WebSocket.pdb
+D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\GamePlatformServer.exe.config
+D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\GamePlatformServer.exe
+D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\bin\Debug\GamePlatformServer.pdb
+D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.exe
+D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.pdb
