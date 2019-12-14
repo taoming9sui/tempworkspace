@@ -29,9 +29,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
             m_password = password;
 
             m_playerSet = new DataTable();
-            DataColumn priKey = m_playerSet.Columns.Add("PlayerId");
-            m_playerSet.Columns.Add("SocketId");
-            m_playerSet.Columns.Add("PlayerInfo");
+            DataColumn priKey = m_playerSet.Columns.Add("PlayerId", typeof(string));
+            m_playerSet.Columns.Add("SocketId", typeof(string));
+            m_playerSet.Columns.Add("PlayerInfo", typeof(PlayerInfo));
             m_playerSet.PrimaryKey = new DataColumn[] { priKey };
         }
 
@@ -136,6 +136,10 @@ namespace GamePlatformServer.GameServer.ServerObjects
             eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Disconnect;
             eventArgs.Param1 = playerId;
             m_game.PushMessage(eventArgs);
+
+            DataRow playerRow = m_playerSet.Rows.Find(playerId);
+            if (playerRow != null)
+                playerRow["SocketId"] = null;
         }
         public void PlayerReConnect(string playerId)
         {

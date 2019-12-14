@@ -243,8 +243,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     player.PlayerId = playerId;
                     player.InRoomId = null;
                     player.SocketId = socketId;
-                    player.Info = new PlayerInfo();
-                    player.Info.Name = playerId;
+                    PlayerInfo info;
+                    info.Name = playerId;
+                    player.Info = info;
                     m_playerSet[playerId] = player;
                     //通知大厅有玩家上线
                     PlayerOnline(player);

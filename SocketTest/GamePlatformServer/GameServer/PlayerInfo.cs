@@ -5,8 +5,8 @@ using System.Text;
 
 namespace GamePlatformServer.GameServer
 {
-    public class PlayerInfo
+    public struct PlayerInfo
     {
-        public string Name { get; set; }
+        public string Name;
     }
 }
