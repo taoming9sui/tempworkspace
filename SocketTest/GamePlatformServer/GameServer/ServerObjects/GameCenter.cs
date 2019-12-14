@@ -394,7 +394,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 m_roomSet.TryGetValue(player.InRoomId, out room);
                 if (room != null)
                 {
-                    room.PlayerReConnect(player.PlayerId);
+                    room.PlayerReConnect(player.PlayerId, player.SocketId);
                 }
             }
         }

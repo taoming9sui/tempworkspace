@@ -141,12 +141,16 @@ namespace GamePlatformServer.GameServer.ServerObjects
             if (playerRow != null)
                 playerRow["SocketId"] = null;
         }
-        public void PlayerReConnect(string playerId)
+        public void PlayerReConnect(string playerId, string socketId)
         {
             GameModuel.QueueEventArgs eventArgs = new GameModuel.QueueEventArgs();
             eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Connect;
             eventArgs.Param1 = playerId;
             m_game.PushMessage(eventArgs);
+
+            DataRow playerRow = m_playerSet.Rows.Find(playerId);
+            if (playerRow != null)
+                playerRow["SocketId"] = socketId;
         }
         public void GameMessageReceive(string playerId, string data)
         {
