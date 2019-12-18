@@ -69,8 +69,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
         public void Stop()
         {
             m_loopThreadExit = true;
-            //停止所有游戏房间
-            StopHallRooms();
         }
 
         #region 消息队列循环
@@ -108,6 +106,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 LogicUpdate();
                 Thread.Sleep(1);
             }
+            StopHallRooms();
         }
         #endregion
 

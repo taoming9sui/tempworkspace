@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Threading;
 using GamePlatformServer.Utils;
+using WebSocketSharp.Server;
 
 namespace GamePlatformServer.GameServer.ServerObjects
 {
@@ -20,10 +21,14 @@ namespace GamePlatformServer.GameServer.ServerObjects
             public Object Param1;
             public Object Param2;
         }
+
+        private int m_socketPort;
+        private string m_socketPath;
         private ConcurrentQueue<QueueEventArgs> m_eventQueue;
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
 
+        private WebSocketServer m_socketServer;
         private GameServerContainer m_serverContainer; 
         private IDictionary<string, PlayerSocket> m_socketSet;
 
@@ -46,12 +51,24 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             m_loopThreadExit = true;
         }
-        public GameClientAgent(GameServerContainer container)
+        public GameClientAgent(GameServerContainer container, int port, string path)
         {
             //服务容器引用
             m_serverContainer = container;
             //客户端会话集
             m_socketSet = new Dictionary<string, PlayerSocket>();
+            //访问路径
+            m_socketPort = port;
+            //访问路径
+            m_socketPath = path;
+            //WebSocket监听
+            m_socketServer = new WebSocketServer(String.Format("ws://0.0.0.0:{0}", m_socketPort.ToString()));
+            m_socketServer.AddWebSocketService(m_socketPath, ()=>
+            {
+                PlayerSocket socket = new PlayerSocket();
+                socket.m_serverContainer = m_serverContainer;
+                return socket;
+            });
         }
 
         #region 消息队列循环
@@ -68,6 +85,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void Run()
         {
+            m_socketServer.Start();
             while (!m_loopThreadExit)
             {
                 QueueEventArgs eventArgs;
@@ -91,6 +109,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 }
                 Thread.Sleep(1);
             }
+            m_socketServer.Stop();
         }
         #endregion
 

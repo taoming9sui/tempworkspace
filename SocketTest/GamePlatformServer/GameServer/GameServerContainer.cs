@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using WebSocketSharp.Server;
 using GamePlatformServer.GameServer.ServerObjects;
 using GamePlatformServer.GameServer.GameModuels;
 
@@ -15,7 +14,7 @@ namespace GamePlatformServer.GameServer
         private string m_sqliteConnStr;
         private GameCenter m_center;
         private GameClientAgent m_clientAgent;
-        private WebSocketServer m_socketServer;
+
         private GamePlayerDBAgent m_playerDBAgent;
 
 
@@ -39,18 +38,13 @@ namespace GamePlatformServer.GameServer
             m_center = new GameCenter(this);
             m_center.Start();
             //开启GameClientAgent
-            m_clientAgent = new GameClientAgent(this);
+            m_clientAgent = new GameClientAgent(this, m_socketPort, m_socketPath);
             m_clientAgent.Start();
-            //开启WebSocket监听
-            m_socketServer = new WebSocketServer(String.Format("ws://0.0.0.0:{0}", m_socketPort.ToString()));
-            m_socketServer.AddWebSocketService(m_socketPath, new Func<PlayerSocket>(this.GetSocket));
-            m_socketServer.Start();
+
         }
 
         public void Stop()
         {
-            //关闭WebSocket监听
-            m_socketServer.Stop();
             //关闭GameClientAgent
             m_clientAgent.Stop();
             //关闭GameCenter
@@ -59,14 +53,6 @@ namespace GamePlatformServer.GameServer
             m_playerDBAgent.Stop();
 
         }
-
-        private PlayerSocket GetSocket()
-        {
-            PlayerSocket socket = new PlayerSocket();
-            socket.m_serverContainer = this;
-            return socket;
-        }
-
 
     }
 }
