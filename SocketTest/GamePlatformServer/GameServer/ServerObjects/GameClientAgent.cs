@@ -38,7 +38,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             {
                 if (m_loopThread.IsAlive)
                 {
-                    throw new Exception("当前部门正在运作！");
+                    return;
                 }
             }
 
@@ -75,17 +75,28 @@ namespace GamePlatformServer.GameServer.ServerObjects
         public void PushMessage(QueueEventArgs eventArgs)
         {
             if (m_eventQueue != null)
-            {
                 m_eventQueue.Enqueue(eventArgs);
-            }
-            else
+        }
+        private void Begin()
+        {
+            try
             {
-                throw new Exception("当前部门尚未启动！");
+                m_socketServer.Start();
             }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
+            
+        }
+        private void Finish()
+        {
+            try
+            {
+                m_socketServer.Stop();
+            }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
         private void Run()
         {
-            m_socketServer.Start();
+            Begin();
             while (!m_loopThreadExit)
             {
                 QueueEventArgs eventArgs;
@@ -109,7 +120,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 }
                 Thread.Sleep(1);
             }
-            m_socketServer.Stop();
+            Finish();
         }
         #endregion
 

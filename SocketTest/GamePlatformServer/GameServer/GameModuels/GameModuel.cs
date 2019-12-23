@@ -36,7 +36,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             {
                 if (m_loopThread.IsAlive)
                 {
-                    throw new Exception("当前部门正在运作！");
+                    return;
                 }
             }
 
@@ -60,16 +60,11 @@ namespace GamePlatformServer.GameServer.GameModuels
         public void PushMessage(QueueEventArgs eventArgs)
         {
             if (m_eventQueue != null)
-            {
                 m_eventQueue.Enqueue(eventArgs);
-            }
-            else
-            {
-                throw new Exception("当前部门尚未启动！");
-            }
         }
         private void Run()
         {
+            Begin();
             while (!m_loopThreadExit)
             {
                 QueueEventArgs eventArgs;
@@ -97,6 +92,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 LogicUpdate();
                 Thread.Sleep(1);
             }
+            Finish();
         }
         #endregion
 
@@ -107,6 +103,8 @@ namespace GamePlatformServer.GameServer.GameModuels
         abstract protected void OnPlayerConnect(string playerId);
         abstract protected void OnPlayerDisconnect(string playerId);
         abstract protected void LogicUpdate();
+        abstract protected void Begin();
+        abstract protected void Finish();
         #endregion
 
         #region 可供调用接口
