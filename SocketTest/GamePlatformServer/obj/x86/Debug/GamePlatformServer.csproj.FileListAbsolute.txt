@@ -14,3 +14,4 @@ D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatform
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.csproj.CopyComplete
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.exe
 D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.pdb
+D:\PG\git-tempworkspace\SocketTest\GamePlatformServer\obj\x86\Debug\GamePlatformServer.csprojAssemblyReference.cache
