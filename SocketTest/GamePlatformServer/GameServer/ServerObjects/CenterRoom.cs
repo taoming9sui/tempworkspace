@@ -175,6 +175,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     JObject jsonObj = new JObject();
                     jsonObj.Add("Type", "Server_Room");
                     jsonObj.Add("Data", JObject.Parse(data));
+                    eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
                     eventArgs.Data = jsonObj.ToString();
                     eventArgs.Param1 = socketId;
                     m_serverContainer.ClientAgent.PushMessage(eventArgs);
@@ -192,6 +193,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     JObject jsonObj = new JObject();
                     jsonObj.Add("Type", "Server_Room");
                     jsonObj.Add("Data", JObject.Parse(data));
+                    eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
                     eventArgs.Data = jsonObj.ToString();
                     eventArgs.Param1 = socketId;
                     m_serverContainer.ClientAgent.PushMessage(eventArgs);

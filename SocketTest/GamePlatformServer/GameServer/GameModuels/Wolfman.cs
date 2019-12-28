@@ -21,6 +21,14 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         public override bool IsOpened { get { throw new NotImplementedException(); } }
 
+        protected override void Begin()
+        {
+        }
+
+        protected override void Finish()
+        {
+        }
+
         protected override void LogicUpdate()
         {
             throw new NotImplementedException();

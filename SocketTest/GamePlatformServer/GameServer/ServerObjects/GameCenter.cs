@@ -320,6 +320,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             JObject jsonObj = new JObject();
             jsonObj.Add("Type", "Server_Center");
             jsonObj.Add("Data", JObject.Parse(data));
+            eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
             eventArgs.Data = jsonObj.ToString();
             eventArgs.Param1 = socketId;
             m_serverContainer.ClientAgent.PushMessage(eventArgs);
@@ -333,6 +334,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             foreach (string socketId in m_socketIdSet.Keys)
             {
                 GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
+                eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
                 eventArgs.Data = jsonStr;
                 eventArgs.Param1 = socketId;
                 m_serverContainer.ClientAgent.PushMessage(eventArgs);
@@ -553,6 +555,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             JObject jsonObj = new JObject();
             jsonObj.Add("Type", "Server_Hall");
             jsonObj.Add("Data", JObject.Parse(data));
+            eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
             eventArgs.Data = jsonObj.ToString();
             eventArgs.Param1 = player.SocketId;
             m_serverContainer.ClientAgent.PushMessage(eventArgs);
@@ -568,7 +571,8 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 if (player.SocketId == null)
                     continue;
 
-                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs(); ;
+                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
+                eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
                 eventArgs.Data = jsonStr;
                 eventArgs.Param1 = player.SocketId;
                 m_serverContainer.ClientAgent.PushMessage(eventArgs);
