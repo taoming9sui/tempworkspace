@@ -221,6 +221,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
             try
             {
                 m_serverContainer.PlayerDBAgent.PlayerLogin(playerId, password);
+                CenterPlayer player = null;
+                m_playerSet.TryGetValue(playerId, out player);
+                if (player != null)
+                    if (player.SocketId != null)
+                        throw new InfoException("该玩家已登录");
                 flag = true;
             }
             catch (InfoException ex)
