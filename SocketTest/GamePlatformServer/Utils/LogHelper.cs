@@ -14,6 +14,7 @@ namespace GamePlatformServer.Utils
 
         static public void LogInfo(string message)
         {
+            Console.WriteLine(string.Format("[{0}]{1}", DateTime.Now.ToString(), message));
             _infoLogger.Info(message);
         }
 

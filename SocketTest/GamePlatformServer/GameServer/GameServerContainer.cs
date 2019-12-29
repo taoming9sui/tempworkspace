@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using GamePlatformServer.GameServer.ServerObjects;
 using GamePlatformServer.GameServer.GameModuels;
+using GamePlatformServer.Utils;
 
 namespace GamePlatformServer.GameServer
 {
@@ -31,16 +32,26 @@ namespace GamePlatformServer.GameServer
 
         public void Start()
         {
-            //开启GamePlayerDBAgent
-            m_playerDBAgent = new GamePlayerDBAgent(m_sqliteConnStr);
-            m_playerDBAgent.Start();
-            //开启GameCenter
-            m_center = new GameCenter(this);
-            m_center.Start();
-            //开启GameClientAgent
-            m_clientAgent = new GameClientAgent(this, m_socketPort, m_socketPath);
-            m_clientAgent.Start();
-
+            try
+            {
+                //开启GamePlayerDBAgent
+                LogHelper.LogInfo("初始化数据库在" + m_sqliteConnStr);
+                m_playerDBAgent = new GamePlayerDBAgent(m_sqliteConnStr);
+                m_playerDBAgent.Start();
+                //开启GameCenter
+                LogHelper.LogInfo("初始化GameCenter……");
+                m_center = new GameCenter(this);
+                m_center.Start();
+                //开启GameClientAgent
+                LogHelper.LogInfo("初始化GameClientAgent……");
+                m_clientAgent = new GameClientAgent(this, m_socketPort, m_socketPath);
+                m_clientAgent.Start();
+            }
+            catch(Exception ex)
+            {
+                LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
+                LogHelper.LogInfo("服务器启动失败:" + ex.Message);
+            }
         }
 
         public void Stop()

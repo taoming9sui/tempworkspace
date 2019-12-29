@@ -27,12 +27,10 @@ namespace GamePlatformServer
             string connStr = ConfigurationManager.ConnectionStrings["SQLite"].ConnectionString;
             GameServerContainer container = new GameServerContainer(port, path, connStr);
             container.Start();
-            Console.WriteLine("websocket server started");
 
             Console.ReadKey(true);
 
             container.Stop();
-            Console.WriteLine("websocket server stoped");
         }
 
         private static void Test2()
