@@ -43,9 +43,11 @@ namespace GamePlatformServer.GameServer
                 m_center = new GameCenter(this);
                 m_center.Start();
                 //开启GameClientAgent
-                LogHelper.LogInfo("初始化GameClientAgent……");
+                LogHelper.LogInfo(string.Format("初始化GameClientAgent在{0}", m_socketPort));
                 m_clientAgent = new GameClientAgent(this, m_socketPort, m_socketPath);
                 m_clientAgent.Start();
+                //服务启动
+                LogHelper.LogInfo("服务器启动成功！");
             }
             catch(Exception ex)
             {
