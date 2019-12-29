@@ -163,7 +163,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
         #region 游戏平台工作
         private void OnClient_Center(string data, string socketId)
         {
-
             try
             {
                 JObject jsonObj = JObject.Parse(data);
