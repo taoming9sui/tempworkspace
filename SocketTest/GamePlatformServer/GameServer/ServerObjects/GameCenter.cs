@@ -220,7 +220,12 @@ namespace GamePlatformServer.GameServer.ServerObjects
 
             try
             {
+                //1检查输入是否正确
                 m_serverContainer.PlayerDBAgent.PlayerLogin(playerId, password);
+                //2检查该Socket是否已经登录账户
+                if (m_mapperSocketIdtoPlayerId.ContainsKey(socketId))
+                    throw new InfoException("你已经登录一个账户");
+                //3检查该用户是否已被Socket登录
                 CenterPlayer player = null;
                 m_playerSet.TryGetValue(playerId, out player);
                 if (player != null)
