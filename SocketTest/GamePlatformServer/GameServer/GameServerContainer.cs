@@ -58,12 +58,25 @@ namespace GamePlatformServer.GameServer
 
         public void Stop()
         {
-            //关闭GameClientAgent
-            m_clientAgent.Stop();
-            //关闭GameCenter
-            m_center.Stop();
-            //关闭GamePlayerDBAgent
-            m_playerDBAgent.Stop();
+            try
+            {
+                //关闭GameClientAgent
+                if(m_clientAgent != null)
+                    m_clientAgent.Stop();
+                //关闭GameCenter
+                if (m_center != null)
+                    m_center.Stop();
+                //关闭GamePlayerDBAgent
+                if(m_playerDBAgent != null)
+                    m_playerDBAgent.Stop();
+                //关闭成功
+                LogHelper.LogInfo("服务器已关闭�?");
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
+                LogHelper.LogInfo("服务器关�?出错:" + ex.Message);
+            }
 
         }
 
