@@ -1,6 +1,0 @@
-C:\Users\admin\Desktop\test\CShartTest\SocketTest\SocketServer\bin\Debug\SocketServer.exe
-C:\Users\admin\Desktop\test\CShartTest\SocketTest\SocketServer\bin\Debug\SocketServer.pdb
-C:\Users\admin\Desktop\test\CShartTest\SocketTest\SocketServer\obj\x86\Debug\SocketServer.exe
-C:\Users\admin\Desktop\test\CShartTest\SocketTest\SocketServer\obj\x86\Debug\SocketServer.pdb
-C:\Users\admin\Desktop\test\CShartTest\SocketTest\SocketServer\obj\x86\Debug\SocketServer.csprojResolveAssemblyReference.cache
-C:\Users\admin\Desktop\test\CShartTest\SocketTest\SocketServer\bin\Debug\SocketServer.exe.config
