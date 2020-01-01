@@ -27,6 +27,7 @@ public class MainTheme : GameActivity
     {
         try
         {
+            //隐藏遮罩
             Mask(false);
             string type = jsonData.GetValue("Type").ToString();
             if(type == "Server_Center")
@@ -168,16 +169,9 @@ public class MainTheme : GameActivity
         GameObject login_panel = canvasObj.transform.Find("login").gameObject;
         string playerId = login_panel.transform.Find("playerid_input").GetComponent<InputField>().text;
         string password = login_panel.transform.Find("password_input").GetComponent<InputField>().text;
-        JObject loginJson = new JObject();
-        loginJson.Add("Type", "Client_Center");
-        JObject data = new JObject();
-        {
-            data.Add("Action", "Login");
-            data.Add("PlayerId", playerId);
-            data.Add("Password", password);
-        }
-        loginJson.Add("Data", data); ;
-        GameManager.Instance.SendMessage(loginJson);
+        //尝试登录
+        GameManager.Instance.PlayerLogin(playerId, password);
+        //显示遮罩
         Mask(true);
     }
     private void SendRegister()
@@ -208,7 +202,7 @@ public class MainTheme : GameActivity
     }
     private void LoginSuccess()
     {
-        TipModel("show", "登录成功");
+        GameManager.Instance.SetActivity("Hall");
     }
     private void RegisterSuccess()
     {

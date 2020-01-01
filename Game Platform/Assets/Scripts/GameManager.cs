@@ -10,12 +10,13 @@ public class GameManager : MonoBehaviour
     static public GameManager Instance;
 
     public string serverAddress = "118.113.201.76:8848/Fuck";
+    public GameObject activitiesObj;
     public GameActivity currentActivity;
     public Camera defaultCamera;
 
-    private WebSocket m_websocket;
-    private string m_playerId;
-    private string m_password;
+    private WebSocket m_websocket = null;
+    private string m_playerId = "";
+    private string m_password = "";
     private ConcurrentQueue<System.Action> m_invokeQueue = new ConcurrentQueue<System.Action>();
 
 
@@ -26,7 +27,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        SetActivity(currentActivity);
+        SetActivity("MainTheme");
     }
 
     private void Update()
@@ -56,27 +57,6 @@ public class GameManager : MonoBehaviour
         {
             action();
         }
-    }
-
-    public void SetUserCredential(string playerId, string password)
-    {
-        m_playerId = playerId;
-        m_password = password;
-    }
-    public bool SocketConnect()
-    {
-        if(m_websocket != null)
-            if (m_websocket.IsAlive)
-                return true;
-
-        m_websocket = new WebSocket("ws://" + serverAddress);
-        m_websocket.OnOpen += M_websocket_OnOpen;
-        m_websocket.OnClose += M_websocket_OnClose;
-        m_websocket.OnMessage += M_websocket_OnMessage;
-        m_websocket.OnError += M_websocket_OnError;
-        m_websocket.Connect();
-
-        return m_websocket.IsAlive;
     }
     private void M_websocket_OnOpen(object sender, System.EventArgs e)
     {
@@ -114,6 +94,47 @@ public class GameManager : MonoBehaviour
 
 
     #region 对外调用
+    public bool SocketConnect()
+    {
+        if (m_websocket != null)
+            if (m_websocket.IsAlive)
+                return true;
+
+        m_websocket = new WebSocket("ws://" + serverAddress);
+        m_websocket.OnOpen += M_websocket_OnOpen;
+        m_websocket.OnClose += M_websocket_OnClose;
+        m_websocket.OnMessage += M_websocket_OnMessage;
+        m_websocket.OnError += M_websocket_OnError;
+        m_websocket.Connect();
+
+        return m_websocket.IsAlive;
+    }
+    public void PlayerLogin(string playerId, string password)
+    {
+        JObject loginJson = new JObject();
+        loginJson.Add("Type", "Client_Center");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "Login");
+            data.Add("PlayerId", playerId);
+            data.Add("Password", password);
+        }
+        loginJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(loginJson);
+    }
+    public void PlayerLogin()
+    {
+        JObject loginJson = new JObject();
+        loginJson.Add("Type", "Client_Center");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "Login");
+            data.Add("PlayerId", m_playerId);
+            data.Add("Password", m_password);
+        }
+        loginJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(loginJson);
+    }
     public void SendMessage(JObject jsonData)
     {
         if (m_websocket != null)
@@ -124,16 +145,26 @@ public class GameManager : MonoBehaviour
             }
         }    
     }
-    public void SetActivity(GameActivity gameActivity, Object param = null)
+    public void SetActivity(string activity, Object param = null)
     {
         if(this.currentActivity != null)
         {
             this.currentActivity.OnActivityDisabled();
             this.currentActivity.gameObject.SetActive(false);
         }
-        this.currentActivity = gameActivity;
-        gameActivity.gameObject.SetActive(true);
-        gameActivity.OnActivityEnabled(param);
+
+        Transform activityTran = this.activitiesObj.transform.Find(activity);
+        if(activityTran != null)
+        {
+            GameActivity gameActivity = activityTran.GetComponent<GameActivity>();
+            this.currentActivity = gameActivity;
+            gameActivity.gameObject.SetActive(true);
+            gameActivity.OnActivityEnabled(param);
+        }
+        else
+        {
+            Debug.Log("未定义的Activity");
+        }
     }
     #endregion
 
