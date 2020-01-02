@@ -382,6 +382,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     case "RequestRoomList":
                         PlayerRequestRoomList(player);
                         break;
+                    case "HallChat":
+                        PlayerHallChat(player, jsonObj.GetValue("Chat").ToString());
+                        break;
                 }
 
             }

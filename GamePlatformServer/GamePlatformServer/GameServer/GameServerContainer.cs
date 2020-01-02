@@ -70,12 +70,12 @@ namespace GamePlatformServer.GameServer
                 if(m_playerDBAgent != null)
                     m_playerDBAgent.Stop();
                 //关闭成功
-                LogHelper.LogInfo("服务器已关闭�?");
+                LogHelper.LogInfo("服务器已关闭!");
             }
             catch (Exception ex)
             {
                 LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
-                LogHelper.LogInfo("服务器关�?出错:" + ex.Message);
+                LogHelper.LogInfo("服务器已关闭:" + ex.Message);
             }
 
         }
