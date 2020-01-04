@@ -13,13 +13,13 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         }
 
-        public override string GameId { get { throw new NotImplementedException(); } }
+        public override string GameId { get { return "Wolfman"; } }
 
-        public override string GameName { get { throw new NotImplementedException(); } }
+        public override string GameName { get { return "狼人杀"; } }
 
-        public override int MaxPlayerCount { get { throw new NotImplementedException(); } }
+        public override int MaxPlayerCount { get { return 12; } }
 
-        public override bool IsOpened { get { throw new NotImplementedException(); } }
+        public override bool IsOpened { get { return true; } }
 
         protected override void Begin()
         {
@@ -31,32 +31,26 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         protected override void LogicUpdate()
         {
-            throw new NotImplementedException();
         }
 
         protected override void OnPlayerConnect(string playerId)
         {
-            throw new NotImplementedException();
         }
 
         protected override void OnPlayerDisconnect(string playerId)
         {
-            throw new NotImplementedException();
         }
 
         protected override void OnPlayerJoin(string playerId)
         {
-            throw new NotImplementedException();
         }
 
         protected override void OnPlayerLeave(string playerId)
         {
-            throw new NotImplementedException();
         }
 
         protected override void OnPlayerMessage(string playerId, string msgData)
         {
-            throw new NotImplementedException();
         }
     }
 }

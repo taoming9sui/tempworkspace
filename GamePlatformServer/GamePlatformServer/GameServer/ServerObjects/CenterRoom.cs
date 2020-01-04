@@ -17,15 +17,15 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private GameModuel m_game;
         private DataTable m_playerSet;
         private string m_roomId;
-        private string m_title;
+        private string m_caption;
         private string m_password;
 
-        public CenterRoom(GameServerContainer container, string roomId, string gameId, string title, string password = null)
+        public CenterRoom(GameServerContainer container, string roomId, string gameId, string caption, string password = null)
         {
             m_serverContainer = container;
             m_roomId = roomId;
             m_game = GameModuelLoader.GetGameInstance(gameId, this);
-            m_title = title;
+            m_caption = caption;
             m_password = password;
 
             m_playerSet = new DataTable();
@@ -82,7 +82,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             get
             {
-                return m_title;
+                return m_caption;
             }
         }
         public string RoomPassword

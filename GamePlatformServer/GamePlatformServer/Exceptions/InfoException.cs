@@ -7,8 +7,11 @@ namespace GamePlatformServer.Exceptions
 {
     public class InfoException : Exception
     {
-        public InfoException(string message): base(message)
+        public int ErrorCode { get; set; }
+
+        public InfoException(string message, int errorCode = 0): base(message)
         {
+            this.ErrorCode = errorCode;
         }
     }
 }

@@ -371,7 +371,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 switch (action)
                 {
                     case "CreateRoom":
-                        PlayerCreateRoom(player, jsonObj.GetValue("GameId").ToString(), jsonObj.GetValue("RoomTitle").ToString(), jsonObj.GetValue("RoomPassword").ToString());
+                        PlayerCreateRoom(player, jsonObj.GetValue("GameId").ToString(), jsonObj.GetValue("Caption").ToString(), jsonObj.GetValue("Password").ToString());
                         break;
                     case "JoinRoom":
                         PlayerJoinRoom(player, jsonObj.GetValue("RoomId").ToString(), jsonObj.GetValue("Password").ToString());
@@ -422,7 +422,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 }
             }
         }
-        private void PlayerCreateRoom(CenterPlayer player, string gameId, string roomTitle, string roomPassword)
+        private void PlayerCreateRoom(CenterPlayer player, string gameId, string roomCaption, string roomPassword)
         {
             if (player.InRoomId != null)
             {
@@ -430,15 +430,15 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 return;
             }
             {
-                Regex roomTitle_reg = new Regex(@"^[\u4E00-\u9FA5A-Za-z0-9_]{3,16}$");  //3-16位汉字数字字母
-                if (!roomTitle_reg.IsMatch(roomTitle))
+                Regex roomTitle_reg = new Regex(@"^.{0,16}$");  //3-16位任意
+                if (!roomTitle_reg.IsMatch(roomCaption))
                 {
                     HallUserTip(player, "房间名格式错误");
                     return;
                 }
             }
             {
-                Regex roomPassword_reg = new Regex(@"^.{0,16}$");  //3-16位
+                Regex roomPassword_reg = new Regex(@"^.{0,16}$");  //0-16位任意
                 if (!roomPassword_reg.IsMatch(roomPassword))
                 {
                     HallUserTip(player, "房间密码格式错误");
@@ -450,9 +450,10 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 string roomId = SecurityHelper.CreateGuid();
                 while (m_roomSet.ContainsKey(roomId))
                     roomId = SecurityHelper.CreateGuid();
-                CenterRoom room = new CenterRoom(m_serverContainer, roomId, gameId, roomTitle, roomPassword);
+                CenterRoom room = new CenterRoom(m_serverContainer, roomId, gameId, roomCaption, roomPassword);
                 room.StartGame();
                 room.PlayerJoin(player.PlayerId, player.SocketId, player.Info);
+                m_roomSet[roomId] = room;
                 player.InRoomId = room.RoomId;
                 //向客户端返回信息
                 JObject jsonObj = new JObject();
@@ -525,8 +526,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void PlayerHallChat(CenterPlayer player, string chat)
         {
+            //HARDCORE 截断过长的字符串
+            if (chat.Length > 255)
+                chat = chat.Substring(0, 255);
             JObject jsonObj = new JObject();
-            jsonObj.Add("Action", "Chat");
+            jsonObj.Add("Action", "HallChat");
             JObject content = new JObject();
             content.Add("Chat", chat);
             content.Add("Sender", player.Info.Name);
