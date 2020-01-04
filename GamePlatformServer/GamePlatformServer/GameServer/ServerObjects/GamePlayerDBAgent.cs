@@ -64,6 +64,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 //执行入库操作
                 using (SQLiteTransaction transaction = conn.BeginTransaction())
                 {
+                    // player_register
                     using (SQLiteCommand cmd2 = new SQLiteCommand(conn))
                     {
                         cmd2.CommandText = "insert into player_register (player_id,password_md5,password_salt,register_date) values (@p0,@p1,@p2,@p3)";
@@ -78,7 +79,18 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         cmd2.Parameters[3].Value = register_date;
                         cmd2.ExecuteNonQuery();
                     }
-                    transaction.Commit();
+                    // player_info
+                    using (SQLiteCommand cmd3 = new SQLiteCommand(conn))
+                    {
+                        cmd3.CommandText = "insert into player_info (player_id, player_name) values (@p0,@p1)";
+                        cmd3.CommandType = System.Data.CommandType.Text;
+                        cmd3.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
+                        cmd3.Parameters[0].Value = playerId;
+                        cmd3.Parameters.Add(new SQLiteParameter("@p1", System.Data.DbType.String));
+                        cmd3.Parameters[1].Value = playerId;
+                        cmd3.ExecuteNonQuery();
+                    }
+                        transaction.Commit();
                 }
             }
         }
