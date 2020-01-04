@@ -64,7 +64,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 //执行入库操作
                 using (SQLiteTransaction transaction = conn.BeginTransaction())
                 {
-                    // player_register
+                    // player_register入库
                     using (SQLiteCommand cmd2 = new SQLiteCommand(conn))
                     {
                         cmd2.CommandText = "insert into player_register (player_id,password_md5,password_salt,register_date) values (@p0,@p1,@p2,@p3)";
@@ -79,7 +79,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         cmd2.Parameters[3].Value = register_date;
                         cmd2.ExecuteNonQuery();
                     }
-                    // player_info
+                    // player_info入库
                     using (SQLiteCommand cmd3 = new SQLiteCommand(conn))
                     {
                         cmd3.CommandText = "insert into player_info (player_id, player_name) values (@p0,@p1)";
