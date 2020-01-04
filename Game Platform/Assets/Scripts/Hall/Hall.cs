@@ -38,6 +38,12 @@ public class Hall : GameActivity
                             this.ReceiveChat(content.GetValue("Sender").ToString(), content.GetValue("Chat").ToString());
                         }                    
                         break;
+                    case "Tip":
+                        {
+                            string content = data.GetValue("Content").ToString();
+                            this.TipModel("show", content);
+                        }
+                        break;
                 }
             }
         }
@@ -51,16 +57,79 @@ public class Hall : GameActivity
     #region UI交互脚本
     public void SendChatButton()
     {
-        SendChat();
+        InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
+        //获取输入框消息并清空
+        string chat = chat_input.text;
+        chat_input.text = "";
+        SendChat(chat);
+    }
+    public void SendChatEnter()
+    {
+        InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
+        //获取输入框消息并清空
+        string chat = chat_input.text;
+        chat_input.text = "";
+        SendChat(chat);
+    }
+    public void CreateRoomModel(string code)
+    {
+        GameObject modelObj = canvasObj.transform.Find("createroom_model").gameObject;
+        switch (code)
+        {
+            case "show":
+                modelObj.SetActive(true);
+                break;
+            case "confirm":
+                {
+                    string caption = modelObj.transform.Find("model/caption_input").GetComponent<InputField>().text;
+                    string password = modelObj.transform.Find("model/password_input").GetComponent<InputField>().text;
+                    SendCreateRoom(caption, password);
+                    modelObj.SetActive(false);
+                }
+                break;
+            case "cancel":
+                modelObj.SetActive(false);
+                break;
+        }
+    }
+    public void TipModel(string code)
+    {
+        GameObject tip_model = canvasObj.transform.Find("tip_model").gameObject;
+        Text tip_text = tip_model.transform.Find("model/tip_text").GetComponent<Text>();
+        switch (code)
+        {
+            case "confirm":
+                {
+                    tip_model.SetActive(false);
+                }
+                break;
+        }
+    }
+    public void TipModel(string code, string tip)
+    {
+        GameObject tip_model = canvasObj.transform.Find("tip_model").gameObject;
+        Text tip_text = tip_model.transform.Find("model/tip_text").GetComponent<Text>();
+        switch (code)
+        {
+            case "show":
+                {
+                    tip_text.text = tip;
+                    tip_model.SetActive(true);
+                }
+                break;
+        }
     }
     #endregion
 
-    private void SendChat()
+
+    private void ClearChat()
     {
-        //获取输入框消息并清空
-        InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
-        string chat = chat_input.text;
-        chat_input.text = "";
+        Text chat_text = canvasObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
+        chat_text.text = "";
+        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
+    }
+    private void SendChat(string chat)
+    {
         if (chat != string.Empty)
         {
             //发送消息
@@ -75,17 +144,30 @@ public class Hall : GameActivity
             GameManager.Instance.SendMessage(dataJson);
         }
     }
+    private void SendCreateRoom(string caption, string password)
+    {
+        JObject createRoomJson = new JObject();
+        createRoomJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "CreateRoom");
+            data.Add("GameId", "");
+            data.Add("Caption", caption);
+            data.Add("Password", password);
+        }
+        createRoomJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(createRoomJson);
+    }
     private void ReceiveChat(string sender, string chat)
     {
         //添加一行聊天信息
         Text chat_text = canvasObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
-        chat_text.text += string.Format("{0}:{1}\n", sender, chat);
+        chat_text.text += string.Format("<color=#A52A2AFF>[{0}] </color>{1}\n", sender, chat);
+        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
         //滚动条刷新到最底部
-        StartCoroutine(DoAction_Delay(() =>
-        {
-            Scrollbar scrollbar = canvasObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
+        Scrollbar scrollbar = canvasObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
+        if(scrollbar.value < 0.2f || scrollbar.size > 0.8f)
             scrollbar.value = 0;
-        }, 0.1f));
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {

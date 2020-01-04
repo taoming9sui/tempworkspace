@@ -10,6 +10,7 @@ public class MainTheme : GameActivity
     public GameObject canvasObj;
     public GameObject sceneObj;
 
+
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
@@ -27,11 +28,11 @@ public class MainTheme : GameActivity
     {
         try
         {
-            //隐藏遮罩
-            Mask(false);
+
             string type = jsonData.GetValue("Type").ToString();
             if(type == "Server_Center")
             {
+                Mask(false); //隐藏遮罩
                 JObject data = (JObject)jsonData.GetValue("Data");
                 string action = data.GetValue("Action").ToString();
                 switch (action)
@@ -72,7 +73,10 @@ public class MainTheme : GameActivity
             case "confirm":
                 {       
                     connecterror_model.SetActive(false);
-                    StartCoroutine(SocketConnect_Delay());
+                    StartCoroutine(DoAction_Delay(()=>
+                    {
+                        GameManager.Instance.SocketConnect();
+                    }, 0.2f));
                 }
                 break;
         }
@@ -122,7 +126,10 @@ public class MainTheme : GameActivity
             case "connect":
                 {
                     connect_panel.SetActive(true);
-                    StartCoroutine(SocketConnect_Delay());
+                    StartCoroutine(DoAction_Delay(() =>
+                    {
+                        GameManager.Instance.SocketConnect();
+                    }, 0.2f));
                 }
                 break;
             case "login":
@@ -158,11 +165,10 @@ public class MainTheme : GameActivity
     }
     #endregion
 
-
-    private IEnumerator SocketConnect_Delay()
+    private IEnumerator DoAction_Delay(System.Action action, float delay)
     {
-        yield return new WaitForSeconds(0.2f);
-        GameManager.Instance.SocketConnect();
+        yield return new WaitForSeconds(delay);
+        action();
     }
     private void SendLogin()
     {
