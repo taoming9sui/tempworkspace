@@ -90,7 +90,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         cmd3.Parameters[1].Value = playerId;
                         cmd3.ExecuteNonQuery();
                     }
-                        transaction.Commit();
+                    transaction.Commit();
                 }
             }
         }

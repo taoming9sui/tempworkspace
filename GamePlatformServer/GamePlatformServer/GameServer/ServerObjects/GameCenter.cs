@@ -34,6 +34,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private IDictionary<string, CenterRoom> m_roomSet;
         private IDictionary<string, string> m_mapperSocketIdtoPlayerId;
         private IDictionary<string, int> m_updateTimerSet;
+        private List<OfflinePlayerRecord> m_offlineRecordList;
         private string m_roomListJsonData;
 
         public GameCenter(GameServerContainer container)
@@ -48,7 +49,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
             m_roomSet = new Dictionary<string, CenterRoom>();
             //客户端会话id到玩家id的关系集
             m_mapperSocketIdtoPlayerId = new Dictionary<string, string>();
-            //计时器
+            //离线玩家的按时间排序列表
+            m_offlineRecordList = new List<OfflinePlayerRecord>();
+            //初始化计时器
             InitTimer();
         }
         public void Start()
@@ -126,6 +129,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             m_updateTimerSet = new Dictionary<string, int>();
             m_updateTimerSet.Add("RoomListUpdate", 0);
+            m_updateTimerSet.Add("OfflinePlayerDispose", 0);
         }
         private void LogicUpdate()
         {
@@ -155,6 +159,38 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     m_roomListJsonData = jsonArray.ToString();
                 }
             }
+
+            //间隔一秒处理掉线超时的玩家
+            {
+                int t = m_updateTimerSet["OfflinePlayerDispose"];
+                if (t > 1000)
+                {
+                    m_updateTimerSet["OfflinePlayerDispose"] = 0;
+                    if(m_offlineRecordList.Count > 0)
+                    {
+                        m_offlineRecordList.Sort((obj1, obj2) =>
+                        {
+                            return obj1.CompareTo(obj2);
+                        });
+                        for (var first = m_offlineRecordList.First();
+                            first.dateTime < DateTime.Now && m_offlineRecordList.Count > 0;
+                            first = m_offlineRecordList.First())
+                        {
+                            //将其踢出服务器
+                            string playerId = first.playerId;
+                            CenterPlayer player = null;
+                            m_playerSet.TryGetValue(playerId, out player);
+                            if (player != null)
+                            {
+                                this.PlayerLeaveRoom(player);
+                            }
+                            //移除该项
+                            m_offlineRecordList.RemoveAt(0);
+                        }
+                    }
+                }
+            }
+
 
         }
         #endregion
@@ -400,6 +436,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void PlayerOffline(CenterPlayer player)
         {
+            //通知房间
             if (player.InRoomId != null)
             {
                 CenterRoom room = null;
@@ -409,9 +446,14 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     room.PlayerOffline(player.PlayerId);
                 }
             }
+            //加入离线玩家列表
+            //HARDCODE 10分钟后剔除玩家
+            DateTime deadline = DateTime.Now.AddMinutes(10);
+            m_offlineRecordList.Add(new OfflinePlayerRecord(deadline, player.PlayerId));
         }
         private void PlayerReconnect(CenterPlayer player)
         {
+            //通知房间
             if (player.InRoomId != null)
             {
                 CenterRoom room = null;
@@ -421,6 +463,13 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     room.PlayerReConnect(player.PlayerId, player.SocketId);
                 }
             }
+            //将玩家从离线列表移除
+            m_offlineRecordList.RemoveAll((obj) =>
+            {
+                if (obj.playerId.Equals(player.PlayerId))
+                    return true;
+                return false;
+            });
         }
         private void PlayerCreateRoom(CenterPlayer player, string gameId, string roomCaption, string roomPassword)
         {
@@ -516,6 +565,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             if (room != null)
             {
                 room.PlayerLeave(player.PlayerId);
+                //当房间为空时 销毁该房间
                 if (room.PlayerCount == 0)
                 {
                     room.StopGame();
@@ -526,7 +576,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void PlayerHallChat(CenterPlayer player, string chat)
         {
-            //HARDCORE 截断过长的字符串
+            //HARDCODE 截断过长的字符串
             if (chat.Length > 255)
                 chat = chat.Substring(0, 255);
             JObject jsonObj = new JObject();
@@ -629,5 +679,23 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         #endregion
 
+
+        #region 工具类
+        private class OfflinePlayerRecord : IComparable<OfflinePlayerRecord>
+        {
+            public DateTime dateTime;
+            public string playerId;
+
+            public OfflinePlayerRecord(DateTime dateTime, string playerId)
+            {
+                this.dateTime = dateTime;
+                this.playerId = playerId;
+            }
+            public int CompareTo(OfflinePlayerRecord obj)
+            {
+                return dateTime.CompareTo(obj.dateTime);
+            }
+        }
+        #endregion
     }
 }

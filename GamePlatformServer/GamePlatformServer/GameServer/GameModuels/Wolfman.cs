@@ -23,10 +23,12 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         protected override void Begin()
         {
+
         }
 
         protected override void Finish()
         {
+
         }
 
         protected override void LogicUpdate()
