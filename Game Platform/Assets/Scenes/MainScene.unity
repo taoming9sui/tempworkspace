@@ -382,7 +382,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5ac9cc43f487f544990448ff4dff493, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverAddress: localhost:8888/Fuck
+  serverAddress: 171.88.46.150:8888/Fuck
   activitiesObj: {fileID: 435409685}
   currentActivity: {fileID: 87294644}
   defaultCamera: {fileID: 1384128336}

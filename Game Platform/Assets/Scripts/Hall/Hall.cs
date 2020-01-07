@@ -10,6 +10,30 @@ public class Hall : GameActivity
     public GameObject canvasObj;
     public GameObject sceneObj;
 
+    private IDictionary<string, float> m_updateTimerSet = new Dictionary<string, float>();
+
+    #region unity触发器
+    private void Awake()
+    {
+        //添加计时器项目
+        m_updateTimerSet["RoomListRequest"] = 0f;
+    }
+    private void Update()
+    {
+        float dt = Time.deltaTime;
+        {
+            m_updateTimerSet["RoomListRequest"] += dt;
+            //HARDCODE 间隔5秒请求一次房间列表
+            if(m_updateTimerSet["RoomListRequest"] > 5f)
+            {
+                m_updateTimerSet["RoomListRequest"] = 0f;
+                this.RequestRoomList();
+            }
+        }
+
+    }
+    #endregion
+
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
@@ -44,6 +68,12 @@ public class Hall : GameActivity
                             this.TipModel("show", content);
                         }
                         break;
+                    case "ResponseRoomList":
+                        {
+                            JObject content = (JObject)data.GetValue("Content");
+                            this.ReceiveRoomList((string)content.GetValue("RoomList"));
+                        }
+                        break;
                 }
             }
         }
@@ -65,11 +95,17 @@ public class Hall : GameActivity
     }
     public void SendChatEnter()
     {
-        InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
-        //获取输入框消息并清空
-        string chat = chat_input.text;
-        chat_input.text = "";
-        SendChat(chat);
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
+            //获取输入框消息并清空
+            string chat = chat_input.text;
+            chat_input.text = "";
+            SendChat(chat);
+            //重新获取焦点
+            chat_input.Select();
+            chat_input.ActivateInputField();
+        }
     }
     public void CreateRoomModel(string code)
     {
@@ -168,6 +204,21 @@ public class Hall : GameActivity
         Scrollbar scrollbar = canvasObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
         if(scrollbar.value < 0.2f || scrollbar.size > 0.8f)
             scrollbar.value = 0;
+    }
+    private void RequestRoomList()
+    {
+        JObject requestJson = new JObject();
+        requestJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "RequestRoomList");
+        }
+        requestJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(requestJson);
+    }
+    private void ReceiveRoomList(string roomListStr)
+    {
+        Debug.Log(roomListStr);
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {
