@@ -62,9 +62,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\CanvasAdapter.cs" />
+    <Compile Include="Assets\Scripts\DropdownHandler.cs" />
     <Compile Include="Assets\Scripts\GameActivity.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\Hall\Hall.cs" />
+    <Compile Include="Assets\Scripts\Hall\RoomItem.cs" />
     <Compile Include="Assets\Scripts\MainTheme\MainTheme.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>D:/PG/git-tempworkspace/Game Platform/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>

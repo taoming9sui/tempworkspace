@@ -8,6 +8,7 @@ using WebSocketSharp;
 public class GameManager : MonoBehaviour
 {
     static public GameManager Instance;
+    public IDictionary<string, GameInfo> GameInfos { get; private set; }
 
     public string serverAddress = "118.113.201.76:8848/Fuck";
     public GameObject activitiesObj;
@@ -23,6 +24,9 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+
+        GameInfos = new Dictionary<string, GameInfo>();
+        GameInfos["Wolfman"] = new GameInfo("Wolfman", "狼人杀", "Wolfman");
     }
 
     private void Start()
@@ -165,6 +169,22 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("未定义的Activity");
         }
+    }
+    #endregion
+
+    #region 数据类
+    public class GameInfo
+    {
+        public GameInfo(string id, string name, string activity)
+        {
+            GameId = id;
+            GameName = name;
+            GameActivity = activity;
+        }
+
+        public string GameId { get; private set; }
+        public string GameName { get; private set; }
+        public string GameActivity { get; private set; }
     }
     #endregion
 
