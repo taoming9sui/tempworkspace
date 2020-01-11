@@ -133,65 +133,29 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void LogicUpdate()
         {
-            string[] keys = m_updateTimerSet.Keys.ToArray();
-            foreach (string key in keys)
-                m_updateTimerSet[key]++;
-
-            //间隔一秒更新房间列表
+            try
             {
-                int t = m_updateTimerSet["RoomListUpdate"];
-                if (t > 1000)
+                string[] keys = m_updateTimerSet.Keys.ToArray();
+                foreach (string key in keys)
+                    m_updateTimerSet[key]++;
+
+                //间隔一秒更新房间列表
+                if(m_updateTimerSet["RoomListUpdate"] > 1000)
                 {
                     m_updateTimerSet["RoomListUpdate"] = 0;
-                    JArray jsonArray = new JArray();
-                    foreach (CenterRoom room in m_roomSet.Values)
-                    {
-                        JObject jobj = new JObject();
-                        jobj.Add("RoomId", room.RoomId);
-                        jobj.Add("RoomTitle", room.RoomTitle);
-                        jobj.Add("GameId", room.GameId);
-                        jobj.Add("RoomStatus", (int)room.RoomStatus);
-                        jobj.Add("PlayerCount", room.PlayerCount);
-                        jobj.Add("MaxPlayerCount", room.MaxPlayerCount);
-                        jobj.Add("HasPassword", !String.IsNullOrEmpty(room.RoomPassword));
-                        jsonArray.Add(jobj);
-                    }
-                    m_roomListJsonData = jsonArray.ToString();
+                    UpdateRoomList();
                 }
-            }
 
-            //间隔一秒处理掉线超时的玩家
-            {
-                int t = m_updateTimerSet["OfflinePlayerDispose"];
-                if (t > 1000)
+                //间隔一秒处理掉线超时的玩家
+                if (m_updateTimerSet["OfflinePlayerDispose"] > 1000)
                 {
                     m_updateTimerSet["OfflinePlayerDispose"] = 0;
-                    if(m_offlineRecordList.Count > 0)
-                    {
-                        m_offlineRecordList.Sort((obj1, obj2) =>
-                        {
-                            return obj1.CompareTo(obj2);
-                        });
-                        for (var first = m_offlineRecordList.First();
-                            first.dateTime < DateTime.Now && m_offlineRecordList.Count > 0;
-                            first = m_offlineRecordList.First())
-                        {
-                            //将其踢出服务器
-                            string playerId = first.playerId;
-                            CenterPlayer player = null;
-                            m_playerSet.TryGetValue(playerId, out player);
-                            if (player != null)
-                            {
-                                this.PlayerLeaveRoom(player);
-                            }
-                            //移除该项
-                            m_offlineRecordList.RemoveAt(0);
-                        }
-                    }
+                    DisposeOfflinePlayer();
                 }
+
             }
-
-
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
+            
         }
         #endregion
 
@@ -430,6 +394,49 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             foreach (CenterRoom room in m_roomSet.Values)
                 room.StopGame();
+        }
+        private void UpdateRoomList()
+        {
+            JArray jsonArray = new JArray();
+            foreach (CenterRoom room in m_roomSet.Values)
+            {
+                JObject jobj = new JObject();
+                jobj.Add("RoomId", room.RoomId);
+                jobj.Add("RoomCaption", room.RoomCaption);
+                jobj.Add("GameId", room.GameId);
+                jobj.Add("RoomStatus", (int)room.RoomStatus);
+                jobj.Add("PlayerCount", room.PlayerCount);
+                jobj.Add("MaxPlayerCount", room.MaxPlayerCount);
+                jobj.Add("HasPassword", !String.IsNullOrEmpty(room.RoomPassword));
+                jsonArray.Add(jobj);
+            }
+            m_roomListJsonData = jsonArray.ToString();
+        }
+        private void DisposeOfflinePlayer()
+        {
+            if (m_offlineRecordList.Count > 0)
+            {
+                m_offlineRecordList.Sort((obj1, obj2) =>
+                {
+                    return obj1.CompareTo(obj2);
+                });
+                OfflinePlayerRecord record = m_offlineRecordList.First();
+                while (record.dateTime < DateTime.Now && m_offlineRecordList.Count > 0)
+                {
+                    //将其踢出服务器
+                    string playerId = record.playerId;
+                    CenterPlayer player = null;
+                    m_playerSet.TryGetValue(playerId, out player);
+                    if (player != null)
+                    {
+                        this.PlayerLeaveRoom(player);
+                    }
+                    //移除该项并选取下一个
+                    m_offlineRecordList.RemoveAt(0);
+                    if (m_offlineRecordList.Count > 0)
+                        record = m_offlineRecordList.First();
+                }
+            }
         }
         private void PlayerOnline(CenterPlayer player)
         {

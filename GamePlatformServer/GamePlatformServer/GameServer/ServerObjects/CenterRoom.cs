@@ -78,7 +78,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 return m_roomId;
             }
         }
-        public string RoomTitle
+        public string RoomCaption
         {
             get
             {
