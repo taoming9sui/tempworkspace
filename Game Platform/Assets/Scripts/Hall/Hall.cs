@@ -45,7 +45,10 @@ public class Hall : GameActivity
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
+        //清空聊天框
         ClearChat();
+        //请求房间列表
+        RequestRoomList();
     }
     public override void OnDisconnect()
     {
