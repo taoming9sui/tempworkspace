@@ -5,6 +5,21 @@ using UnityEngine.UI;
 
 public class RoomItem : MonoBehaviour
 {
+    private bool m_selected = false;
+
+    public bool Selected
+    {
+        get
+        {
+            return m_selected;
+        }
+        set
+        {
+            m_selected = value;
+            this.transform.Find("select_flag").gameObject.SetActive(m_selected) ;
+        }
+    }
+
     public void SetRoomInfo(string gameName, string caption, bool hasPassword, int status, int count, int maxCount)
     {
         Text game_text = this.gameObject.transform.Find("game_image/Text").GetComponent<Text>();
@@ -38,5 +53,7 @@ public class RoomItem : MonoBehaviour
     {
         this.gameObject.SetActive(visiblity);
     }
+
+
 
 }

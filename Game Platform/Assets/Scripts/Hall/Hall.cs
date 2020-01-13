@@ -13,13 +13,15 @@ public class Hall : GameActivity
 
     private IDictionary<string, float> m_updateTimerSet = new Dictionary<string, float>();
     private IList<RoomItemInfo> m_roomInfoList = new List<RoomItemInfo>();
-    private RoomItemInfo[] m_pageRoomInfos = new RoomItemInfo[6];  //HARDCODE 一页显示六个房间
-    private int m_roomPageSize = 6;  //HARDCODE 一页显示六个房间
+    private IList<RoomItemInfo> m_pageRoomInfoList = new List<RoomItemInfo>();
+    private int m_roomPageSize = 0;
     private int m_roomPageNo = 1;
 
     #region unity触发器
     private void Awake()
     {
+        //房间信息列表
+        m_roomPageSize = roomItems.Length;
         //添加计时器项目
         m_updateTimerSet["RoomListRequest"] = 0f;
         //添加下拉框选项
@@ -77,7 +79,7 @@ public class Hall : GameActivity
                     case "Tip":
                         {
                             string content = data.GetValue("Content").ToString();
-                            this.TipModel("show", content);
+                            this.TipModel(content);
                         }
                         break;
                     case "ResponseRoomList":
@@ -119,60 +121,70 @@ public class Hall : GameActivity
             chat_input.ActivateInputField();
         }
     }
-    public void CreateRoomModel(string code)
+    public void CreateRoomModel()
     {
         GameObject modelObj = canvasObj.transform.Find("createroom_model").gameObject;
-        switch (code)
-        {
-            case "show":
-                modelObj.SetActive(true);
-                break;
-            case "confirm":
-                {
-                    string caption = modelObj.transform.Find("model/caption_input").GetComponent<InputField>().text;
-                    string password = modelObj.transform.Find("model/password_input").GetComponent<InputField>().text;
-                    SendCreateRoom(caption, password);
-                    modelObj.SetActive(false);
-                }
-                break;
-            case "cancel":
-                modelObj.SetActive(false);
-                break;
-        }
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        modelDialog.ModelShow((code) => {
+            switch (code)
+            {
+                case "confirm":
+                    {
+                        string caption = modelObj.transform.Find("model/caption_input").GetComponent<InputField>().text;
+                        string password = modelObj.transform.Find("model/password_input").GetComponent<InputField>().text;
+                        SendCreateRoom(caption, password);
+                    }
+                    break;
+            }
+        });
     }
-    public void TipModel(string code)
+    public void TipModel(string tip)
     {
-        GameObject tip_model = canvasObj.transform.Find("tip_model").gameObject;
-        Text tip_text = tip_model.transform.Find("model/tip_text").GetComponent<Text>();
-        switch (code)
-        {
-            case "confirm":
-                {
-                    tip_model.SetActive(false);
-                }
-                break;
-        }
-    }
-    public void TipModel(string code, string tip)
-    {
-        GameObject tip_model = canvasObj.transform.Find("tip_model").gameObject;
-        Text tip_text = tip_model.transform.Find("model/tip_text").GetComponent<Text>();
-        switch (code)
-        {
-            case "show":
-                {
-                    tip_text.text = tip;
-                    tip_model.SetActive(true);
-                }
-                break;
-        }
+        GameObject modelObj = canvasObj.transform.Find("tip_model").gameObject;
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        Text tip_text = modelObj.transform.Find("model/tip_text").GetComponent<Text>();
+        tip_text.text = tip;
+        modelDialog.ModelShow();
     }
     public void ChangeRoomPage(int code)
     {
+        //更改页数
         if (code > 0)
             SetRoomViewPage(m_roomPageNo + 1);
         else
             SetRoomViewPage(m_roomPageNo - 1);
+        //取消选择其它房间项
+        for (int i = 0; i < roomItems.Length; i++)
+                roomItems[i].Selected = false;
+        //更新房间列表
+        UpdateRoomView();
+    }
+    public void RoomItemClicked(int number)
+    {
+        //取消选择其它房间项
+        for(int i=0; i< roomItems.Length; i++)
+        {
+            if(i != number)
+                roomItems[i].Selected = false;
+        }
+        if (roomItems[number].Selected)
+        {
+            //二次被点击
+            int roomItemNo = (m_roomPageNo - 1) * m_roomPageSize + number;
+            TryJoinRoom(m_roomInfoList[roomItemNo]);
+        }
+        else
+        {
+            //首次被点击
+            roomItems[number].Selected = true;
+        }
+    }
+    public void RoomFilterChanged()
+    {
+        //得到过滤后的列表
+        FilterRoomList();
+        //更新房间列表
+        UpdateRoomView();
     }
     #endregion
 
@@ -181,15 +193,15 @@ public class Hall : GameActivity
         {
             DropdownHandler dropdown = canvasObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
-            dropdown.AddItem<object>("所有", null);
+            dropdown.AddItem("所有", null);
             foreach (GameManager.GameInfo info in GameManager.Instance.GameInfos.Values)
-                dropdown.AddItem<GameManager.GameInfo>(info.GameName, info);
+                dropdown.AddItem(info.GameName, info);
         }
         {
             DropdownHandler dropdown = canvasObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
             foreach (GameManager.GameInfo info in GameManager.Instance.GameInfos.Values)
-                dropdown.AddItem<GameManager.GameInfo>(info.GameName, info);
+                dropdown.AddItem(info.GameName, info);
         }
     }
     private void ClearChat()
@@ -253,6 +265,7 @@ public class Hall : GameActivity
     private void ReceiveRoomList(string roomListStr)
     {
         JArray jsonArr = JArray.Parse(roomListStr);
+        //得到全部
         m_roomInfoList.Clear();
         foreach (JToken token in jsonArr)
         {
@@ -274,44 +287,64 @@ public class Hall : GameActivity
             roomInfo.Status = (int)jobj.GetValue("RoomStatus");
             roomInfo.Count = (int)jobj.GetValue("PlayerCount");
             roomInfo.MaxCount = (int)jobj.GetValue("MaxPlayerCount");
-            //应用过滤条件
-
-            //添加项
             m_roomInfoList.Add(roomInfo);
         }
+        //得到过滤后的列表
+        FilterRoomList();
+        //更新房间列表
         UpdateRoomView();
     }
-    private void SetRoomViewPage(int pageNo)
+    private void FilterRoomList()
     {
-        //检查页数是否超出范围
-        bool check = (pageNo - 1) * m_roomPageSize < m_roomInfoList.Count && pageNo > 0;
-        //设置当前房间页数
-        if (check)
+        m_pageRoomInfoList.Clear();
         {
-            m_roomPageNo = pageNo;
-            UpdateRoomView();
-        }      
+            bool showPassword = canvasObj.transform.Find("roompanel/right/filterpanel/check1").GetComponent<Toggle>().isOn;
+            bool showFull = canvasObj.transform.Find("roompanel/right/filterpanel/check2").GetComponent<Toggle>().isOn;
+            bool showPlaying = canvasObj.transform.Find("roompanel/right/filterpanel/check3").GetComponent<Toggle>().isOn;
+            string gameId = "";
+            {
+                GameManager.GameInfo gameInfo = (GameManager.GameInfo)canvasObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>().GetSelectedValue();
+                if (gameInfo != null)
+                    gameId = gameInfo.GameId;
+            }
+
+            foreach (RoomItemInfo roomInfo in m_roomInfoList)
+            {
+                if (!showPassword)
+                {
+                    if (roomInfo.HasPassword)
+                        continue;
+                }
+                if (!showFull)
+                {
+                    if (roomInfo.Status == 2)
+                        continue;
+                }
+                if (!showPlaying)
+                {
+                    if (roomInfo.Status == 3)
+                        continue;
+                }
+                if (!string.IsNullOrEmpty(gameId))
+                {
+                    if (!roomInfo.GameId.Equals(gameId))
+                        continue;
+                }
+                m_pageRoomInfoList.Add(roomInfo);
+            }
+        }
     }
     private void UpdateRoomView()
     {
-        //刷新m_pageRooms
-        int startNo = (m_roomPageNo - 1) * m_roomPageSize;
-        m_pageRoomInfos = new RoomItemInfo[m_roomPageSize];
-        for (int i = startNo; i < startNo + m_roomPageSize; i++)
-        {
-            if (i < 0 || i >= m_roomInfoList.Count)
-                continue;
-            m_pageRoomInfos[i] = m_roomInfoList[i];
-        }
         //更新房间列表的显示
         for (int i = 0; i < roomItems.Length; i++)
         {
             RoomItem roomItem = roomItems[i];
             roomItem.SetVisiblity(false);
 
-            if (i < m_roomInfoList.Count)
+            if (i < m_pageRoomInfoList.Count)
             {
-                RoomItemInfo roomItemInfo = m_roomInfoList[i];
+                RoomItemInfo roomItemInfo = m_pageRoomInfoList[i];
                 if (roomItemInfo != null)
                 {
                     roomItem.SetVisiblity(true);
@@ -319,6 +352,18 @@ public class Hall : GameActivity
                 }
             }
         }
+    }
+    private void SetRoomViewPage(int pageNo)
+    {
+        //检查页数是否超出范围
+        bool check = (pageNo - 1) * m_roomPageSize < m_pageRoomInfoList.Count && pageNo > 0;
+        //设置当前房间页数
+        if (check)
+            m_roomPageNo = pageNo;
+    }
+    private void TryJoinRoom(RoomItemInfo info)
+    {
+
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {

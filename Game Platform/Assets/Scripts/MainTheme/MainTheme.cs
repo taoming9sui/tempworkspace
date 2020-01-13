@@ -18,7 +18,7 @@ public class MainTheme : GameActivity
     }
     public override void OnDisconnect()
     {
-        ConnectErrorModel("show");
+        ConnectErrorModel();
     }
     public override void OnConnect()
     {
@@ -46,7 +46,7 @@ public class MainTheme : GameActivity
                     case "Tip":
                         {
                             string content = data.GetValue("Content").ToString();
-                            this.TipModel("show", content);
+                            this.TipModel(content);
                         }
                         break;
                 }
@@ -60,53 +60,31 @@ public class MainTheme : GameActivity
     #endregion
 
     #region UI交互脚本
-    public void ConnectErrorModel(string code)
+    public void ConnectErrorModel()
     {
-        GameObject connecterror_model = canvasObj.transform.Find("connecterror_model").gameObject;
-        switch (code)
-        {
-            case "show":
-                {
-                    connecterror_model.SetActive(true);
-                }
-                break;
-            case "confirm":
-                {       
-                    connecterror_model.SetActive(false);
-                    StartCoroutine(DoAction_Delay(()=>
+        GameObject modelObj = canvasObj.transform.Find("connecterror_model").gameObject;
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        modelDialog.ModelShow((code) =>{
+            switch (code)
+            {
+                case "confirm":
                     {
-                        GameManager.Instance.SocketConnect();
-                    }, 0.2f));
-                }
-                break;
-        }
+                        StartCoroutine(DoAction_Delay(() =>
+                        {
+                            GameManager.Instance.SocketConnect();
+                        }, 0.2f));
+                    }
+                    break;
+            }
+        });
     }
-    public void TipModel(string code)
+    public void TipModel(string tip)
     {
-        GameObject tip_model = canvasObj.transform.Find("tip_model").gameObject;
-        Text tip_text = tip_model.transform.Find("tip_text").GetComponent<Text>();
-        switch (code)
-        {
-            case "confirm":
-                {
-                    tip_model.SetActive(false);
-                }
-                break;
-        }
-    }
-    public void TipModel(string code, string tip)
-    {
-        GameObject tip_model = canvasObj.transform.Find("tip_model").gameObject;
-        Text tip_text = tip_model.transform.Find("tip_text").GetComponent<Text>();
-        switch (code)
-        {
-            case "show":
-                {
-                    tip_text.text = tip;
-                    tip_model.SetActive(true);
-                }
-                break;
-        }
+        GameObject modelObj = canvasObj.transform.Find("tip_model").gameObject;
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        Text tip_text = modelObj.transform.Find("tip_text").GetComponent<Text>();
+        tip_text.text = tip;
+        modelDialog.ModelShow();
     }
     public void Mask(bool show)
     {
@@ -203,7 +181,7 @@ public class MainTheme : GameActivity
         }
         else
         {
-            TipModel("show", "两次密码输入不一致");
+            TipModel("两次密码输入不一致");
         }
     }
     private void LoginSuccess()
@@ -212,7 +190,7 @@ public class MainTheme : GameActivity
     }
     private void RegisterSuccess()
     {
-        TipModel("show", "注册成功");
+        TipModel("注册成功");
         SetStage("login");
     }
 }
