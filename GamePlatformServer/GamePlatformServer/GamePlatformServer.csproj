@@ -72,7 +72,7 @@
     <Compile Include="GameServer\GameModuels\Wolfman.cs" />
     <Compile Include="GameServer\GameServerContainer.cs" />
     <Compile Include="GameServer\GameModuels\GameModuel.cs" />
-    <Compile Include="GameServer\ServerObjects\GamePlayerDBAgent.cs" />
+    <Compile Include="GameServer\ServerObjects\GameCenterDBAgent.cs" />
     <Compile Include="GameServer\ServerObjects\CenterPlayer.cs" />
     <Compile Include="GameServer\ServerObjects\CenterRoom.cs" />
     <Compile Include="GameServer\ServerObjects\GameClientAgent.cs" />

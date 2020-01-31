@@ -194,16 +194,20 @@ namespace GamePlatformServer.GameServer.ServerObjects
 
             try
             {
-                m_serverContainer.PlayerDBAgent.PlayerRegister(playerId, password);
+                //输入格式校验
+                Regex playerId_reg = new Regex(@"^[a-zA-Z0-9]{8,20}$");  //8-20数字大小写字母
+                Regex password_reg = new Regex(@"^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$"); //至少有一个数字 至少有一个小写字母 至少有一个大写字母 8-20位密码
+                if (!playerId_reg.IsMatch(playerId))
+                    throw new InfoException("用户名格式错误");
+                if (!password_reg.IsMatch(password))
+                    throw new InfoException("密码格式错误");
+                //写入数据库
+                m_serverContainer.CenterDBAgent.PlayerRegister(playerId, password);
                 flag = true;
             }
             catch (InfoException ex)
             {
                 CenterUserTip(socketId, ex.Message);
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
             }
 
             if (flag)
@@ -221,7 +225,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             try
             {
                 //1检查输入是否正确
-                m_serverContainer.PlayerDBAgent.PlayerLogin(playerId, password);
+                m_serverContainer.CenterDBAgent.PlayerLogin(playerId, password);
                 //2检查该Socket是否已经登录账户
                 if (m_mapperSocketIdtoPlayerId.ContainsKey(socketId))
                     throw new InfoException("你已经登录一个账户");
@@ -236,10 +240,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
             catch (InfoException ex)
             {
                 CenterUserTip(socketId, ex.Message);
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
             }
 
             if (flag)
@@ -262,8 +262,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     player.PlayerId = playerId;
                     player.InRoomId = null;
                     player.SocketId = socketId;
-                    PlayerInfo info;
-                    info.Name = playerId;
+                    PlayerInfo info = m_serverContainer.CenterDBAgent.GetPlayerInfo(playerId);
                     player.Info = info;
                     m_playerSet[playerId] = player;
                     //通知大厅有玩家上线
@@ -381,6 +380,12 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         break;
                     case "RequestRoomList":
                         PlayerRequestRoomList(player);
+                        break;
+                    case "RequestPlayerInfo":
+                        PlayerRequestPlayerInfo(player);
+                        break;
+                    case "ChangePlayerInfo":
+                        PlayerChangePlayerInfo(player, jsonObj.GetValue("Name").ToString(), (int)jsonObj.GetValue("HeadNo"));
                         break;
                     case "HallChat":
                         PlayerHallChat(player, jsonObj.GetValue("Chat").ToString());
@@ -602,6 +607,56 @@ namespace GamePlatformServer.GameServer.ServerObjects
             content.Add("RoomList", m_roomListJsonData);
             jsonObj.Add("Content", content);
             HallResponse(player, jsonObj.ToString());
+        }
+        private void PlayerRequestPlayerInfo(CenterPlayer player)
+        {
+            //构建JSON并返回
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "ResponsePlayerInfo");
+            JObject content = new JObject();
+            content.Add("Id", player.Info.Id);
+            content.Add("Name", player.Info.Name);
+            content.Add("Point", player.Info.Point);
+            content.Add("HeadNo", player.Info.IconNo);
+            jsonObj.Add("Content", content);
+            HallResponse(player, jsonObj.ToString());
+        }
+        private void PlayerChangePlayerInfo(CenterPlayer player, string name, int iconNo)
+        {
+            //获取PlayerInfo
+            PlayerInfo info = player.Info;
+            info.Name = name;
+            info.IconNo = iconNo;
+            //尝试更新到数据库
+            bool flag = false;
+            try
+            {
+                //输入格式校验
+                Regex playerName_reg = new Regex(@"^.{3,12}$");  //3-12位任意
+                if (!playerName_reg.IsMatch(name))
+                    throw new InfoException("昵称格式错误");
+                //写入数据库
+                m_serverContainer.CenterDBAgent.UpdatePlayerInfo(player.PlayerId, info);
+                flag = true;
+            }
+            catch (InfoException ex)
+            {
+                HallUserTip(player, ex.Message);
+            }
+            //入库成功
+            if (flag)
+            {
+                player.Info = info;
+                JObject jsonObj = new JObject();
+                jsonObj.Add("Action", "ChangePlayerInfoSuccess");
+                JObject content = new JObject();
+                content.Add("Id", player.Info.Id);
+                content.Add("Name", player.Info.Name);
+                content.Add("Point", player.Info.Point);
+                content.Add("HeadNo", player.Info.IconNo);
+                jsonObj.Add("Content", content);
+                HallResponse(player, jsonObj.ToString());
+            }
         }
         private void HallNotice(string notice, int level)
         {

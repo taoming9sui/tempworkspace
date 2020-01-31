@@ -9,16 +9,15 @@ using System.Text.RegularExpressions;
 
 namespace GamePlatformServer.GameServer.ServerObjects
 {
-    public class GamePlayerDBAgent
+    public class GameCenterDBAgent
     {
 
         private string m_sqliteConnStr;
 
-        public GamePlayerDBAgent(string sqliteConnStr)
+        public GameCenterDBAgent(string sqliteConnStr)
         {
             m_sqliteConnStr = sqliteConnStr;
         }
-
 
         public void Start()
         {
@@ -35,13 +34,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
             using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
             {
                 conn.Open();
-                //检查输入格式
-                Regex playerId_reg = new Regex(@"^[a-zA-Z0-9]{8,20}$");  //8-20数字大小写字母
-                Regex password_reg = new Regex(@"^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$"); //至少有一个数字 至少有一个小写字母 至少有一个大写字母 8-20位密码
-                if (!playerId_reg.IsMatch(playerId))
-                    throw new InfoException("用户名格式错误");
-                if (!password_reg.IsMatch(password))
-                    throw new InfoException("密码格式错误");
                 //检查用户是否重复
                 using (SQLiteCommand cmd1 = new SQLiteCommand(conn))
                 {
@@ -75,7 +67,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         cmd2.Parameters[1].Value = password_md5;
                         cmd2.Parameters.Add(new SQLiteParameter("@p2", System.Data.DbType.String));
                         cmd2.Parameters[2].Value = password_salt;
-                        cmd2.Parameters.Add(new SQLiteParameter("@p3", System.Data.DbType.Int64));
+                        cmd2.Parameters.Add(new SQLiteParameter("@p3", System.Data.DbType.Int32));
                         cmd2.Parameters[3].Value = register_date;
                         cmd2.ExecuteNonQuery();
                     }
@@ -122,6 +114,77 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 }
             }
         }
+        public PlayerInfo GetPlayerInfo(string playerId)
+        {
+            //使用这种方法定义单个实体
+            IDictionary<string, object> dbResult = new Dictionary<string, object>();
+            dbResult["player_id"] = DBNull.Value;
+            dbResult["player_name"] = DBNull.Value;
+            dbResult["player_point"] = DBNull.Value;
+            dbResult["player_icon"] = DBNull.Value;
+            //查询实体
+            using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
+            {
+                conn.Open();
+                using (SQLiteCommand cmd1 = new SQLiteCommand(conn))
+                {
+                    cmd1.CommandText = "select * from player_info where player_id=@p0";
+                    cmd1.CommandType = System.Data.CommandType.Text;
+                    cmd1.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
+                    cmd1.Parameters[0].Value = playerId;
+                    using (SQLiteDataReader reader = cmd1.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            foreach (string field in dbResult.Keys.ToArray())
+                                dbResult[field] = reader[field];
+                        }
+                    }
+
+                }
+            }
+            //赋值返回
+            PlayerInfo info;
+            info.Id = playerId;
+            info.Name = dbResult["player_name"] == DBNull.Value ? "" : (string)dbResult["player_name"];
+            info.Point = dbResult["player_point"] == DBNull.Value ? 0 : (int)dbResult["player_point"];
+            info.IconNo = dbResult["player_icon"] == DBNull.Value ? 0 : (int)dbResult["player_icon"];
+            return info;
+        }
+        public void UpdatePlayerInfo(string playerId, PlayerInfo info)
+        {
+            using (SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr))
+            {
+                conn.Open();
+                //填写更新表单
+                string player_id = playerId;
+                string player_name = info.Name;
+                int player_point = info.Point;
+                int player_icon = info.IconNo;
+                //执行更新操作
+                using (SQLiteTransaction transaction = conn.BeginTransaction())
+                {
+                    // player_info更新
+                    using (SQLiteCommand cmd1 = new SQLiteCommand(conn))
+                    {
+                        cmd1.CommandText = "update player_info set player_name=@p1,player_point=@p2,player_icon=@p3 where player_id=@p0";
+                        cmd1.CommandType = System.Data.CommandType.Text;
+                        cmd1.Parameters.Add(new SQLiteParameter("@p0", System.Data.DbType.String));
+                        cmd1.Parameters[0].Value = playerId;
+                        cmd1.Parameters.Add(new SQLiteParameter("@p1", System.Data.DbType.String));
+                        cmd1.Parameters[1].Value = player_name;
+                        cmd1.Parameters.Add(new SQLiteParameter("@p2", System.Data.DbType.Int32));
+                        cmd1.Parameters[2].Value = player_point;
+                        cmd1.Parameters.Add(new SQLiteParameter("@p3", System.Data.DbType.Int32));
+                        cmd1.Parameters[3].Value = player_icon;
+                        cmd1.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
+                }
+            }
+
+        }
+
 
     }
 }

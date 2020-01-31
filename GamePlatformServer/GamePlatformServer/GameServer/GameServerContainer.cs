@@ -15,13 +15,12 @@ namespace GamePlatformServer.GameServer
         private string m_sqliteConnStr;
         private GameCenter m_center;
         private GameClientAgent m_clientAgent;
-
-        private GamePlayerDBAgent m_playerDBAgent;
+        private GameCenterDBAgent m_centerDBAgent;
 
 
         public GameCenter Center { get { return m_center; } }
         public GameClientAgent ClientAgent { get { return m_clientAgent; } }
-        public GamePlayerDBAgent PlayerDBAgent { get { return m_playerDBAgent; } }
+        public GameCenterDBAgent CenterDBAgent { get { return m_centerDBAgent; } }
 
         public GameServerContainer(int port, string path, string connStr)
         {
@@ -36,8 +35,8 @@ namespace GamePlatformServer.GameServer
             {
                 //开启GamePlayerDBAgent
                 LogHelper.LogInfo("初始化数据库在" + m_sqliteConnStr);
-                m_playerDBAgent = new GamePlayerDBAgent(m_sqliteConnStr);
-                m_playerDBAgent.Start();
+                m_centerDBAgent = new GameCenterDBAgent(m_sqliteConnStr);
+                m_centerDBAgent.Start();
                 //开启GameCenter
                 LogHelper.LogInfo("初始化GameCenter……");
                 m_center = new GameCenter(this);
@@ -67,8 +66,8 @@ namespace GamePlatformServer.GameServer
                 if (m_center != null)
                     m_center.Stop();
                 //关闭GamePlayerDBAgent
-                if(m_playerDBAgent != null)
-                    m_playerDBAgent.Stop();
+                if(m_centerDBAgent != null)
+                    m_centerDBAgent.Stop();
                 //关闭成功
                 LogHelper.LogInfo("服务器已关闭!");
             }

@@ -20,6 +20,7 @@ namespace GamePlatformServer.Utils
 
         static public void LogError(string message)
         {
+            Console.WriteLine(string.Format("[{0}]{1}", DateTime.Now.ToString(), message));
             _errorLogger.Error(message);
         }
     }
