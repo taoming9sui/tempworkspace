@@ -14,7 +14,10 @@ public class MainTheme : GameActivity
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
-        SetStage("connect");
+        if (GameManager.Instance.HasConnection)
+            SetStage("login");
+        else
+            SetStage("connect");
     }
     public override void OnDisconnect()
     {
@@ -122,24 +125,25 @@ public class MainTheme : GameActivity
                 break;
         }
     }
-    public void ButtonAction(string code)
+    public void ExitButton()
     {
-
-        switch (code)
-        {
-            case "login-login":
-                SendLogin();
-                break;
-            case "login-register":
-                SetStage("register");
-                break;
-            case "register-back":
-                SetStage("login");
-                break;
-            case "register-commit":
-                SendRegister();
-                break;
-        }
+        GameManager.Instance.QuitGame();
+    }
+    public void LoginButton()
+    {
+        SendLogin();
+    }
+    public void RegisterPageButton()
+    {
+        SetStage("register");
+    }
+    public void RegisterBackButton()
+    {
+        SetStage("login");
+    }
+    public void RegisterCommitButton()
+    {
+        SendRegister();
     }
     #endregion
 

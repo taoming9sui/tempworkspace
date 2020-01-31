@@ -326,6 +326,11 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6266681546829153300, guid: 5e23b298ff3bf324385fb92cc5417ff4,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.0000019073486
+      objectReference: {fileID: 0}
     - target: {fileID: 8821433422788922316, guid: 5e23b298ff3bf324385fb92cc5417ff4,
         type: 3}
       propertyPath: m_SizeDelta.y
@@ -382,7 +387,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5ac9cc43f487f544990448ff4dff493, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverAddress: 171.88.47.135:8888/Fuck
+  serverIP: 127.0.0.1
+  serverPort: 8888
+  serverPath: Fuck
   activitiesObj: {fileID: 435409685}
   currentActivity: {fileID: 87294644}
   defaultCamera: {fileID: 1384128336}
