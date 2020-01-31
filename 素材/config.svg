@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866668"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="config.svg"
+   inkscape:export-filename="D:\PG\U3D\素材\齿轮.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="-219.92709"
+     inkscape:cy="29.931219"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-263.13332)">
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.11889613;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 64 0 A 64.000003 64.000003 0 0 0 58.876953 0.23242188 L 54.3125 18.544922 L 40.630859 4.4296875 A 64.000003 64.000003 0 0 0 28.570312 10.753906 L 34.150391 30.210938 L 13.798828 24.416016 A 64.000003 64.000003 0 0 0 6.8808594 35.291016 L 22.521484 50.394531 L 0.578125 55.910156 A 64.000003 64.000003 0 0 0 0 64 A 64.000003 64.000003 0 0 0 0.14453125 68.103516 L 22.544922 73.6875 L 5.6386719 90.072266 A 64.000003 64.000003 0 0 0 11.435547 100.38086 L 34.210938 93.849609 L 27.703125 116.70117 A 64.000003 64.000003 0 0 0 38.019531 122.43555 L 54.394531 105.47852 L 60.003906 127.79883 A 64.000003 64.000003 0 0 0 64 128 A 64.000003 64.000003 0 0 0 72.220703 127.39062 L 77.6875 105.45508 L 92.863281 121.11133 A 64.000003 64.000003 0 0 0 103.70117 114.19141 L 97.849609 93.789062 L 117.31641 99.332031 A 64.000003 64.000003 0 0 0 123.57031 87.212891 L 109.47852 73.605469 L 127.74805 69.013672 A 64.000003 64.000003 0 0 0 128 64 A 64.000003 64.000003 0 0 0 127.26562 54.751953 L 109.45508 50.3125 L 122.32227 37.841797 A 64.000003 64.000003 0 0 0 114.87305 25.25 L 97.789062 30.150391 L 102.64844 13.087891 A 64.000003 64.000003 0 0 0 90.074219 5.609375 L 77.605469 18.521484 L 73.134766 0.734375 A 64.000003 64.000003 0 0 0 64 0 z M 66 34 A 28 28 0 0 1 94 62 A 28 28 0 0 1 66 90 A 28 28 0 0 1 38 62 A 28 28 0 0 1 66 34 z "
+       transform="matrix(0.26458334,0,0,0.26458334,0,263.13332)"
+       id="path815"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+  </g>
+</svg>
