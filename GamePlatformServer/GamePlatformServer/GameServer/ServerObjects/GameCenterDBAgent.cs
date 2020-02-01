@@ -21,9 +21,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
 
         public void Start()
         {
+            LogHelper.LogInfo(string.Format("测试GameCenterDBAgent连接在{0}", m_sqliteConnStr));
             SQLiteConnection conn = SQLiteHelper.GetConnection(m_sqliteConnStr);
             conn.Open();
             conn.Close();
+            LogHelper.LogInfo(string.Format("测试GameCenterDBAgent连接可用！"));
         }
         public void Stop()
         {

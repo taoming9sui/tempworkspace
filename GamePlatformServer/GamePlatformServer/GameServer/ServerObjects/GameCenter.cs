@@ -29,6 +29,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private bool m_loopThreadExit = false;
 
         private GameServerContainer m_serverContainer;
+        private GameCenterDBAgent m_centerDBAgent;
         private IDictionary<string, bool> m_socketIdSet;
         private IDictionary<string, CenterPlayer> m_playerSet;
         private IDictionary<string, CenterRoom> m_roomSet;
@@ -37,10 +38,12 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private List<OfflinePlayerRecord> m_offlineRecordList;
         private string m_roomListJsonData;
 
-        public GameCenter(GameServerContainer container)
+        public GameCenter(GameServerContainer container, string sqliteConnStr)
         {
             //服务容器引用
             m_serverContainer = container;
+            //数据库操作者
+            m_centerDBAgent = new GameCenterDBAgent(sqliteConnStr);
             //客户端会话id集
             m_socketIdSet = new Dictionary<string, bool>();
             //玩家对象集
@@ -84,6 +87,8 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             try
             {
+                //启动数据库操作者
+                m_centerDBAgent.Start();
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
@@ -91,7 +96,10 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             try
             {
+                //释放所有房间
                 StopHallRooms();
+                //释放数据库操作者
+                m_centerDBAgent.Stop();
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }         
         }
@@ -195,14 +203,14 @@ namespace GamePlatformServer.GameServer.ServerObjects
             try
             {
                 //输入格式校验
-                Regex playerId_reg = new Regex(@"^[a-zA-Z0-9]{8,20}$");  //8-20数字大小写字母
-                Regex password_reg = new Regex(@"^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,20}$"); //至少有一个数字 至少有一个小写字母 至少有一个大写字母 8-20位密码
+                Regex playerId_reg = new Regex(@"^[a-zA-Z0-9]{8,20}$");  //8-20位的数字/字母大小写
+                Regex password_reg = new Regex(@"^.{8,20}$"); //8-20位密码
                 if (!playerId_reg.IsMatch(playerId))
                     throw new InfoException("用户名格式错误");
                 if (!password_reg.IsMatch(password))
                     throw new InfoException("密码格式错误");
                 //写入数据库
-                m_serverContainer.CenterDBAgent.PlayerRegister(playerId, password);
+                m_centerDBAgent.PlayerRegister(playerId, password);
                 flag = true;
             }
             catch (InfoException ex)
@@ -225,7 +233,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             try
             {
                 //1检查输入是否正确
-                m_serverContainer.CenterDBAgent.PlayerLogin(playerId, password);
+                m_centerDBAgent.PlayerLogin(playerId, password);
                 //2检查该Socket是否已经登录账户
                 if (m_mapperSocketIdtoPlayerId.ContainsKey(socketId))
                     throw new InfoException("你已经登录一个账户");
@@ -262,7 +270,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     player.PlayerId = playerId;
                     player.InRoomId = null;
                     player.SocketId = socketId;
-                    PlayerInfo info = m_serverContainer.CenterDBAgent.GetPlayerInfo(playerId);
+                    PlayerInfo info = m_centerDBAgent.GetPlayerInfo(playerId);
                     player.Info = info;
                     m_playerSet[playerId] = player;
                     //通知大厅有玩家上线
@@ -378,8 +386,8 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     case "LeaveRoom":
                         PlayerLeaveRoom(player);
                         break;
-                    case "RequestRoomList":
-                        PlayerRequestRoomList(player);
+                    case "RequestHallInfo":
+                        PlayerRequestHallInfo(player);
                         break;
                     case "RequestPlayerInfo":
                         PlayerRequestPlayerInfo(player);
@@ -599,15 +607,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
             jsonObj.Add("Content", content);
             HallBroadcast(jsonObj.ToString());
         }
-        private void PlayerRequestRoomList(CenterPlayer player)
-        {
-            JObject jsonObj = new JObject();
-            jsonObj.Add("Action", "ResponseRoomList");
-            JObject content = new JObject();
-            content.Add("RoomList", m_roomListJsonData);
-            jsonObj.Add("Content", content);
-            HallResponse(player, jsonObj.ToString());
-        }
         private void PlayerRequestPlayerInfo(CenterPlayer player)
         {
             //构建JSON并返回
@@ -618,6 +617,18 @@ namespace GamePlatformServer.GameServer.ServerObjects
             content.Add("Name", player.Info.Name);
             content.Add("Point", player.Info.Point);
             content.Add("HeadNo", player.Info.IconNo);
+            jsonObj.Add("Content", content);
+            HallResponse(player, jsonObj.ToString());
+        }
+        private void PlayerRequestHallInfo(CenterPlayer player)
+        {
+            //构建JSON并返回
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "ResponseHallInfo");
+            JObject content = new JObject();
+            content.Add("RoomList", m_roomListJsonData);
+            content.Add("PlayerCount", m_playerSet.Count);
+            content.Add("RoomCount", m_roomSet.Count);
             jsonObj.Add("Content", content);
             HallResponse(player, jsonObj.ToString());
         }
@@ -636,7 +647,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 if (!playerName_reg.IsMatch(name))
                     throw new InfoException("昵称格式错误");
                 //写入数据库
-                m_serverContainer.CenterDBAgent.UpdatePlayerInfo(player.PlayerId, info);
+                m_centerDBAgent.UpdatePlayerInfo(player.PlayerId, info);
                 flag = true;
             }
             catch (InfoException ex)
