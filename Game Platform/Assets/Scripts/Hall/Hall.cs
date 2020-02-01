@@ -27,23 +27,14 @@ public class Hall : GameActivity
         //初始化信息列表
         m_roomPageSize = roomItems.Length;
         //初始化计时器项目
-        m_updateTimerSet["RoomListRequest"] = 0f;
+        InitTimer();
         //初始化下拉框选项
         InitDropdown();
     }
     private void Update()
     {
         float dt = Time.deltaTime;
-        IList<string> keys = new List<string>(m_updateTimerSet.Keys);
-        foreach (string key in keys)
-            m_updateTimerSet[key] += dt;
-
-
-        if (m_updateTimerSet["RoomListRequest"] > 5f)
-        {
-            m_updateTimerSet["RoomListRequest"] = 0f;
-            this.RequestRoomList();
-        }
+        TimerUpdate(dt);
     }
     #endregion
 
@@ -53,7 +44,7 @@ public class Hall : GameActivity
         //清空聊天框
         ClearChat();
         //请求房间列表
-        RequestRoomList();
+        RequestHallInfo();
         //请求玩家信息
         RequestPlayerInfo();
     }
@@ -92,10 +83,10 @@ public class Hall : GameActivity
                             this.TipModel(content);
                         }
                         break;
-                    case "ResponseRoomList":
+                    case "ResponseHallInfo":
                         {
                             JObject content = (JObject)data.GetValue("Content");
-                            this.ReceiveRoomList((string)content.GetValue("RoomList"));
+                            this.ReceiveHallInfo((string)content.GetValue("RoomList"), (int)content.GetValue("RoomCount"), (int)content.GetValue("PlayerCount"));
                         }
                         break;
                     case "ResponsePlayerInfo":
@@ -252,6 +243,23 @@ public class Hall : GameActivity
     }
     #endregion
 
+    private void InitTimer()
+    {
+        m_updateTimerSet["RoomListRequest"] = 0f;
+    }
+    private void TimerUpdate(float dt)
+    {
+        IList<string> keys = new List<string>(m_updateTimerSet.Keys);
+        foreach (string key in keys)
+            m_updateTimerSet[key] += dt;
+
+
+        if (m_updateTimerSet["RoomListRequest"] > 5f)
+        {
+            m_updateTimerSet["RoomListRequest"] = 0f;
+            this.RequestHallInfo();
+        }
+    }
     private void InitDropdown()
     {
         {
@@ -376,18 +384,34 @@ public class Hall : GameActivity
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
-    private void RequestRoomList()
+    private void RequestHallInfo()
     {
+        //Ping服务器
+        GameManager.Instance.Ping((dt) =>
+        {
+            //更新Ping显示
+            Text playercount_text = canvasObj.transform.Find("roompanel/right/statuspanel/ping_text").GetComponent<Text>();
+            playercount_text.text = dt < 0 ? "失败" : string.Format("{0}ms", dt);
+        });
+        //获取大厅信息
         JObject requestJson = new JObject();
         requestJson.Add("Type", "Client_Hall");
         JObject data = new JObject();
         {
-            data.Add("Action", "RequestRoomList");
+            data.Add("Action", "RequestHallInfo");
         }
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
-    private void ReceiveRoomList(string roomListStr)
+    private void ReceiveHallInfo(string roomListStr, int roomCount, int playerCount)
+    {
+        //更新玩家数显示
+        Text playercount_text = canvasObj.transform.Find("roompanel/right/statuspanel/playercount_text").GetComponent<Text>();
+        playercount_text.text = playerCount.ToString();
+        //更新房间列表
+        UpdateRoomList(roomListStr);
+    }
+    private void UpdateRoomList(string roomListStr)
     {
         JArray jsonArr = JArray.Parse(roomListStr);
         //得到全部

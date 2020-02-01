@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ModelDialog : MonoBehaviour
 {
-    private System.Action<string> m_callback;
+    private System.Action<string> m_callback = (code) => { };
 
     public void ModelShow()
     {

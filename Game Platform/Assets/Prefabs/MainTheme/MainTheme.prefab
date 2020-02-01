@@ -1153,7 +1153,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: "8-20\u4F4D\u7684\u6570\u5B57/\u5B57\u6BCD\u5927\u5C0F\u5199"
 --- !u!1 &3066777729938542060
 GameObject:
   m_ObjectHideFlags: 0
@@ -2377,7 +2377,18 @@ MonoBehaviour:
   m_CharacterLimit: 64
   m_OnEndEdit:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 6257628786545732528}
+        m_MethodName: LoginEnter
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -4134,7 +4145,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: "8-20\u4F4D\u5BC6\u7801"
 --- !u!1 &7431632517775063157
 GameObject:
   m_ObjectHideFlags: 0
@@ -4506,4 +4517,4 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: "8-20\u4F4D\u5BC6\u7801"

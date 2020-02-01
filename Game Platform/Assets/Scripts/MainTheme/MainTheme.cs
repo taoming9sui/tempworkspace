@@ -133,6 +133,13 @@ public class MainTheme : GameActivity
     {
         SendLogin();
     }
+    public void LoginEnter()
+    {
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            SendLogin();
+        }
+    }
     public void RegisterPageButton()
     {
         SetStage("register");
