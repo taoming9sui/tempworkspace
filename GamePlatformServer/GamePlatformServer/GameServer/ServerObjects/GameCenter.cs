@@ -516,6 +516,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
             }
 
             {
+                //1开启房间
                 string roomId = SecurityHelper.CreateGuid();
                 while (m_roomSet.ContainsKey(roomId))
                     roomId = SecurityHelper.CreateGuid();
@@ -523,12 +524,14 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 room.StartGame();
                 room.PlayerJoin(player.PlayerId, player.SocketId, player.Info);
                 m_roomSet[roomId] = room;
+                //2更新玩家所在房间
                 player.InRoomId = room.RoomId;
-                //向客户端返回信息
+                //3向客户端返回信息
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "InRoom");
                 JObject content = new JObject();
                 content.Add("RoomId", room.RoomId);
+                content.Add("GameId", room.GameId);
                 jsonObj.Add("Content", content);
                 HallResponse(player, jsonObj.ToString());
             }
@@ -541,7 +544,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 return;
             }
             CenterRoom room = null;
-            m_roomSet.TryGetValue(player.InRoomId, out room);
+            m_roomSet.TryGetValue(roomId, out room);
             if (room == null)
             {
                 HallUserTip(player, "意料之外的房间");
@@ -564,13 +567,16 @@ namespace GamePlatformServer.GameServer.ServerObjects
             }
 
             {
+                //1通知房间
                 room.PlayerJoin(player.PlayerId, player.SocketId, player.Info);
+                //2更新玩家所在房间
                 player.InRoomId = room.RoomId;
-                //向客户端返回信息
+                //3向客户端返回信息
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "InRoom");
                 JObject content = new JObject();
                 content.Add("RoomId", room.RoomId);
+                content.Add("GameId", room.GameId);
                 jsonObj.Add("Content", content);
                 HallResponse(player, jsonObj.ToString());
             }

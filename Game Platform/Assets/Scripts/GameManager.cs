@@ -90,6 +90,9 @@ public class GameManager : MonoBehaviour
             try
             {
                 JObject jsonData = JObject.Parse(e.Data);
+#if DEBUG
+                Debug.Log(jsonData.ToString());
+#endif
                 if (currentActivity != null)
                     currentActivity.OnMessage(jsonData);
             }

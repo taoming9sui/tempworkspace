@@ -100,6 +100,12 @@ public class Hall : GameActivity
                             JObject content = (JObject)data.GetValue("Content");
                             this.UpdatePlayerInfo(content.ToString());
                         }
+                        break;
+                    case "InRoom":
+                        {
+                            JObject content = (JObject)data.GetValue("Content");
+                            this.JoinRoomSuccess((string)content.GetValue("GameId"), (string)content.GetValue("RoomId"));
+                        }
                         break;           
                 }
             }
@@ -512,7 +518,53 @@ public class Hall : GameActivity
             m_roomPageNo = pageNo;
     }
     private void TryJoinRoom(RoomItemInfo info)
+    {    
+        if (info.HasPassword)
+        {
+            //房间需要密码 显示对话框
+            GameObject modelObj = canvasObj.transform.Find("joinroom_model").gameObject;
+            ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+            InputField caption_text = modelObj.transform.Find("model/caption_text").GetComponent<InputField>();
+            InputField game_text = modelObj.transform.Find("model/game_text").GetComponent<InputField>();
+            InputField password_input = modelObj.transform.Find("model/password_input").GetComponent<InputField>();
+            caption_text.text = info.Caption;
+            game_text.text = info.GameName;
+            password_input.text = "";
+            modelDialog.ModelShow((code) =>
+            {
+                switch (code)
+                {
+                    case "confirm":
+                        {
+                            string password = password_input.text;
+                            SendJoinRoom(info, password);
+                        }
+                        break;
+                }
+            });
+        }
+        else
+        {
+            //房间不需要密码
+            SendJoinRoom(info, "");
+        }
+    }
+    private void SendJoinRoom(RoomItemInfo info, string password)
     {
+        JObject joinRoomJson = new JObject();
+        joinRoomJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "JoinRoom");
+            data.Add("RoomId", info.RoomId);
+            data.Add("Password", password);
+        }
+        joinRoomJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(joinRoomJson);
+    }
+    private void JoinRoomSuccess(string gameId, string roomId)
+    {
+
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {
