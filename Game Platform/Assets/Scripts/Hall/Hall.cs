@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class Hall : GameActivity
 {
     public GameObject cameraObj;
-    public GameObject canvasObj;
+    public GameObject panelObj;
     public GameObject sceneObj;
     public RoomItem[] roomItems;
 
@@ -133,7 +133,7 @@ public class Hall : GameActivity
     #region UI交互脚本
     public void SendChatButton()
     {
-        InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
+        InputField chat_input = panelObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
         //获取输入框消息并清空
         string chat = chat_input.text;
         chat_input.text = "";
@@ -143,7 +143,7 @@ public class Hall : GameActivity
     {
         if (Input.GetKeyDown(KeyCode.Return))
         {
-            InputField chat_input = canvasObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
+            InputField chat_input = panelObj.transform.Find("chatpanel/chat_input").GetComponent<InputField>();
             //获取输入框消息并清空
             string chat = chat_input.text;
             chat_input.text = "";
@@ -155,7 +155,7 @@ public class Hall : GameActivity
     }
     public void CreateRoomModel()
     {
-        GameObject modelObj = canvasObj.transform.Find("createroom_model").gameObject;
+        GameObject modelObj = panelObj.transform.Find("createroom_model").gameObject;
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         modelDialog.ModelShow((code) =>
         {
@@ -173,7 +173,7 @@ public class Hall : GameActivity
     }
     public void TipModel(string tip)
     {
-        GameObject modelObj = canvasObj.transform.Find("tip_model").gameObject;
+        GameObject modelObj = panelObj.transform.Find("tip_model").gameObject;
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         Text tip_text = modelObj.transform.Find("model/tip_text").GetComponent<Text>();
         tip_text.text = tip;
@@ -221,7 +221,7 @@ public class Hall : GameActivity
     }
     public void ChangePlayerInfoButton()
     {
-        GameObject modelObj = canvasObj.transform.Find("changeplayerinfo_model").gameObject;
+        GameObject modelObj = panelObj.transform.Find("changeplayerinfo_model").gameObject;
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         InputField playerid_text = modelObj.transform.Find("model/playerid_text").GetComponent<InputField>();
         InputField playername_input = modelObj.transform.Find("model/playername_input").GetComponent<InputField>();
@@ -269,20 +269,20 @@ public class Hall : GameActivity
     private void InitDropdown()
     {
         {
-            DropdownHandler dropdown = canvasObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
+            DropdownHandler dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
             dropdown.AddItem(null, "所有");
             foreach (GameManager.GameInfo info in GameManager.Instance.GameInfoSet.Values)
                 dropdown.AddItem(info, info.GameName);
         }
         {
-            DropdownHandler dropdown = canvasObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
+            DropdownHandler dropdown = panelObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
             foreach (GameManager.GameInfo info in GameManager.Instance.GameInfoSet.Values)
                 dropdown.AddItem(info, info.GameName);
         }
         {
-            DropdownHandler dropdown = canvasObj.transform.Find("changeplayerinfo_model/model/head_dropdown").GetComponent<DropdownHandler>();
+            DropdownHandler dropdown = panelObj.transform.Find("changeplayerinfo_model/model/head_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
             for (int i = 0; i < GameManager.Instance.PlayerHeads.Length; i++)
             {
@@ -294,7 +294,7 @@ public class Hall : GameActivity
     }
     private void ClearChat()
     {
-        Text chat_text = canvasObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
+        Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
         chat_text.text = "";
         chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
     }
@@ -339,11 +339,11 @@ public class Hall : GameActivity
     private void ReceiveChat(string sender, string chat)
     {
         //添加一行聊天信息
-        Text chat_text = canvasObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
+        Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
         chat_text.text += string.Format("<color=#A52A2AFF>[{0}] </color>{1}\n", sender, chat);
         chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
         //滚动条刷新到最底部
-        Scrollbar scrollbar = canvasObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
+        Scrollbar scrollbar = panelObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
         if (scrollbar.value < 0.2f || scrollbar.size > 0.8f)
             scrollbar.value = 0;
     }
@@ -367,10 +367,10 @@ public class Hall : GameActivity
         m_playerPoint = (int)jsonObj.GetValue("Point");
         m_playerHeadNo = (int)jsonObj.GetValue("HeadNo");
         //更新UI界面
-        Image player_photo = canvasObj.transform.Find("infopanel/player_photo").GetComponent<Image>();
-        Text playerid_text = canvasObj.transform.Find("infopanel/playerid_text").GetComponent<Text>();
-        Text playername_text = canvasObj.transform.Find("infopanel/playername_text").GetComponent<Text>();
-        Text playerpoint_text = canvasObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
+        Image player_photo = panelObj.transform.Find("infopanel/player_photo").GetComponent<Image>();
+        Text playerid_text = panelObj.transform.Find("infopanel/playerid_text").GetComponent<Text>();
+        Text playername_text = panelObj.transform.Find("infopanel/playername_text").GetComponent<Text>();
+        Text playerpoint_text = panelObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
         Texture2D texture = GameManager.Instance.PlayerHeads[m_playerHeadNo];
         player_photo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         playerid_text.text = string.Format("ID：{0}", m_playerId);
@@ -396,7 +396,7 @@ public class Hall : GameActivity
         GameManager.Instance.Ping((dt) =>
         {
             //更新Ping显示
-            Text playercount_text = canvasObj.transform.Find("roompanel/right/statuspanel/ping_text").GetComponent<Text>();
+            Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/ping_text").GetComponent<Text>();
             playercount_text.text = dt < 0 ? "失败" : string.Format("{0}ms", dt);
         });
         //获取大厅信息
@@ -412,7 +412,7 @@ public class Hall : GameActivity
     private void ReceiveHallInfo(string roomListStr, int roomCount, int playerCount)
     {
         //更新玩家数显示
-        Text playercount_text = canvasObj.transform.Find("roompanel/right/statuspanel/playercount_text").GetComponent<Text>();
+        Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/playercount_text").GetComponent<Text>();
         playercount_text.text = playerCount.ToString();
         //更新房间列表
         UpdateRoomList(roomListStr);
@@ -453,12 +453,12 @@ public class Hall : GameActivity
     {
         m_pageRoomInfoList.Clear();
         {
-            bool showPassword = canvasObj.transform.Find("roompanel/right/filterpanel/check1").GetComponent<Toggle>().isOn;
-            bool showFull = canvasObj.transform.Find("roompanel/right/filterpanel/check2").GetComponent<Toggle>().isOn;
-            bool showPlaying = canvasObj.transform.Find("roompanel/right/filterpanel/check3").GetComponent<Toggle>().isOn;
+            bool showPassword = panelObj.transform.Find("roompanel/right/filterpanel/check1").GetComponent<Toggle>().isOn;
+            bool showFull = panelObj.transform.Find("roompanel/right/filterpanel/check2").GetComponent<Toggle>().isOn;
+            bool showPlaying = panelObj.transform.Find("roompanel/right/filterpanel/check3").GetComponent<Toggle>().isOn;
             string gameId = "";
             {
-                DropdownHandler filtergame_dropdown = canvasObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
+                DropdownHandler filtergame_dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
                 GameManager.GameInfo gameInfo = (GameManager.GameInfo)filtergame_dropdown.SelectedValue;
                 if (gameInfo != null)
                     gameId = gameInfo.GameId;
@@ -522,7 +522,7 @@ public class Hall : GameActivity
         if (info.HasPassword)
         {
             //房间需要密码 显示对话框
-            GameObject modelObj = canvasObj.transform.Find("joinroom_model").gameObject;
+            GameObject modelObj = panelObj.transform.Find("joinroom_model").gameObject;
             ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
             InputField caption_text = modelObj.transform.Find("model/caption_text").GetComponent<InputField>();
             InputField game_text = modelObj.transform.Find("model/game_text").GetComponent<InputField>();

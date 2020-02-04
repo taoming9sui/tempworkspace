@@ -31,7 +31,7 @@ public class GameManager : MonoBehaviour
         //初始化 游戏记录信息
         {
             GameInfoSet = new Dictionary<string, GameInfo>();
-            GameInfoSet["Wolfman"] = new GameInfo("Wolfman", "狼人杀", "Wolfman");
+            GameInfoSet["Wolfman_P8"] = new GameInfo("Wolfman_P8", "狼人杀8人", "Wolfman_P8");
         }
         //初始化 头像记录信息
         {

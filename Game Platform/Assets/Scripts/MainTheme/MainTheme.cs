@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class MainTheme : GameActivity
 {
     public GameObject cameraObj;
-    public GameObject canvasObj;
+    public GameObject panelObj;
     public GameObject sceneObj;
 
 
@@ -65,7 +65,7 @@ public class MainTheme : GameActivity
     #region UI交互脚本
     public void ConnectErrorModel()
     {
-        GameObject modelObj = canvasObj.transform.Find("connecterror_model").gameObject;
+        GameObject modelObj = panelObj.transform.Find("connecterror_model").gameObject;
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         modelDialog.ModelShow((code) =>{
             switch (code)
@@ -83,7 +83,7 @@ public class MainTheme : GameActivity
     }
     public void TipModel(string tip)
     {
-        GameObject modelObj = canvasObj.transform.Find("tip_model").gameObject;
+        GameObject modelObj = panelObj.transform.Find("tip_model").gameObject;
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         Text tip_text = modelObj.transform.Find("tip_text").GetComponent<Text>();
         tip_text.text = tip;
@@ -91,14 +91,14 @@ public class MainTheme : GameActivity
     }
     public void Mask(bool show)
     {
-        GameObject mask = canvasObj.transform.Find("mask").gameObject;
+        GameObject mask = panelObj.transform.Find("mask").gameObject;
         mask.SetActive(show);
     }
     public void SetStage(string code)
     {
-        GameObject connect_panel = canvasObj.transform.Find("connect").gameObject;
-        GameObject login_panel = canvasObj.transform.Find("login").gameObject;
-        GameObject register_panel = canvasObj.transform.Find("register").gameObject;
+        GameObject connect_panel = panelObj.transform.Find("connect").gameObject;
+        GameObject login_panel = panelObj.transform.Find("login").gameObject;
+        GameObject register_panel = panelObj.transform.Find("register").gameObject;
         connect_panel.SetActive(false);
         login_panel.SetActive(false);
         register_panel.SetActive(false);
@@ -161,7 +161,7 @@ public class MainTheme : GameActivity
     }
     private void SendLogin()
     {
-        GameObject login_panel = canvasObj.transform.Find("login").gameObject;
+        GameObject login_panel = panelObj.transform.Find("login").gameObject;
         string playerId = login_panel.transform.Find("playerid_input").GetComponent<InputField>().text;
         string password = login_panel.transform.Find("password_input").GetComponent<InputField>().text;
         //尝试登录
@@ -171,7 +171,7 @@ public class MainTheme : GameActivity
     }
     private void SendRegister()
     {
-        GameObject register_panel = canvasObj.transform.Find("register").gameObject;
+        GameObject register_panel = panelObj.transform.Find("register").gameObject;
 
         string playerId = register_panel.transform.Find("playerid_input").GetComponent<InputField>().text;
         string password = register_panel.transform.Find("password_input").GetComponent<InputField>().text;
