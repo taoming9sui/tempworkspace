@@ -13,7 +13,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             switch (gameId)
             {
                 default:
-                    return new Wolfman(room);
+                    return new Wolfman_P8(room);
             }
         }
     }

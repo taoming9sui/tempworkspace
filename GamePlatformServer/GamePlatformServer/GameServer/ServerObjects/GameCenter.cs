@@ -10,6 +10,7 @@ using System.Data.SQLite;
 using GamePlatformServer.Exceptions;
 using System.Text.RegularExpressions;
 using System.Data;
+using System.Diagnostics;
 
 namespace GamePlatformServer.GameServer.ServerObjects
 {
@@ -34,7 +35,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         private IDictionary<string, CenterPlayer> m_playerSet;
         private IDictionary<string, CenterRoom> m_roomSet;
         private IDictionary<string, string> m_mapperSocketIdtoPlayerId;
-        private IDictionary<string, int> m_updateTimerSet;
+        private IDictionary<string, long> m_updateTimerSet;
         private List<OfflinePlayerRecord> m_offlineRecordList;
         private string m_roomListJsonData;
 
@@ -54,6 +55,8 @@ namespace GamePlatformServer.GameServer.ServerObjects
             m_mapperSocketIdtoPlayerId = new Dictionary<string, string>();
             //离线玩家的按时间排序列表
             m_offlineRecordList = new List<OfflinePlayerRecord>();
+            //大厅房间列表JSON缓存
+            m_roomListJsonData = "[]";
             //初始化计时器
             InitTimer();
         }
@@ -105,9 +108,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
         }
         private void Run()
         {
+            Stopwatch stopwatch = new Stopwatch();
             Begin();
             while (!m_loopThreadExit)
             {
+                stopwatch.Restart();
                 QueueEventArgs eventArgs;
                 while (m_eventQueue.TryDequeue(out eventArgs))
                 {
@@ -124,8 +129,8 @@ namespace GamePlatformServer.GameServer.ServerObjects
                             break;
                     }
                 }
-                LogicUpdate();
                 Thread.Sleep(1);
+                LogicUpdate(stopwatch.ElapsedMilliseconds);
             }
             Finish();
         }
@@ -135,20 +140,20 @@ namespace GamePlatformServer.GameServer.ServerObjects
         #region 计时器
         private void InitTimer()
         {
-            m_updateTimerSet = new Dictionary<string, int>();
+            m_updateTimerSet = new Dictionary<string, long>();
             m_updateTimerSet.Add("RoomListUpdate", 0);
             m_updateTimerSet.Add("OfflinePlayerDispose", 0);
         }
-        private void LogicUpdate()
+        private void LogicUpdate(long milliseceonds)
         {
             try
             {
                 string[] keys = m_updateTimerSet.Keys.ToArray();
                 foreach (string key in keys)
-                    m_updateTimerSet[key]++;
+                    m_updateTimerSet[key] += milliseceonds;
 
                 //间隔一秒更新房间列表
-                if(m_updateTimerSet["RoomListUpdate"] > 1000)
+                if (m_updateTimerSet["RoomListUpdate"] > 1000)
                 {
                     m_updateTimerSet["RoomListUpdate"] = 0;
                     UpdateRoomList();

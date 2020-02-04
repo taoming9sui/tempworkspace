@@ -5,6 +5,7 @@ using System.Text;
 using System.Collections.Concurrent;
 using System.Threading;
 using GamePlatformServer.GameServer.ServerObjects;
+using System.Diagnostics;
 
 namespace GamePlatformServer.GameServer.GameModuels
 {
@@ -64,9 +65,11 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private void Run()
         {
+            Stopwatch stopwatch = new Stopwatch();
             Begin();
             while (!m_loopThreadExit)
             {
+                stopwatch.Restart();
                 QueueEventArgs eventArgs;
                 while (m_eventQueue.TryDequeue(out eventArgs))
                 {
@@ -89,8 +92,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                             break;
                     }
                 }
-                LogicUpdate();
                 Thread.Sleep(1);
+                LogicUpdate(stopwatch.ElapsedMilliseconds);
             }
             Finish();
         }
@@ -102,7 +105,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         abstract protected void OnPlayerLeave(string playerId);
         abstract protected void OnPlayerConnect(string playerId);
         abstract protected void OnPlayerDisconnect(string playerId);
-        abstract protected void LogicUpdate();
+        abstract protected void LogicUpdate(long milliseconds);
         abstract protected void Begin();
         abstract protected void Finish();
         #endregion
