@@ -2311,7 +2311,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: "3-12\u4F4D\u6635\u79F0"
 --- !u!1 &1538345716786543239
 GameObject:
   m_ObjectHideFlags: 0
@@ -5478,6 +5478,7 @@ MonoBehaviour:
   cameraObj: {fileID: 3539346959452429355}
   panelObj: {fileID: 6081260329197969596}
   sceneObj: {fileID: 3539346959612672039}
+  tipModelObj: {fileID: 2134703998195945430}
   roomItems:
   - {fileID: 5329847486802195927}
   - {fileID: 2584938871767466554}
@@ -6594,8 +6595,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -11.999997, y: 12.000008}
-  m_SizeDelta: {x: -56.000008, y: -55.999985}
+  m_AnchoredPosition: {x: -11.999997, y: 12}
+  m_SizeDelta: {x: -56.000008, y: -56}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6265543297025063708
 CanvasRenderer:

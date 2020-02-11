@@ -9,6 +9,7 @@ public class Hall : GameActivity
     public GameObject cameraObj;
     public GameObject panelObj;
     public GameObject sceneObj;
+    public GameObject tipModelObj;
     public RoomItem[] roomItems;
 
     private IDictionary<string, float> m_updateTimerSet = new Dictionary<string, float>();
@@ -173,11 +174,17 @@ public class Hall : GameActivity
     }
     public void TipModel(string tip)
     {
-        GameObject modelObj = panelObj.transform.Find("tip_model").gameObject;
+        //1对话框对象克隆
+        GameObject modelObj = GameObject.Instantiate(tipModelObj, panelObj.transform);
+        //2显示该克隆对象
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         Text tip_text = modelObj.transform.Find("model/tip_text").GetComponent<Text>();
         tip_text.text = tip;
-        modelDialog.ModelShow();
+        //3确定后移除该克隆
+        modelDialog.ModelShow((code) =>
+        {
+            Destroy(modelObj);
+        });
     }
     public void ChangeRoomPage(int code)
     {
@@ -564,7 +571,9 @@ public class Hall : GameActivity
     }
     private void JoinRoomSuccess(string gameId, string roomId)
     {
-
+        //加入成功 跳转游戏活动
+        GameManager.GameInfo gameinfo = GameManager.Instance.GameInfoSet[gameId];
+        GameManager.Instance.SetActivity(gameinfo.GameActivity);
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {

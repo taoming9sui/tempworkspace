@@ -9,6 +9,7 @@ public class MainTheme : GameActivity
     public GameObject cameraObj;
     public GameObject panelObj;
     public GameObject sceneObj;
+    public GameObject tipModelObj;
 
 
     #region 活动触发器
@@ -35,7 +36,6 @@ public class MainTheme : GameActivity
             string type = jsonData.GetValue("Type").ToString();
             if(type == "Server_Center")
             {
-                Mask(false); //隐藏遮罩
                 JObject data = (JObject)jsonData.GetValue("Data");
                 string action = data.GetValue("Action").ToString();
                 switch (action)
@@ -83,16 +83,17 @@ public class MainTheme : GameActivity
     }
     public void TipModel(string tip)
     {
-        GameObject modelObj = panelObj.transform.Find("tip_model").gameObject;
+        //1对话框对象克隆
+        GameObject modelObj = GameObject.Instantiate(tipModelObj, panelObj.transform);
+        //2显示该克隆对象
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         Text tip_text = modelObj.transform.Find("tip_text").GetComponent<Text>();
         tip_text.text = tip;
-        modelDialog.ModelShow();
-    }
-    public void Mask(bool show)
-    {
-        GameObject mask = panelObj.transform.Find("mask").gameObject;
-        mask.SetActive(show);
+        //3确定后移除该克隆
+        modelDialog.ModelShow((code)=>
+        {
+            Destroy(modelObj);
+        });
     }
     public void SetStage(string code)
     {
@@ -166,8 +167,6 @@ public class MainTheme : GameActivity
         string password = login_panel.transform.Find("password_input").GetComponent<InputField>().text;
         //尝试登录
         GameManager.Instance.PlayerLogin(playerId, password);
-        //显示遮罩
-        Mask(true);
     }
     private void SendRegister()
     {
@@ -178,6 +177,7 @@ public class MainTheme : GameActivity
         string repeat = register_panel.transform.Find("repeat_input").GetComponent<InputField>().text;
         if(password == repeat)
         {
+            //尝试登录
             JObject registerJson = new JObject();
             registerJson.Add("Type", "Client_Center");
             JObject data = new JObject();
@@ -188,7 +188,6 @@ public class MainTheme : GameActivity
             }
             registerJson.Add("Data", data); ;
             GameManager.Instance.SendMessage(registerJson);
-            Mask(true);
         }
         else
         {

@@ -70,6 +70,8 @@
     <Compile Include="Assets\Scripts\Hall\RoomItem.cs" />
     <Compile Include="Assets\Scripts\MainTheme\MainTheme.cs" />
     <Compile Include="Assets\Scripts\ModelDialog.cs" />
+    <Compile Include="Assets\Scripts\Wolfman_P8\PlayerHead.cs" />
+    <Compile Include="Assets\Scripts\Wolfman_P8\Wolfman_P8.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\client_publicdefinitions.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\public_definitions.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\public_errors.cs" />

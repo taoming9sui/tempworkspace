@@ -81,22 +81,17 @@ public class GameManager : MonoBehaviour
             if (currentActivity != null)
                 currentActivity.OnConnect();
         });
-
     }
     private void M_websocket_OnMessage(object sender, MessageEventArgs e)
     {
         PushInvoke(() =>
         {
-            try
-            {
-                JObject jsonData = JObject.Parse(e.Data);
+            JObject jsonData = JObject.Parse(e.Data);
 #if DEBUG
-                Debug.Log(jsonData.ToString());
+            Debug.Log(jsonData.ToString());
 #endif
-                if (currentActivity != null)
-                    currentActivity.OnMessage(jsonData);
-            }
-            catch (System.Exception ex) { Debug.Log(ex.Message); }
+            if (currentActivity != null)
+                currentActivity.OnMessage(jsonData);
         });
     }
     private void M_websocket_OnClose(object sender, CloseEventArgs e)
