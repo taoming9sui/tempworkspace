@@ -69,7 +69,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         cmd2.Parameters[1].Value = password_md5;
                         cmd2.Parameters.Add(new SQLiteParameter("@p2", System.Data.DbType.String));
                         cmd2.Parameters[2].Value = password_salt;
-                        cmd2.Parameters.Add(new SQLiteParameter("@p3", System.Data.DbType.Int32));
+                        cmd2.Parameters.Add(new SQLiteParameter("@p3", System.Data.DbType.Int64));
                         cmd2.Parameters[3].Value = register_date;
                         cmd2.ExecuteNonQuery();
                     }

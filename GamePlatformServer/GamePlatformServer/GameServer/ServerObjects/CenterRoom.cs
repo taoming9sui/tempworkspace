@@ -24,7 +24,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             m_serverContainer = container;
             m_roomId = roomId;
-            m_game = GameModuelLoader.GetGameInstance(gameId, this);
+            m_game = GameModuelLoader.GetGameInstance(gameId, container);
             m_caption = caption;
             m_password = password;
 
@@ -104,6 +104,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             GameModuel.QueueEventArgs eventArgs = new GameModuel.QueueEventArgs();
             eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Join;
+            eventArgs.Data = socketId;
             eventArgs.Param1 = playerId;
             eventArgs.Param2 = playerInfo;
             m_game.PushMessage(eventArgs);
@@ -141,10 +142,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
             if (playerRow != null)
                 playerRow["SocketId"] = null;
         }
-        public void PlayerReConnect(string playerId, string socketId)
+        public void PlayerReconnect(string playerId, string socketId)
         {
             GameModuel.QueueEventArgs eventArgs = new GameModuel.QueueEventArgs();
             eventArgs.Type = GameModuel.QueueEventArgs.MessageType.Connect;
+            eventArgs.Data = socketId;
             eventArgs.Param1 = playerId;
             m_game.PushMessage(eventArgs);
 
@@ -161,47 +163,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
             m_game.PushMessage(eventArgs);
         }
         #endregion
-
-        #region 面向游戏调用
-        public void GameMessageResponse(string playerId, string data)
-        {
-            DataRow playerRow = m_playerSet.Rows.Find(playerId);
-            if (playerRow != null)
-            {
-                string socketId = (string)playerRow["SocketId"];
-                if(socketId != null)
-                {
-                    GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
-                    JObject jsonObj = new JObject();
-                    jsonObj.Add("Type", "Server_Room");
-                    jsonObj.Add("Data", JObject.Parse(data));
-                    eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
-                    eventArgs.Data = jsonObj.ToString();
-                    eventArgs.Param1 = socketId;
-                    m_serverContainer.ClientAgent.PushMessage(eventArgs);
-                }
-            }
-        }
-        public void GameMessageBroad(string data)
-        {
-            foreach(DataRow playerRow in m_playerSet.Rows)
-            {
-                string socketId = (string)playerRow["SocketId"];
-                if (socketId != null)
-                {
-                    GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
-                    JObject jsonObj = new JObject();
-                    jsonObj.Add("Type", "Server_Room");
-                    jsonObj.Add("Data", JObject.Parse(data));
-                    eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
-                    eventArgs.Data = jsonObj.ToString();
-                    eventArgs.Param1 = socketId;
-                    m_serverContainer.ClientAgent.PushMessage(eventArgs);
-                }
-            }
-        }
-        #endregion
-
 
     }
 }

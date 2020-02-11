@@ -222,6 +222,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
             {
                 CenterUserTip(socketId, ex.Message);
             }
+            catch
+            {
+                CenterUserTip(socketId, "意料之外的错误");
+                throw;
+            }
 
             if (flag)
             {
@@ -253,6 +258,11 @@ namespace GamePlatformServer.GameServer.ServerObjects
             catch (InfoException ex)
             {
                 CenterUserTip(socketId, ex.Message);
+            }
+            catch
+            {
+                CenterUserTip(socketId, "意料之外的错误");
+                throw;
             }
 
             if (flag)
@@ -370,40 +380,43 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             try
             {
-                CenterPlayer player = null;
-                try
-                {
-                    string playerId = m_mapperSocketIdtoPlayerId[socketId];
-                    player = m_playerSet[playerId];
-                }
-                catch { }
 
-                JObject jsonObj = JObject.Parse(data);
-                string action = jsonObj.GetValue("Action").ToString();
-                switch (action)
+                CenterPlayer player = null;
                 {
-                    case "CreateRoom":
-                        PlayerCreateRoom(player, jsonObj.GetValue("GameId").ToString(), jsonObj.GetValue("Caption").ToString(), jsonObj.GetValue("Password").ToString());
-                        break;
-                    case "JoinRoom":
-                        PlayerJoinRoom(player, jsonObj.GetValue("RoomId").ToString(), jsonObj.GetValue("Password").ToString());
-                        break;
-                    case "LeaveRoom":
-                        PlayerLeaveRoom(player);
-                        break;
-                    case "RequestHallInfo":
-                        PlayerRequestHallInfo(player);
-                        break;
-                    case "RequestPlayerInfo":
-                        PlayerRequestPlayerInfo(player);
-                        break;
-                    case "ChangePlayerInfo":
-                        PlayerChangePlayerInfo(player, jsonObj.GetValue("Name").ToString(), (int)jsonObj.GetValue("HeadNo"));
-                        break;
-                    case "HallChat":
-                        PlayerHallChat(player, jsonObj.GetValue("Chat").ToString());
-                        break;
+                    string playerId = null;
+                    m_mapperSocketIdtoPlayerId.TryGetValue(socketId, out playerId);
+                    if (playerId != null)
+                        m_playerSet.TryGetValue(playerId, out player);
                 }
+                if(player != null)
+                {
+                    JObject jsonObj = JObject.Parse(data);
+                    string action = jsonObj.GetValue("Action").ToString();
+                    switch (action)
+                    {
+                        case "CreateRoom":
+                            PlayerCreateRoom(player, jsonObj.GetValue("GameId").ToString(), jsonObj.GetValue("Caption").ToString(), jsonObj.GetValue("Password").ToString());
+                            break;
+                        case "JoinRoom":
+                            PlayerJoinRoom(player, jsonObj.GetValue("RoomId").ToString(), jsonObj.GetValue("Password").ToString());
+                            break;
+                        case "LeaveRoom":
+                            PlayerLeaveRoom(player);
+                            break;
+                        case "RequestHallInfo":
+                            PlayerRequestHallInfo(player);
+                            break;
+                        case "RequestPlayerInfo":
+                            PlayerRequestPlayerInfo(player);
+                            break;
+                        case "ChangePlayerInfo":
+                            PlayerChangePlayerInfo(player, jsonObj.GetValue("Name").ToString(), (int)jsonObj.GetValue("HeadNo"));
+                            break;
+                        case "HallChat":
+                            PlayerHallChat(player, jsonObj.GetValue("Chat").ToString());
+                            break;
+                    }
+                }            
 
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
@@ -485,7 +498,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 m_roomSet.TryGetValue(player.InRoomId, out room);
                 if (room != null)
                 {
-                    room.PlayerReConnect(player.PlayerId, player.SocketId);
+                    room.PlayerReconnect(player.PlayerId, player.SocketId);
                 }
             }
             //将玩家从离线列表移除
@@ -591,9 +604,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
             if (player.InRoomId == null)
                 return;
 
-            CenterRoom room = null;
-            m_roomSet.TryGetValue(player.InRoomId, out room);
-            if (room != null)
+            //1管理房间状态
+            CenterRoom room = null;     
+            if (m_roomSet.TryGetValue(player.InRoomId, out room))
             {
                 room.PlayerLeave(player.PlayerId);
                 //当房间为空时 销毁该房间
@@ -603,7 +616,12 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     m_roomSet.Remove(room.RoomId);
                 }
             }
+            //2管理玩家状态
             player.InRoomId = null;
+            //3向客户端返回信息
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "OutRoom");
+            HallResponse(player, jsonObj.ToString());
         }
         private void PlayerHallChat(CenterPlayer player, string chat)
         {

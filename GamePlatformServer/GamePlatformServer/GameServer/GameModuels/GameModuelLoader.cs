@@ -8,12 +8,12 @@ namespace GamePlatformServer.GameServer.GameModuels
 {
     public class GameModuelLoader
     {
-        static public GameModuel GetGameInstance(string gameId, CenterRoom room)
+        static public GameModuel GetGameInstance(string gameId, GameServerContainer container)
         {
             switch (gameId)
             {
                 default:
-                    return new Wolfman_P8(room);
+                    return new Wolfman_P8(container);
             }
         }
     }

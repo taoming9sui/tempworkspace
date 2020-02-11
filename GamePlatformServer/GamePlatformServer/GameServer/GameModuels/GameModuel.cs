@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using GamePlatformServer.GameServer.ServerObjects;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 
 namespace GamePlatformServer.GameServer.GameModuels
 {
@@ -23,7 +24,9 @@ namespace GamePlatformServer.GameServer.GameModuels
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
 
-        private CenterRoom m_room;
+        private GameServerContainer m_serverContainer;
+        private IDictionary<string, string> m_socketIdMapper;
+
 
         abstract public string GameId { get; }
         abstract public string GameName { get; }
@@ -50,10 +53,12 @@ namespace GamePlatformServer.GameServer.GameModuels
         {
             m_loopThreadExit = true;
         }
-        public GameModuel(CenterRoom room)
+        public GameModuel(GameServerContainer container)
         {
-            //所在房间对象引用
-            m_room = room;
+            //容器引用
+            m_serverContainer = container;
+            //SocketId映射记录
+            m_socketIdMapper = new Dictionary<string, string>();
         }
 
 
@@ -79,15 +84,19 @@ namespace GamePlatformServer.GameServer.GameModuels
                             OnPlayerMessage((string)eventArgs.Param1, eventArgs.Data);
                             break;
                         case QueueEventArgs.MessageType.Join:
-                            OnPlayerJoin((string)eventArgs.Param1);
+                            PlayerJoin(eventArgs.Data, (string)eventArgs.Param1, (PlayerInfo)eventArgs.Param2);
+                            OnPlayerJoin((string)eventArgs.Param1, (PlayerInfo)eventArgs.Param2);
                             break;
                         case QueueEventArgs.MessageType.Leave:
+                            PlayerLeave((string)eventArgs.Param1);
                             OnPlayerLeave((string)eventArgs.Param1);
                             break;
                         case QueueEventArgs.MessageType.Connect:
-                            OnPlayerConnect((string)eventArgs.Param1);
+                            PlayerReconnect(eventArgs.Data, (string)eventArgs.Param1);
+                            OnPlayerReconnect((string)eventArgs.Param1);
                             break;
                         case QueueEventArgs.MessageType.Disconnect:
+                            PlayerDisconnect((string)eventArgs.Param1);
                             OnPlayerDisconnect((string)eventArgs.Param1);
                             break;
                     }
@@ -99,25 +108,66 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         #endregion
 
+        #region 内部方法
+        private void PlayerJoin(string socketId, string playerId, PlayerInfo info)
+        {
+            m_socketIdMapper[playerId] = socketId;
+        }
+        private void PlayerLeave(string playerId)
+        {
+            m_socketIdMapper.Remove(playerId);
+        }
+        private void PlayerReconnect(string socketId, string playerId)
+        {
+            m_socketIdMapper[playerId] = socketId;
+        }
+        private void PlayerDisconnect(string playerId)
+        {
+            m_socketIdMapper.Remove(playerId);
+        }
+        #endregion
+
         #region 内置事件
         abstract protected void OnPlayerMessage(string playerId, string msgData);
-        abstract protected void OnPlayerJoin(string playerId);
+        abstract protected void OnPlayerJoin(string playerId, PlayerInfo info);
         abstract protected void OnPlayerLeave(string playerId);
-        abstract protected void OnPlayerConnect(string playerId);
+        abstract protected void OnPlayerReconnect(string playerId);
         abstract protected void OnPlayerDisconnect(string playerId);
         abstract protected void LogicUpdate(long milliseconds);
         abstract protected void Begin();
         abstract protected void Finish();
         #endregion
 
+
         #region 可供调用接口
         protected void SendMessage(string playerId, string data)
         {
-            m_room.GameMessageResponse(playerId, data);
+            string socketId = "";
+            if (m_socketIdMapper.TryGetValue(playerId, out socketId))
+            {
+                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
+                JObject jsonObj = new JObject();
+                jsonObj.Add("Type", "Server_Room");
+                jsonObj.Add("Data", JObject.Parse(data));
+                eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
+                eventArgs.Data = jsonObj.ToString();
+                eventArgs.Param1 = socketId;
+                m_serverContainer.ClientAgent.PushMessage(eventArgs);
+            }
         }
         protected void BroadMessage(string data)
         {
-            m_room.GameMessageBroad(data);
+            foreach(string socketId in m_socketIdMapper.Values)
+            {
+                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
+                JObject jsonObj = new JObject();
+                jsonObj.Add("Type", "Server_Room");
+                jsonObj.Add("Data", JObject.Parse(data));
+                eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Server_Client;
+                eventArgs.Data = jsonObj.ToString();
+                eventArgs.Param1 = socketId;
+                m_serverContainer.ClientAgent.PushMessage(eventArgs);
+            }
         }
         #endregion
 
