@@ -10,16 +10,22 @@ namespace GamePlatformServer.GameServer.GameModuels
 {
     public class Wolfman_P8 : GameModuel
     {
-        private IDictionary<string, Player> m_playerSet;
-        private Player[] m_players;
+        private PlayerSeat[] m_players;
+        private IDictionary<string, PlayerSeat> m_playerMapper;
+
 
         public Wolfman_P8(GameServerContainer container) : base(container)
         {
             //玩家集合
-            m_playerSet = new Dictionary<string, Player>();
+            m_playerMapper = new Dictionary<string, PlayerSeat>();
             //玩家列表
-            m_players = new Player[this.MaxPlayerCount];
-
+            m_players = new PlayerSeat[this.MaxPlayerCount];
+            for (int i = 0; i < m_players.Length; i++)
+            {
+                PlayerSeat newSeat = new PlayerSeat();
+                newSeat.SeatNo = i;
+                m_players[i] = newSeat;
+            }
         }
 
         #region 游戏规格信息
@@ -63,24 +69,20 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         protected override void OnPlayerMessage(string playerId, string msgData)
         {
-            try
+            JObject jsonObj = JObject.Parse(msgData);
+            string action = jsonObj.GetValue("Action").ToString();
+            switch (action)
             {
-                JObject jsonObj = JObject.Parse(msgData);
-                string action = jsonObj.GetValue("Action").ToString();
-                switch (action)
-                {
-                    case "RequestGameStatus":
-                        PlayerRequestGameStatus(playerId);
-                        break;
-                    case "GetReady":
-                        PlayerGetReady(playerId);
-                        break;
-                    case "CancelReady":
-                        PlayerCancelReady(playerId);
-                        break;
-                }
+                case "RequestGameStatus":
+                    PlayerRequestGameStatus(playerId);
+                    break;
+                case "GetReady":
+                    PlayerGetReady(playerId);
+                    break;
+                case "CancelReady":
+                    PlayerCancelReady(playerId);
+                    break;
             }
-            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }
 
         protected override void LogicUpdate(long milliseconds)
@@ -89,17 +91,16 @@ namespace GamePlatformServer.GameServer.GameModuels
         #endregion
 
         #region 具体逻辑
-        private class Player
+        private class PlayerSeat
         {
             //基本资料
+            public int SeatNo = 0;
+            public bool HasPlayer = false;
+            public bool Connected = false;
             public string PlayerId = "";
             public string PlayerName = "";
             public int PlayerHeadNo = 0;
-            //房间布局资料
-            public int SeatNo = 0;
             public bool isReady = false;
-            public bool Connected = false;
-            public bool Aborted = false;
             //狼人杀资料
             public GameIdentity Identity = null;
         }
@@ -131,7 +132,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             int seatNo = -1;
             for (int i = 0; i < m_players.Length; i++)
             {
-                if (m_players[i] == null)
+                if (!m_players[i].HasPlayer)
                 {
                     seatNo = i;
                     break;
@@ -140,46 +141,47 @@ namespace GamePlatformServer.GameServer.GameModuels
             if (seatNo == -1)
                 throw new Exception(string.Format("{0}尝试加入一个已满的房间", playerId));
 
-            //1创建对象
-            Player newPlayer = new Player();
-            newPlayer.PlayerId = info.Id;
-            newPlayer.PlayerHeadNo = info.IconNo;
-            newPlayer.PlayerName = info.Name;
-            newPlayer.SeatNo = seatNo;
-            newPlayer.isReady = false;
-            newPlayer.Connected = true;
-            newPlayer.Aborted = false;
+            //1更新对象
+            PlayerSeat seat = m_players[seatNo];
+            seat.HasPlayer = true;
+            seat.PlayerId = info.Id;
+            seat.PlayerHeadNo = info.IconNo;
+            seat.PlayerName = info.Name;
+            seat.SeatNo = seatNo;
+            seat.isReady = false;
+            seat.Connected = true;
             //2整理关系
-            m_playerSet[playerId] = newPlayer;
-            m_players[seatNo] = newPlayer;
+            m_playerMapper[playerId] = seat;
             //3通知客户端
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "PlayerChange");
             JObject content = new JObject();
             {
                 content.Add("Change", "Join");
-                content.Add("Name", newPlayer.PlayerName);
-                content.Add("HeadNo", newPlayer.PlayerHeadNo);
-                content.Add("SeatNo", newPlayer.SeatNo);
+                content.Add("Name", seat.PlayerName);
+                content.Add("HeadNo", seat.PlayerHeadNo);
+                content.Add("SeatNo", seat.SeatNo);
             }
             jsonObj.Add("Content", content);
             BroadMessage(jsonObj.ToString());
         }
         private void PlayerLeaveGame(string playerId)
         {
-            Player player = null;
-            if (m_playerSet.TryGetValue(playerId, out player))
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
             {
                 //1整理关系
-                m_players[player.SeatNo] = null;
-                m_playerSet.Remove(player.PlayerId);
+                PlayerSeat newSeat = new PlayerSeat();
+                newSeat.SeatNo = seat.SeatNo;
+                m_players[seat.SeatNo] = newSeat;
+                m_playerMapper.Remove(seat.PlayerId);
                 //2通知游戏客户端
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "PlayerChange");
                 JObject content = new JObject();
                 {
                     content.Add("Change", "Leave");
-                    content.Add("SeatNo", player.SeatNo);
+                    content.Add("SeatNo", seat.SeatNo);
                 }
                 jsonObj.Add("Content", content);
                 BroadMessage(jsonObj.ToString());
@@ -193,31 +195,26 @@ namespace GamePlatformServer.GameServer.GameModuels
             JObject content = new JObject();
             {
                 //1玩家名片状态
-                JArray playerHeadArray = new JArray();
-                foreach (Player player in m_players)
+                JArray playerSeatArray = new JArray();
+                foreach (PlayerSeat seat in m_players)
                 {
-                    if (player != null)
-                    {
-                        JObject jobj = new JObject();
-                        jobj.Add("SeatNo", player.SeatNo);
-                        jobj.Add("Name", player.PlayerName);
-                        jobj.Add("HeadNo", player.PlayerHeadNo);
-                        playerHeadArray.Add(jobj);
-                    }
-                    else
-                    {
-                        playerHeadArray.Add(null);
-                    }                  
+                    JObject jobj = new JObject();
+                    jobj.Add("SeatNo", seat.SeatNo);
+                    jobj.Add("HasPlayer", seat.HasPlayer);
+                    jobj.Add("IsReady", seat.isReady);
+                    jobj.Add("Name", seat.PlayerName);
+                    jobj.Add("HeadNo", seat.PlayerHeadNo);
+                    playerSeatArray.Add(jobj);                
                 }
-                content.Add("PlayerHeadArray", playerHeadArray);
+                content.Add("PlayerSeatArray", playerSeatArray);
             }
             jsonObj.Add("Content", content);
             SendMessage(playerId, jsonObj.ToString());
         }
         private void PlayerGetReady(string playerId)
         {
-            Player player = null;
-            if (m_playerSet.TryGetValue(playerId, out player))
+            PlayerSeat player = null;
+            if (m_playerMapper.TryGetValue(playerId, out player))
             {
                 //车准备好了
                 player.isReady = true;
@@ -244,8 +241,8 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private void PlayerCancelReady(string playerId)
         {
-            Player player = null;
-            if (m_playerSet.TryGetValue(playerId, out player))
+            PlayerSeat player = null;
+            if (m_playerMapper.TryGetValue(playerId, out player))
             {
                 //车准备不好
                 player.isReady = false;

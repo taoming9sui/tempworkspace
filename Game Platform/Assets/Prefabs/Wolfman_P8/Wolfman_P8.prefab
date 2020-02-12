@@ -809,7 +809,7 @@ RectTransform:
   m_Children:
   - {fileID: 4982499183212272644}
   - {fileID: 952709738582458063}
-  - {fileID: 741922652432301942}
+  - {fileID: 756932054229264900}
   - {fileID: 3783079989757613140}
   m_Father: {fileID: 7121583982679340353}
   m_RootOrder: 1
@@ -1619,7 +1619,7 @@ MonoBehaviour:
   playerHeads:
   - {fileID: 2727229236427696146}
   - {fileID: 7909658385343875801}
-  - {fileID: 7689793739288824672}
+  - {fileID: 7673392282760814098}
   - {fileID: 6087819017672433730}
   - {fileID: 3018310761780681817}
   - {fileID: 7585651355403587346}
@@ -2973,7 +2973,7 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 5415371578595289749}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &5500057394704739116
+--- !u!1001 &5521094312732474974
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -3048,7 +3048,7 @@ PrefabInstance:
     - target: {fileID: 5053029676086727770, guid: a1b0973a8043c4742a773c292f55ab82,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -68.00001
+      value: -68
       objectReference: {fileID: 0}
     - target: {fileID: 5053029676086727770, guid: a1b0973a8043c4742a773c292f55ab82,
         type: 3}
@@ -3097,11 +3097,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a1b0973a8043c4742a773c292f55ab82, type: 3}
---- !u!114 &7689793739288824672 stripped
+--- !u!114 &7673392282760814098 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2802228145195294796, guid: a1b0973a8043c4742a773c292f55ab82,
     type: 3}
-  m_PrefabInstance: {fileID: 5500057394704739116}
+  m_PrefabInstance: {fileID: 5521094312732474974}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -3109,11 +3109,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8296e3e18350934f8b7e11485e9811f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!224 &741922652432301942 stripped
+--- !u!224 &756932054229264900 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5053029676086727770, guid: a1b0973a8043c4742a773c292f55ab82,
     type: 3}
-  m_PrefabInstance: {fileID: 5500057394704739116}
+  m_PrefabInstance: {fileID: 5521094312732474974}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5592514068974920425
 PrefabInstance:

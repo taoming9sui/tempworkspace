@@ -10,11 +10,31 @@ public class Wolfman_P8 : GameActivity
     public GameObject sceneObj;
     public PlayerHead[] playerHeads;
 
+    #region 需要状态同步的数据
+    private class GameIdentity
+    {
+        
+    }
+    private GameIdentity m_gameIdentity = null;
+    private string m_currentProgress = "Waiting";
+    private string m_currentTime = "Night";
+    private class PlayerInfo
+    {
+        public int SeatNo = 0;
+        public bool HasPlayer = false;
+        public int HeadNo = 0;
+        public string PlayerName = "空座位";
+        public bool isSpeaking = false;
+        public bool isReady = false;
+    }
+    private PlayerInfo[] m_playerInfos = new PlayerInfo[8];
+    #endregion
+
+
     #region unity触发器
     private void Awake()
     {
-        //初始化头像
-        InitPlayerHeads();
+        InitPlayerInfos();
     }
     private void Update()
     {
@@ -48,7 +68,7 @@ public class Wolfman_P8 : GameActivity
                         SynchronizeGameState((JObject)data.GetValue("Content"));
                         break;
                     case "PlayerChange":
-                        PlayerHeadChange((JObject)data.GetValue("Content"));
+                        ChangePlayerInfo((JObject)data.GetValue("Content"));
                         break;
                     case "GetReadyResponse":
                         GetReadySuccess();
@@ -92,39 +112,13 @@ public class Wolfman_P8 : GameActivity
     }
     #endregion
 
-    private void InitPlayerHeads()
+    private void InitPlayerInfos()
     {
-        for(int i=0; i<playerHeads.Length; i++)
-            playerHeads[i].SetPlayer(i, null, null);
-    }
-    private void PlayerHeadChange(JObject content)
-    {
-        string change = (string)content.GetValue("Change");
-        switch (change)
+        for (int i = 0; i < m_playerInfos.Length; i++)
         {
-            case "Join":
-                {
-                    int seatNo = (int)content.GetValue("SeatNo");
-                    int headNo = (int)content.GetValue("HeadNo");
-                    string name = (string)content.GetValue("Name");
-                    Texture2D texture = GameManager.Instance.PlayerHeads[headNo];
-                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                    playerHeads[seatNo].SetPlayer(seatNo, sprite, name);
-                }
-                break;
-            case "Leave":
-                {
-                    int seatNo = (int)content.GetValue("SeatNo");
-                    playerHeads[seatNo].SetPlayer(seatNo, null, null);
-                }
-                break;
-            case "Ready":
-                {
-                    int seatNo = (int)content.GetValue("SeatNo");
-                    bool isReady = (bool)content.GetValue("IsReady");
-                    playerHeads[seatNo].SetStasusMark(PlayerHead.StasusMark.Ready, isReady);
-                }
-                break;
+            PlayerInfo info = new PlayerInfo();
+            info.SeatNo = i;
+            m_playerInfos[i] = info;
         }
     }
     private void RequestGameStatus()
@@ -140,29 +134,85 @@ public class Wolfman_P8 : GameActivity
     }
     private void SynchronizeGameState(JObject content)
     {
-        //1同步玩家头像状态
+        //1同步座位状态
         {
-            JArray playerHeadArray = (JArray)content.GetValue("PlayerHeadArray");
-            for (int i = 0; i < playerHeadArray.Count; i++)
+            JArray playerSeatArray = (JArray)content.GetValue("PlayerSeatArray");
+            for (int i = 0; i < playerSeatArray.Count; i++)
             {
-                JToken jToken = playerHeadArray[i];
-                if (jToken.Type == JTokenType.Object)
-                {
-                    JObject jobj = (JObject)jToken;
-                    int seatNo = (int)jobj.GetValue("SeatNo");
-                    int headNo = (int)jobj.GetValue("HeadNo");
-                    string name = (string)jobj.GetValue("Name");
-                    Texture2D texture = GameManager.Instance.PlayerHeads[headNo];
-                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                    playerHeads[seatNo].SetPlayer(seatNo, sprite, name);
-                }
-                else
-                {
-                    playerHeads[i].SetPlayer(i, null, null);
-                }
+                //解析JSON
+                JObject jobj = (JObject)playerSeatArray[i];
+                int seatNo = (int)jobj.GetValue("SeatNo");
+                bool hasPlayer = (bool)jobj.GetValue("HasPlayer");
+                bool isReady = (bool)jobj.GetValue("IsReady");
+                int headNo = (int)jobj.GetValue("HeadNo");
+                string name = (string)jobj.GetValue("Name");
+                //更新数据
+                PlayerInfo info = m_playerInfos[seatNo];
+                info.HasPlayer = hasPlayer;
+                info.isReady = isReady;
+                info.PlayerName = name;
+                info.HeadNo = headNo;
+                //更新界面
+                UpdatePlayerHead();
             }
         }
         //2同步游戏进程
+    }
+    private void UpdatePlayerHead()
+    {
+        foreach (PlayerInfo info in m_playerInfos)
+        {
+            PlayerHead head = playerHeads[info.SeatNo];
+            if (info.HasPlayer)
+            {
+                Texture2D texture = GameManager.Instance.PlayerHeads[info.HeadNo];
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                head.SetPlayer(info.SeatNo, sprite, info.PlayerName);
+                head.SetStasusMark(PlayerHead.StasusMark.Ready, info.isReady);
+            }
+            else
+            {
+                playerHeads[info.SeatNo].SetPlayer(info.SeatNo);
+                head.SetStasusMark(PlayerHead.StasusMark.Ready, info.isReady);
+            }
+        }
+    }
+    private void ChangePlayerInfo(JObject content)
+    {
+        //更新数据
+        string change = (string)content.GetValue("Change");
+        switch (change)
+        {
+            case "Join":
+                {
+                    int seatNo = (int)content.GetValue("SeatNo");
+                    int headNo = (int)content.GetValue("HeadNo");
+                    string name = (string)content.GetValue("Name");
+                    PlayerInfo info = m_playerInfos[seatNo];
+                    info.HasPlayer = true;
+                    info.PlayerName = name;
+                    info.HeadNo = headNo;
+                }
+                break;
+            case "Leave":
+                {
+                    int seatNo = (int)content.GetValue("SeatNo");
+                    PlayerInfo info = new PlayerInfo();
+                    info.SeatNo = seatNo;
+                    m_playerInfos[seatNo] = info;
+                }
+                break;
+            case "Ready":
+                {
+                    int seatNo = (int)content.GetValue("SeatNo");
+                    bool isReady = (bool)content.GetValue("IsReady");
+                    PlayerInfo info = m_playerInfos[seatNo];
+                    info.isReady = isReady;
+                }
+                break;
+        }
+        //更新界面
+        UpdatePlayerHead();
     }
     private void ExitGameRequest()
     {

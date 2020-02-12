@@ -24,6 +24,11 @@ public class GameActivity : MonoBehaviour
 
     }
 
+    virtual public void OnConnectError()
+    {
+
+    }
+
     virtual public void OnMessage(Newtonsoft.Json.Linq.JObject jsonData)
     {
 

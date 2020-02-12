@@ -78,32 +78,50 @@ public class GameManager : MonoBehaviour
     {
         PushInvoke(() =>
         {
-            if (currentActivity != null)
-                currentActivity.OnConnect();
+            try
+            {
+                if (currentActivity != null)
+                    currentActivity.OnConnect();
+            }
+            catch(System.Exception ex) { Debug.LogError(ex); }
         });
     }
     private void M_websocket_OnMessage(object sender, MessageEventArgs e)
     {
         PushInvoke(() =>
         {
-            JObject jsonData = JObject.Parse(e.Data);
+            try
+            {
+                JObject jsonData = JObject.Parse(e.Data);
 #if DEBUG
-            Debug.Log(jsonData.ToString());
+                Debug.Log(jsonData.ToString());
 #endif
-            if (currentActivity != null)
-                currentActivity.OnMessage(jsonData);
+                if (currentActivity != null)
+                    currentActivity.OnMessage(jsonData);
+            }
+            catch (System.Exception ex) { Debug.LogError(ex); }
         });
     }
     private void M_websocket_OnClose(object sender, CloseEventArgs e)
     {
         PushInvoke(() =>
         {
-            if (currentActivity != null)
-                currentActivity.OnDisconnect();
+            try
+            {
+                if (currentActivity != null)
+                    currentActivity.OnDisconnect();
+            }
+            catch (System.Exception ex) { Debug.LogError(ex); }
         });
     }
     private void M_websocket_OnError(object sender, ErrorEventArgs e)
     {
+        try
+        {
+            if (currentActivity != null)
+                currentActivity.OnConnectError();
+        }
+        catch (System.Exception ex) { Debug.LogError(ex); }
     }
     private IEnumerator WaitPing(Ping ping, float delayTime, System.Action<int> callback)
     {

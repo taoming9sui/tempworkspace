@@ -7,6 +7,7 @@ using System.Threading;
 using GamePlatformServer.GameServer.ServerObjects;
 using System.Diagnostics;
 using Newtonsoft.Json.Linq;
+using GamePlatformServer.Utils;
 
 namespace GamePlatformServer.GameServer.GameModuels
 {
@@ -24,14 +25,17 @@ namespace GamePlatformServer.GameServer.GameModuels
         private Thread m_loopThread;
         private bool m_loopThreadExit = false;
 
+        #region 私有变量
         private GameServerContainer m_serverContainer;
         private IDictionary<string, string> m_socketIdMapper;
+        #endregion
 
-
+        #region 通用对外属性
         abstract public string GameId { get; }
         abstract public string GameName { get; }
         abstract public int MaxPlayerCount { get; }
         abstract public bool IsOpened { get; }
+        #endregion
 
 
         public void Start()
@@ -71,40 +75,56 @@ namespace GamePlatformServer.GameServer.GameModuels
         private void Run()
         {
             Stopwatch stopwatch = new Stopwatch();
-            Begin();
+            try
+            {
+                Begin();
+            }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }       
             while (!m_loopThreadExit)
             {
                 stopwatch.Restart();
                 QueueEventArgs eventArgs;
                 while (m_eventQueue.TryDequeue(out eventArgs))
                 {
-                    switch (eventArgs.Type)
+                    try
                     {
-                        case QueueEventArgs.MessageType.Message:
-                            OnPlayerMessage((string)eventArgs.Param1, eventArgs.Data);
-                            break;
-                        case QueueEventArgs.MessageType.Join:
-                            PlayerJoin(eventArgs.Data, (string)eventArgs.Param1, (PlayerInfo)eventArgs.Param2);
-                            OnPlayerJoin((string)eventArgs.Param1, (PlayerInfo)eventArgs.Param2);
-                            break;
-                        case QueueEventArgs.MessageType.Leave:
-                            PlayerLeave((string)eventArgs.Param1);
-                            OnPlayerLeave((string)eventArgs.Param1);
-                            break;
-                        case QueueEventArgs.MessageType.Connect:
-                            PlayerReconnect(eventArgs.Data, (string)eventArgs.Param1);
-                            OnPlayerReconnect((string)eventArgs.Param1);
-                            break;
-                        case QueueEventArgs.MessageType.Disconnect:
-                            PlayerDisconnect((string)eventArgs.Param1);
-                            OnPlayerDisconnect((string)eventArgs.Param1);
-                            break;
+                        switch (eventArgs.Type)
+                        {
+                            case QueueEventArgs.MessageType.Message:
+                                OnPlayerMessage((string)eventArgs.Param1, eventArgs.Data);
+                                break;
+                            case QueueEventArgs.MessageType.Join:
+                                PlayerJoin(eventArgs.Data, (string)eventArgs.Param1, (PlayerInfo)eventArgs.Param2);
+                                OnPlayerJoin((string)eventArgs.Param1, (PlayerInfo)eventArgs.Param2);
+                                break;
+                            case QueueEventArgs.MessageType.Leave:
+                                PlayerLeave((string)eventArgs.Param1);
+                                OnPlayerLeave((string)eventArgs.Param1);
+                                break;
+                            case QueueEventArgs.MessageType.Connect:
+                                PlayerReconnect(eventArgs.Data, (string)eventArgs.Param1);
+                                OnPlayerReconnect((string)eventArgs.Param1);
+                                break;
+                            case QueueEventArgs.MessageType.Disconnect:
+                                PlayerDisconnect((string)eventArgs.Param1);
+                                OnPlayerDisconnect((string)eventArgs.Param1);
+                                break;
+                        }
                     }
+                    catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }             
                 }
                 Thread.Sleep(1);
-                LogicUpdate(stopwatch.ElapsedMilliseconds);
+                try
+                {
+                    LogicUpdate(stopwatch.ElapsedMilliseconds);
+                }
+                catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }            
             }
-            Finish();
+            try
+            {
+                Finish();
+            }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }         
         }
         #endregion
 

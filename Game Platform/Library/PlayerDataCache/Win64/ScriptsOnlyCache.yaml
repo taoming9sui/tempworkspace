@@ -25,8 +25,6 @@ ScriptsOnlyBuild:
     UnityEditor.TestRunner.dll:
     - UnityEditor.TestTools.TestRunner.Api.CallbacksHolder
     - UnityEditor.TestTools.TestRunner.TestListCacheData
-    UnityEditor.UI.dll:
-    - UnityEditor.UI.TextEditor
     UnityEngine.UI.dll:
     - UnityEngine.EventSystems.EventSystem
     - UnityEngine.EventSystems.StandaloneInputModule
@@ -43,6 +41,7 @@ ScriptsOnlyBuild:
     - UnityEngine.UI.Scrollbar
     - UnityEngine.UI.Text
     - UnityEngine.UI.Toggle
+    - UnityEngine.UI.ToggleGroup
     com.unity.multiplayer-hlapi.Runtime.dll:
     - UnityEngine.Networking.NetworkCallbacks
     - UnityEngine.Networking.NetworkIdentity
@@ -136,6 +135,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 12124}
     - Class: 114
       Script: {instanceID: 12140}
+    - Class: 114
+      Script: {instanceID: 12182}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -667,7 +668,7 @@ ScriptsOnlyBuild:
     className: GraphicRaycaster
   - hash:
       serializedVersion: 2
-      Hash: 44c97c67ca82114fb09534a6eb726943
+      Hash: 53a4f6cb061c44b5d07b11e8fddaef42
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Hall
@@ -709,13 +710,13 @@ ScriptsOnlyBuild:
     className: NetworkAnimator
   - hash:
       serializedVersion: 2
-      Hash: 70020326e8e2d854169cea2a19597206
+      Hash: 948e303c8e5732e50883dd4fc0ccffb0
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: MainTheme
   - hash:
       serializedVersion: 2
-      Hash: 6818bc840c3e786a7fdd5cc72ff0f7d0
+      Hash: d7779181aa72c6e615b2caf43b625892
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: PlayerHead
