@@ -16,8 +16,8 @@ public class Wolfman_P8 : GameActivity
         
     }
     private GameIdentity m_gameIdentity = null;
-    private string m_currentProgress = "Waiting";
-    private string m_currentTime = "Night";
+    private string m_playerProgress = "Ready";
+    private bool m_isReady = false;
     private class PlayerInfo
     {
         public int SeatNo = 0;
@@ -70,11 +70,8 @@ public class Wolfman_P8 : GameActivity
                     case "PlayerChange":
                         ChangePlayerInfo((JObject)data.GetValue("Content"));
                         break;
-                    case "GetReadyResponse":
-                        GetReadySuccess();
-                        break;
-                    case "CancelReadyResponse":
-                        CancelReadySuccess();
+                    case "ReadyResponse":
+                        ReadyResponse((bool)data.GetValue("Ready"));
                         break;
                 }
             }
@@ -104,14 +101,15 @@ public class Wolfman_P8 : GameActivity
     }
     public void GetReadyButton()
     {
-        GetReadyRequest();
+        ReadyRequest(true);
     }
     public void CancelReadyButton()
     {
-        CancelReadyRequest();
+        ReadyRequest(false);
     }
     #endregion
 
+    #region 初始化
     private void InitPlayerInfos()
     {
         for (int i = 0; i < m_playerInfos.Length; i++)
@@ -121,6 +119,46 @@ public class Wolfman_P8 : GameActivity
             m_playerInfos[i] = info;
         }
     }
+    #endregion
+
+    #region 界面
+    private void UpdatePlayerHead()
+    {
+        foreach (PlayerInfo info in m_playerInfos)
+        {
+            PlayerHead head = playerHeads[info.SeatNo];
+            if (info.HasPlayer)
+            {
+                Texture2D texture = GameManager.Instance.PlayerHeads[info.HeadNo];
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                head.SetPlayer(info.SeatNo, sprite, info.PlayerName);
+                head.SetStasusMark(PlayerHead.StasusMark.Ready, info.isReady);
+            }
+            else
+            {
+                playerHeads[info.SeatNo].SetPlayer(info.SeatNo);
+                head.SetStasusMark(PlayerHead.StasusMark.Ready, info.isReady);
+            }
+        }
+    }
+    private void UpdateProgressGUI()
+    {
+        switch (m_playerProgress)
+        {
+            case "Ready":
+                {
+                    GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
+                    GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
+                    GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
+                    getready_button.SetActive(!m_isReady);
+                    cancelready_button.SetActive(m_isReady);
+                }
+                break;
+        }
+    }
+    #endregion
+
+    #region 操作指令
     private void RequestGameStatus()
     {
         JObject requestJson = new JObject();
@@ -156,25 +194,14 @@ public class Wolfman_P8 : GameActivity
                 UpdatePlayerHead();
             }
         }
-        //2同步游戏进程
-    }
-    private void UpdatePlayerHead()
-    {
-        foreach (PlayerInfo info in m_playerInfos)
+        //2同步游戏状态
         {
-            PlayerHead head = playerHeads[info.SeatNo];
-            if (info.HasPlayer)
-            {
-                Texture2D texture = GameManager.Instance.PlayerHeads[info.HeadNo];
-                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                head.SetPlayer(info.SeatNo, sprite, info.PlayerName);
-                head.SetStasusMark(PlayerHead.StasusMark.Ready, info.isReady);
-            }
-            else
-            {
-                playerHeads[info.SeatNo].SetPlayer(info.SeatNo);
-                head.SetStasusMark(PlayerHead.StasusMark.Ready, info.isReady);
-            }
+            //解析JSON
+            string progress = (string)content.GetValue("PlayerProgress");
+            //更新数据
+            m_playerProgress = progress;
+            //更新界面
+            UpdateProgressGUI();
         }
     }
     private void ChangePlayerInfo(JObject content)
@@ -231,43 +258,23 @@ public class Wolfman_P8 : GameActivity
         //返回大厅
         GameManager.Instance.SetActivity("Hall");
     }
-    private void GetReadyRequest()
+    private void ReadyRequest(bool ready)
     {
         JObject requestJson = new JObject();
         requestJson.Add("Type", "Client_Room");
         JObject data = new JObject();
         {
-            data.Add("Action", "GetReady");
+            data.Add("Action", "ReadyCommand");
+            data.Add("Ready", ready);
         }
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
-    private void GetReadySuccess()
+    private void ReadyResponse(bool ready)
     {
-        GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
-        GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
-        GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
-        getready_button.SetActive(false);
-        cancelready_button.SetActive(true);
+        m_isReady = ready;
+        UpdateProgressGUI();
     }
-    private void CancelReadyRequest()
-    {
-        JObject requestJson = new JObject();
-        requestJson.Add("Type", "Client_Room");
-        JObject data = new JObject();
-        {
-            data.Add("Action", "CancelReady");
-        }
-        requestJson.Add("Data", data); ;
-        GameManager.Instance.SendMessage(requestJson);
-    }
-    private void CancelReadySuccess()
-    {
-        GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
-        GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
-        GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
-        getready_button.SetActive(true);
-        cancelready_button.SetActive(false);
-    }
+    #endregion
 
 }

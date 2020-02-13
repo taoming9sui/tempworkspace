@@ -62,16 +62,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\CanvasAdapter.cs" />
-    <Compile Include="Assets\Scripts\DropdownHandler.cs" />
-    <Compile Include="Assets\Scripts\GameActivity.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\GameActivity.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\Hall\Hall.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\Hall\RoomItem.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\MainTheme\MainTheme.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\Wolfman_P8\MessageContainer.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\Wolfman_P8\PlayerHead.cs" />
+    <Compile Include="Assets\Scripts\GameActivities\Wolfman_P8\Wolfman_P8.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
-    <Compile Include="Assets\Scripts\Hall\Hall.cs" />
-    <Compile Include="Assets\Scripts\Hall\RoomItem.cs" />
-    <Compile Include="Assets\Scripts\MainTheme\MainTheme.cs" />
-    <Compile Include="Assets\Scripts\ModelDialog.cs" />
-    <Compile Include="Assets\Scripts\Wolfman_P8\PlayerHead.cs" />
-    <Compile Include="Assets\Scripts\Wolfman_P8\Wolfman_P8.cs" />
+    <Compile Include="Assets\Scripts\UIEffects\FlyInto.cs" />
+    <Compile Include="Assets\Scripts\Utils\CanvasAdapter.cs" />
+    <Compile Include="Assets\Scripts\Utils\DropdownHandler.cs" />
+    <Compile Include="Assets\Scripts\Utils\ModelDialog.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\client_publicdefinitions.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\public_definitions.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\public_errors.cs" />
