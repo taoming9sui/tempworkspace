@@ -243,7 +243,7 @@ public class GameManager : MonoBehaviour
     }
     #endregion
 
-    #region 数据类
+    #region 游戏条目类
     public class GameInfo
     {
         public GameInfo(string id, string name, string activity)

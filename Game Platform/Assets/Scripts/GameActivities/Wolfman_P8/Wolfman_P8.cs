@@ -30,7 +30,6 @@ public class Wolfman_P8 : GameActivity
     private PlayerInfo[] m_playerInfos = new PlayerInfo[8];
     #endregion
 
-
     #region unity触发器
     private void Awake()
     {
@@ -44,8 +43,20 @@ public class Wolfman_P8 : GameActivity
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
-        //初始化游戏 从服务器状态同步
-        RequestGameStatus();
+        //从服务器获取状态同步
+        SynchronizeGameCommand();
+        //消息框
+        {
+            ClearGameLog();
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            builder.AppendLine("<color=#FF6633>【系统】</color>");
+            builder.Append("当房间满员，且所有玩家已准备时，游戏自动开始");
+            AddGameLog(builder.ToString());
+            builder.Clear();
+            builder.AppendLine("<color=#FF6633>【系统】</color>");
+            builder.Append("请玩家在开始游戏时检查麦克风状态");
+            AddGameLog(builder.ToString());
+        }
     }
     public override void OnDisconnect()
     {
@@ -65,7 +76,7 @@ public class Wolfman_P8 : GameActivity
                 switch (action)
                 {
                     case "ResponseGameStatus":
-                        SynchronizeGameState((JObject)data.GetValue("Content"));
+                        SynchronizeGameResponse((JObject)data.GetValue("Content"));
                         break;
                     case "PlayerChange":
                         ChangePlayerInfo((JObject)data.GetValue("Content"));
@@ -82,7 +93,7 @@ public class Wolfman_P8 : GameActivity
                 switch (action)
                 {
                     case "OutRoom":
-                        ExitGameSuccess();
+                        ExitGameResponse();
                         break;
                 }
             }
@@ -97,15 +108,15 @@ public class Wolfman_P8 : GameActivity
     #region UI交互脚本
     public void ExitButton()
     {
-        ExitGameRequest();
+        ExitGameCommand();
     }
     public void GetReadyButton()
     {
-        ReadyRequest(true);
+        ReadyCommand(true);
     }
     public void CancelReadyButton()
     {
-        ReadyRequest(false);
+        ReadyCommand(false);
     }
     #endregion
 
@@ -121,7 +132,7 @@ public class Wolfman_P8 : GameActivity
     }
     #endregion
 
-    #region 界面
+    #region 界面刷新
     private void UpdatePlayerHead()
     {
         foreach (PlayerInfo info in m_playerInfos)
@@ -156,21 +167,31 @@ public class Wolfman_P8 : GameActivity
                 break;
         }
     }
+    private void ClearGameLog()
+    {
+        MessageContainer message_container = panelObj.transform.Find("middle/message_container").GetComponent<MessageContainer>();
+        message_container.ClearMessage();
+    }
+    private void AddGameLog(string logtext)
+    {
+        MessageContainer message_container = panelObj.transform.Find("middle/message_container").GetComponent<MessageContainer>();
+        message_container.AddMessage(logtext);
+    }
     #endregion
 
-    #region 操作指令
-    private void RequestGameStatus()
+    #region 命令和响应
+    private void SynchronizeGameCommand()
     {
         JObject requestJson = new JObject();
         requestJson.Add("Type", "Client_Room");
         JObject data = new JObject();
         {
-            data.Add("Action", "RequestGameStatus");
+            data.Add("Action", "SynchronizeGameCommand");
         }
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
-    private void SynchronizeGameState(JObject content)
+    private void SynchronizeGameResponse(JObject content)
     {
         //1同步座位状态
         {
@@ -241,7 +262,7 @@ public class Wolfman_P8 : GameActivity
         //更新界面
         UpdatePlayerHead();
     }
-    private void ExitGameRequest()
+    private void ExitGameCommand()
     {
         //发送登出消息
         JObject requestJson = new JObject();
@@ -253,12 +274,11 @@ public class Wolfman_P8 : GameActivity
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
-    private void ExitGameSuccess()
+    private void ExitGameResponse()
     {
-        //返回大厅
         GameManager.Instance.SetActivity("Hall");
     }
-    private void ReadyRequest(bool ready)
+    private void ReadyCommand(bool ready)
     {
         JObject requestJson = new JObject();
         requestJson.Add("Type", "Client_Room");
@@ -276,5 +296,6 @@ public class Wolfman_P8 : GameActivity
         UpdateProgressGUI();
     }
     #endregion
+
 
 }

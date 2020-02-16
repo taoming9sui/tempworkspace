@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Audio;
+
 
 public class Hall : GameActivity
 {
@@ -10,6 +12,8 @@ public class Hall : GameActivity
     public GameObject panelObj;
     public GameObject sceneObj;
     public GameObject tipModelObj;
+    public AudioPlayer audioPlayer;
+    public AudioMixer audioMixer;
     public RoomItem[] roomItems;
 
     private IDictionary<string, float> m_updateTimerSet = new Dictionary<string, float>();
@@ -48,6 +52,8 @@ public class Hall : GameActivity
         RequestHallInfo();
         //请求玩家信息
         RequestPlayerInfo();
+        //播放bgm
+        audioPlayer.PlayBGM("HallBGM1");
     }
     public override void OnDisconnect()
     {
@@ -107,7 +113,7 @@ public class Hall : GameActivity
                             JObject content = (JObject)data.GetValue("Content");
                             this.JoinRoomSuccess((string)content.GetValue("GameId"), (string)content.GetValue("RoomId"));
                         }
-                        break;           
+                        break;
                 }
             }
             else if (type == "Server_Center")
@@ -253,6 +259,53 @@ public class Hall : GameActivity
     public void LogoutButton()
     {
         SendLogout();
+    }
+    public void SetMasterVol(Slider slider)
+    {
+        if (slider.value < -39)
+            audioMixer.SetFloat("MasterVolume", -80);
+        else
+            audioMixer.SetFloat("MasterVolume", slider.value);
+    }
+    public void SetBGMVol(Slider slider)
+    {
+        if (slider.value < -39)
+            audioMixer.SetFloat("BGMVolume", -80);
+        else
+            audioMixer.SetFloat("BGMVolume", slider.value);
+    }
+    public void SetSoundVol(Slider slider)
+    {
+        if (slider.value < -39)
+            audioMixer.SetFloat("SoundVolume", -80);
+        else
+            audioMixer.SetFloat("SoundVolume", slider.value);
+    }
+    public void ConfigButton()
+    {
+        GameObject modelObj = panelObj.transform.Find("config_model").gameObject;
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        Slider masterSlider = modelObj.transform.Find("model/master_slider").GetComponent<Slider>();
+        Slider bgmSlider = modelObj.transform.Find("model/bgm_slider").GetComponent<Slider>();
+        Slider soundSlider = modelObj.transform.Find("model/sound_slider").GetComponent<Slider>();
+        // 获取当前音量
+        audioMixer.GetFloat("MasterVolume", out float masterVol);
+        audioMixer.GetFloat("BGMVolume", out float bgmVol);
+        audioMixer.GetFloat("SoundVolume", out float soundVol);
+        masterSlider.value = masterVol;
+        bgmSlider.value = bgmVol;
+        soundSlider.value = soundVol;
+        modelDialog.ModelShow((code) =>
+        {
+            switch (code)
+            {
+                case "confirm":
+                    {
+
+                    }
+                    break;
+            }
+        });
     }
     #endregion
 
@@ -525,7 +578,7 @@ public class Hall : GameActivity
             m_roomPageNo = pageNo;
     }
     private void TryJoinRoom(RoomItemInfo info)
-    {    
+    {
         if (info.HasPassword)
         {
             //房间需要密码 显示对话框

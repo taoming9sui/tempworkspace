@@ -9,6 +9,7 @@ public class MainTheme : GameActivity
     public GameObject cameraObj;
     public GameObject panelObj;
     public GameObject sceneObj;
+    public AudioPlayer audioPlayer;
     public GameObject tipModelObj;
 
 
@@ -19,6 +20,7 @@ public class MainTheme : GameActivity
             SetStage("login");
         else
             SetStage("connect");
+        audioPlayer.PlayBGM("MainThemeBGM1");
     }
     public override void OnDisconnect()
     {

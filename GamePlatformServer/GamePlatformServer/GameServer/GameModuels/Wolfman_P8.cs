@@ -72,8 +72,8 @@ namespace GamePlatformServer.GameServer.GameModuels
             string action = jsonObj.GetValue("Action").ToString();
             switch (action)
             {
-                case "RequestGameStatus":
-                    PlayerRequestGameStatus(playerId);
+                case "SynchronizeGameCommand":
+                    PlayerSynchronizeGame(playerId);
                     break;
                 case "ReadyCommand":
                     PlayerReady(playerId, (bool)jsonObj.GetValue("Ready"));
@@ -187,7 +187,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 BroadMessage(jsonObj.ToString());
             }
         }
-        private void PlayerRequestGameStatus(string playerId)
+        private void PlayerSynchronizeGame(string playerId)
         {
             PlayerSeat playerSeat = null;
             if (m_playerMapper.TryGetValue(playerId, out playerSeat))
