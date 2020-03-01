@@ -8,15 +8,14 @@ public class AudioPlayer : MonoBehaviour
     public AudioData[] bgmList;
     public AudioData[] soundList;
 
-    private AudioSource bgmAudioSource;
-    private AudioSource soundAudioSource;
+    private AudioSource m_bgmAudioSource;
+    private AudioSource m_soundAudioSource;
 
 
     private void Awake()
     {
-        bgmAudioSource = this.transform.Find("bgm_player").gameObject.GetComponent<AudioSource>();
-        soundAudioSource = this.transform.Find("sound_player").gameObject.GetComponent<AudioSource>();
-
+        m_bgmAudioSource = this.transform.Find("bgm_player").gameObject.GetComponent<AudioSource>();
+        m_soundAudioSource = this.transform.Find("sound_player").gameObject.GetComponent<AudioSource>();
     }
 
     public void PlayBGM(string audioName)
@@ -25,18 +24,18 @@ public class AudioPlayer : MonoBehaviour
         {
             if (audioName == bgmList[i].audioName)
             {
-                bgmAudioSource.clip = bgmList[i].audioClip;
-                bgmAudioSource.loop = bgmList[i].loop;
-                bgmAudioSource.Play();
+                m_bgmAudioSource.clip = bgmList[i].audioClip;
+                m_bgmAudioSource.loop = bgmList[i].loop;
+                m_bgmAudioSource.Play();
                 break;
             }
          }
     }
 
-    public void StopBGM(string audioName)
+    public void StopBGM()
     {
-        if (bgmAudioSource.isPlaying)
-            bgmAudioSource.Pause();
+        if (m_bgmAudioSource.isPlaying)
+            m_bgmAudioSource.Pause();
     }
 
     public void PlaySound(string audioName)
@@ -45,7 +44,7 @@ public class AudioPlayer : MonoBehaviour
         {
             if (audioName == soundList[i].audioName)
             {
-                soundAudioSource.PlayOneShot(soundList[i].audioClip);
+                m_soundAudioSource.PlayOneShot(soundList[i].audioClip);
                 break;
             }
         }

@@ -29,8 +29,12 @@ public class MessageContainer : MonoBehaviour
         Text textObj = messageObj.transform.Find("Text").GetComponent<Text>();
         textObj.text = messageText;
         //滚动到底部
-        if (scrollbar.value < 0.2f || scrollbar.size > 0.8f)
-            scrollbar.value = 0;
+        contentObj.GetComponent<ContentSizeFitter>().SetLayoutVertical();
+        StartCoroutine(DoAction_Delay(() => {
+            if (scrollbar.value < 0.2f || scrollbar.size > 0.5f)
+                scrollbar.value = 0;
+        }, 0.1f));
+
     }
 
     public void ClearMessage()
@@ -40,5 +44,11 @@ public class MessageContainer : MonoBehaviour
         //清空UI对象
         foreach (Transform child in contentObj.transform)
             GameObject.Destroy(child.gameObject);
+    }
+
+    private IEnumerator DoAction_Delay(System.Action action, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        action();
     }
 }

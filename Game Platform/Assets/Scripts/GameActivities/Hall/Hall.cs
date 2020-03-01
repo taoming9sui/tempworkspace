@@ -401,11 +401,13 @@ public class Hall : GameActivity
         //添加一行聊天信息
         Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
         chat_text.text += string.Format("<color=#A52A2AFF>[{0}] </color>{1}\n", sender, chat);
-        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
         //滚动条刷新到最底部
+        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
         Scrollbar scrollbar = panelObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
-        if (scrollbar.value < 0.2f || scrollbar.size > 0.8f)
-            scrollbar.value = 0;
+        StartCoroutine(DoAction_Delay(() => {
+            if (scrollbar.value < 0.2f || scrollbar.size > 0.5f)
+                scrollbar.value = 0;
+        }, 0.1f));
     }
     private void RequestPlayerInfo()
     {

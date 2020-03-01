@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 7875909341203928881}
   - component: {fileID: 2686276976587966487}
   - component: {fileID: 1397389087946784486}
+  - component: {fileID: 8943306939351902090}
   m_Layer: 0
-  m_Name: IdentitySelect
+  m_Name: SingleSelect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -123,6 +124,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &8943306939351902090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 759022504968807203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f99c0d9367db604ba38dd5401046fac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stringValue: 
 --- !u!1 &813886507158227771
 GameObject:
   m_ObjectHideFlags: 0

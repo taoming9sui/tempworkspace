@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHead : MonoBehaviour
+public class PlayerSeat : MonoBehaviour
 {
     public Image headImage;
     public Text nameText;

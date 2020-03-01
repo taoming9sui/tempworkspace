@@ -113,7 +113,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                     }
                     catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }             
                 }
-                Thread.Sleep(1);
+                Thread.Sleep(20);
                 try
                 {
                     LogicUpdate(stopwatch.ElapsedMilliseconds);
