@@ -612,10 +612,10 @@ PlayerSettings:
   facebookXfbml: 0
   facebookFrictionlessRequests: 1
   apiCompatibilityLevel: 6
-  cloudProjectId: b2036759-08ff-4883-8ff1-d374491c3fb0
+  cloudProjectId: f21829bb-564c-4150-b979-74119dfa4e75
   framebufferDepthMemorylessMode: 0
   projectName: Game Platform
-  organizationId: yhemanbu
+  organizationId: a545300730
   cloudEnabled: 0
   enableNativePlatformBackendsForNewInputSystem: 0
   disableOldInputManagerSupport: 0

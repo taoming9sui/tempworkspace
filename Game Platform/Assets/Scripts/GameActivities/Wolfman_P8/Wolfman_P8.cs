@@ -18,14 +18,17 @@ public class Wolfman_P8 : GameActivity
     {
         public int SeatNo = 0;
         public bool HasPlayer = false;
-        public int HeadNo = 0;
         public string PlayerName = "";
+        public int HeadNo = 0;
+        public bool isDead = false;
+        public bool Connected = false;
         public bool isSpeaking = false;
         public bool isReady = false;
     }
     private PlayerSeatInfo[] m_playerSeatInfos = new PlayerSeatInfo[8];
     private bool m_isPlaying = false;
-    private string m_publicProgress = "";
+    private string m_publicProcess = "";
+    private string m_gameloopProcess = "";
     private int m_dayTime = 0;
     private int m_dayNumber = 0;
     //玩家状态
@@ -34,13 +37,59 @@ public class Wolfman_P8 : GameActivity
     private int m_playerHeadNo = 0;
     private int m_seatNo = 0;
     private bool m_isReady = false;
-    private bool m_isSpeaking = false;
-    private bool m_isVoting = false;
     //狼人杀角色状态
     private GameIdentity m_identity = null;
     private class GameIdentity
     {
-        
+        public string IdentityType = "Default";
+        public string CurrentAction = "";
+        public bool isDead = false;
+        public int GameCamp = 0;
+    }
+    private class Villager : GameIdentity
+    {
+        public Villager()
+        {
+            IdentityType = "Villager";
+        }
+    }
+    private class Wolfman : GameIdentity
+    {
+        public Wolfman()
+        {
+            IdentityType = "Wolfman";
+        }
+    }
+    private class Prophet : GameIdentity
+    {
+        public Prophet()
+        {
+            IdentityType = "Prophet";
+        }
+    }
+    private class Hunter : GameIdentity
+    {
+        public Hunter()
+        {
+            IdentityType = "Hunter";
+        }
+    }
+    private class Defender : GameIdentity
+    {
+        public int LastDefendNo = -1;
+        public Defender()
+        {
+            IdentityType = "Defender";
+        }
+    }
+    private class Witch : GameIdentity
+    {
+        public bool Poison = true;
+        public bool Antidote = true;
+        public Witch()
+        {
+            IdentityType = "Witch";
+        }
     }
     #endregion
 
@@ -99,6 +148,12 @@ public class Wolfman_P8 : GameActivity
                         break;
                     case "StartPrepare":
                         ReceiveStartPrepare();
+                        break;
+                    case "GameStart":
+                        ReceiveGameStart();
+                        break;
+                    case "DistributeIdentity":
+                        ReceiveDistributeIdentity((JObject)data.GetValue("Identity"));
                         break;
                 }
             }
@@ -181,7 +236,7 @@ public class Wolfman_P8 : GameActivity
     {
         //1准备界面
         {
-            bool flag = m_publicProgress == "PlayerReady";
+            bool flag = m_publicProcess == "PlayerReady";
             GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
             getready_panel.SetActive(flag);
             GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
@@ -191,14 +246,20 @@ public class Wolfman_P8 : GameActivity
         }
         //2开始预备界面
         {
-            bool flag = m_publicProgress == "StartPrepare";
+            bool flag = m_publicProcess == "StartPrepare";
             GameObject startprepare_panel = panelObj.transform.Find("bottom/startprepare_panel").gameObject;
             startprepare_panel.SetActive(flag);
             Text text_text = startprepare_panel.transform.Find("info_text").GetComponent<Text>();
             string name = GetIdentityName(m_identitySelect);
             if (string.IsNullOrEmpty(name))
                 name = "随机";
-            text_text.text = string.Format("游戏即将开始！你的期望职业是<color=#FFFF66>【{0}】</color>", name);
+            text_text.text = string.Format("游戏即将开始！你的期望身份是<color=#FFFF66>【{0}】</color>", name);
+        }
+        //3游戏控制界面
+        {
+            bool flag = m_publicProcess == "GameLoop";
+            GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
+            gamecontrol_panel.SetActive(flag);
         }
     }
     private void ClearGameLog()
@@ -259,17 +320,19 @@ public class Wolfman_P8 : GameActivity
                 bool hasPlayer = (bool)jobj.GetValue("HasPlayer");
                 string name = (string)jobj.GetValue("Name");
                 int headNo = (int)jobj.GetValue("HeadNo");
+                bool connected = (bool)jobj.GetValue("Connected");
                 bool isReady = (bool)jobj.GetValue("IsReady");
+                bool isDead = (bool)jobj.GetValue("IsDead");
                 bool isSpeaking = (bool)jobj.GetValue("IsSpeaking");
                 //更新数据
                 PlayerSeatInfo info = m_playerSeatInfos[seatNo];
                 info.HasPlayer = hasPlayer;
                 info.PlayerName = name;
                 info.HeadNo = headNo;
+                info.Connected = connected;
                 info.isReady = isReady;
+                info.isDead = isDead;
                 info.isSpeaking = isSpeaking;
-                //更新界面
-                UpdatePlayerSeat();
             }
         }
         //2同步游戏变量
@@ -277,7 +340,8 @@ public class Wolfman_P8 : GameActivity
             //解析JSON
             JObject gameProperty = (JObject)content.GetValue("GameProperty");
             m_isPlaying = (bool)gameProperty.GetValue("IsPlaying");
-            m_publicProgress = (string)gameProperty.GetValue("PublicProgress");
+            m_publicProcess = (string)gameProperty.GetValue("PublicProcess");
+            m_gameloopProcess = (string)gameProperty.GetValue("GameloopProcess");
             m_dayTime = (int)gameProperty.GetValue("DayTime");
             m_dayNumber = (int)gameProperty.GetValue("DayNumber");
             //系统提示信息
@@ -298,11 +362,10 @@ public class Wolfman_P8 : GameActivity
             m_playerHeadNo = (int)playerProperty.GetValue("PlayerHeadNo");
             m_seatNo = (int)playerProperty.GetValue("SeatNo");
             m_isReady = (bool)playerProperty.GetValue("IsReady");
-            m_isSpeaking = (bool)playerProperty.GetValue("IsSpeaking");
-            m_isVoting = (bool)playerProperty.GetValue("IsVoting");
-            //更新界面
-            UpdateBottomGUI();
         }
+        //4更新界面
+        UpdateBottomGUI();
+        UpdatePlayerSeat();
     }
     private void ExitGameCommand()
     {
@@ -358,7 +421,9 @@ public class Wolfman_P8 : GameActivity
                             info.HasPlayer = true;
                             info.PlayerName = name;
                             info.HeadNo = headNo;
+                            info.Connected = true;
                             info.isReady = false;
+                            info.isDead = false;
                             info.isSpeaking = false;
                         }
                         break;
@@ -369,7 +434,9 @@ public class Wolfman_P8 : GameActivity
                             info.HasPlayer = false;
                             info.PlayerName = "";
                             info.HeadNo = 0;
+                            info.Connected = false;
                             info.isReady = false;
+                            info.isDead = false;
                             info.isSpeaking = false;
                         }
                         break;
@@ -398,18 +465,21 @@ public class Wolfman_P8 : GameActivity
     {
         //重置变量
         m_isPlaying = false;
-        m_publicProgress = "PlayerReady";
+        m_publicProcess = "PlayerReady";
         m_isReady = false;
         m_identity = null;
-        m_isSpeaking = false;
-        m_isVoting = false;
         //切换界面
         UpdateBottomGUI();
     }
     private void ReceiveStartPrepare()
     {
+        m_isReady = false;
         m_isPlaying = true;
-        m_publicProgress = "StartPrepare";
+        m_publicProcess = "StartPrepare";
+        foreach (PlayerSeatInfo seatInfo in m_playerSeatInfos)
+        {
+            seatInfo.isReady = false;
+        }
         //发送身份选择
         {
             JObject cmdJson = new JObject();
@@ -430,15 +500,43 @@ public class Wolfman_P8 : GameActivity
             AddGameLog(logContent);
         }
         //切换界面
+        UpdatePlayerSeat();
         UpdateBottomGUI();
+    }
+    private void ReceiveGameStart()
+    {
+        m_publicProcess = "GameLoop";
+        //1法官通告 开始游戏
+        {
+            ClearGameLog();
+            JObject logContent = new JObject();
+            logContent.Add("LogType", "Judge");
+            logContent.Add("Text", "游戏开始！");
+            AddGameLog(logContent);
+        }
+        //2切换画面
+        UpdateBottomGUI();
+    }
+    private void ReceiveDistributeIdentity(JObject identityJObj)
+    {
+        m_gameloopProcess = "CheckIdentity";
+        m_identity = GetIdentityObj(identityJObj);
+        //1法官通告身份信息
+        {
+            JObject logContent = new JObject();
+            logContent.Add("LogType", "Judge");
+            string text = string.Format("你的身份是<color=#FF0033>【{0}】</color>", GetIdentityName(m_identity.IdentityType));
+            logContent.Add("Text", text);
+            AddGameLog(logContent);
+        }
     }
     #endregion
 
     #region 工具函数
-    private string GetIdentityName(string identity)
+    private string GetIdentityName(string identityType)
     {
         string name = "";
-        switch (identity)
+        switch (identityType)
         {
             case "Villager":
                 name = "村民";
@@ -460,6 +558,49 @@ public class Wolfman_P8 : GameActivity
                 break;
         }
         return name;
+    }
+    private GameIdentity GetIdentityObj(JObject identityJObj)
+    {
+        GameIdentity identityObj = null;
+        string identityType = (string)identityJObj.GetValue("IdentityType");
+        bool isDead = (bool)identityJObj.GetValue("IsDead");
+        int gameCamp = (int)identityJObj.GetValue("GameCamp");
+        string currentAction = (string)identityJObj.GetValue("CurrentAction");
+        switch (identityType)
+        {
+            case "Villager":
+                identityObj = new Villager();
+                break;
+            case "Wolfman":
+                identityObj = new Wolfman();
+                break;
+            case "Prophet":
+                identityObj = new Prophet();
+                break;
+            case "Hunter":
+                identityObj = new Hunter();
+                break;
+            case "Defender":
+                identityObj = new Defender();
+                {
+                    Defender defender = (Defender)identityObj;
+                    defender.LastDefendNo = (int)identityJObj.GetValue("LastDefendNo");
+                }
+                break;
+            case "Witch":
+                identityObj = new Witch();
+                {
+                    Witch witch = (Witch)identityObj;
+                    witch.Antidote = (bool)identityJObj.GetValue("Antidote");
+                    witch.Poison = (bool)identityJObj.GetValue("Poison");
+                }
+                break;
+        }
+        identityObj.isDead = isDead;
+        identityObj.GameCamp = gameCamp;
+        identityObj.CurrentAction = currentAction;
+
+        return identityObj;
     }
     #endregion
 }

@@ -95,7 +95,8 @@ namespace GamePlatformServer.GameServer.GameModuels
         private IDictionary<string, PlayerSeat> m_playerMapper;
         private IEnumerator<int> m_gameFlowLoop;
         private bool m_isPlaying = false;
-        private string m_publicProgress = "";
+        private string m_publicProcess = "";
+        private string m_gameloopProcess = "";
         private int m_dayTime = 0;
         private int m_dayNumber = 0;
         private class PlayerSeat
@@ -109,34 +110,63 @@ namespace GamePlatformServer.GameServer.GameModuels
             public bool HasPlayer = false;
             public bool Connected = false;
             //狼人游戏字段
+            public string IdentityExpection = "";
             public bool isReady = false;
             public GameIdentity Identity = null;
-            public string IdentityExpection = "";
-            public bool isSpeaking = false;
-            public bool isVoting = false;
         }
         private PlayerSeat[] m_playerSeats;
         private class GameIdentity
         {
-            public bool isDead = false;
             public string IdentityType = "Default";
+            public string CurrentAction = "";
+            public bool isDead = false;
             public IList<object> OperationFlags = new List<object>();
             public int GameCamp = 0;
         }
         private class Villager : GameIdentity
-        { }
+        {
+            public Villager()
+            {
+                IdentityType = "Villager";
+            }
+        }
         private class Wolfman : GameIdentity
-        { }
+        {
+            public Wolfman()
+            {
+                IdentityType = "Wolfman";
+            }
+        }
         private class Prophet : GameIdentity
-        { }
+        {
+            public Prophet()
+            {
+                IdentityType = "Prophet";
+            }
+        }
         private class Hunter : GameIdentity
-        { }
+        {
+            public Hunter()
+            {
+                IdentityType = "Hunter";
+            }
+        }
         private class Defender : GameIdentity
-        { }
+        {
+            public int LastDefendNo = -1;
+            public Defender()
+            {
+                IdentityType = "Defender";
+            }
+        }
         private class Witch : GameIdentity
         {
             public bool Poison = true;
             public bool Antidote = true;
+            public Witch()
+            {
+                IdentityType = "Witch";
+            }
         }
 
 
@@ -157,10 +187,14 @@ namespace GamePlatformServer.GameServer.GameModuels
                         JObject jobj = new JObject();
                         jobj.Add("SeatNo", seat.SeatNo);
                         jobj.Add("HasPlayer", seat.HasPlayer);
-                        jobj.Add("IsReady", seat.isReady);
                         jobj.Add("Name", seat.PlayerName);
                         jobj.Add("HeadNo", seat.PlayerHeadNo);
-                        jobj.Add("IsSpeaking", seat.isSpeaking);
+                        jobj.Add("Connected", seat.Connected);
+                        jobj.Add("IsReady", seat.isReady);
+                        bool isDead = seat.Identity != null ? seat.Identity.isDead : false;
+                        jobj.Add("IsDead", isDead);
+                        bool isSpeaking = seat.Identity != null ? (seat.Identity.CurrentAction == "Speaking") : false;
+                        jobj.Add("IsSpeaking", isSpeaking);
                         playerSeatArray.Add(jobj);
                     }
                     content.Add("PlayerSeatArray", playerSeatArray);
@@ -168,7 +202,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                     JObject gameProperty = new JObject();
                     {
                         gameProperty.Add("IsPlaying", m_isPlaying);
-                        gameProperty.Add("PublicProgress", m_publicProgress);
+                        gameProperty.Add("PublicProcess", m_publicProcess);
+                        gameProperty.Add("GameloopProcess", m_gameloopProcess);               
                         gameProperty.Add("DayTime", m_dayTime);
                         gameProperty.Add("DayNumber", m_dayNumber);
                     }
@@ -181,8 +216,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                         playerProperty.Add("PlayerHeadNo", playerSeat.PlayerHeadNo);
                         playerProperty.Add("SeatNo", playerSeat.SeatNo);
                         playerProperty.Add("IsReady", playerSeat.isReady);
-                        playerProperty.Add("IsSpeaking", playerSeat.isSpeaking);
-                        playerProperty.Add("IsVoting", playerSeat.isVoting);
                     }
                     content.Add("PlayerProperty", playerProperty);
                 }
@@ -212,7 +245,6 @@ namespace GamePlatformServer.GameServer.GameModuels
             seat.PlayerHeadNo = info.IconNo;
             seat.PlayerName = info.Name;
             seat.isReady = false;
-            seat.isSpeaking = false;
             //2整理关系
             m_playerMapper[playerId] = seat;
             //3通知客户端
@@ -242,7 +274,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                 seat.PlayerHeadNo = 0;
                 seat.Connected = false;
                 seat.isReady = false;
-                seat.isSpeaking = false;
                 m_playerMapper.Remove(seat.PlayerId);
                 //2通知游戏客户端
                 JObject jsonObj = new JObject();
@@ -313,11 +344,9 @@ namespace GamePlatformServer.GameServer.GameModuels
                 seat.isReady = false;
                 seat.Identity = null;
                 seat.IdentityExpection = "";
-                seat.isSpeaking = false;
-                seat.isVoting = false;
             }
             m_isPlaying = false;
-            m_publicProgress = "PlayerReady";
+            m_publicProcess = "PlayerReady";
             //2发送信息
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "Reset");
@@ -326,8 +355,12 @@ namespace GamePlatformServer.GameServer.GameModuels
         private void GameStartPrepare()
         {
             //1设置变量
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                seat.isReady = false;
+            }
             m_isPlaying = true;
-            m_publicProgress = "StartPrepare";
+            m_publicProcess = "StartPrepare";
             //2发送信息
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "StartPrepare");
@@ -335,7 +368,101 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private void GameStart()
         {
-
+            m_publicProcess = "GameLoop";
+            //1发送消息
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "GameStart");
+            BroadMessage(jsonObj.ToString());
+        }
+        private void DistributeIdentity()
+        {
+            m_gameloopProcess = "CheckIdentity";
+            //1定义身份池
+            List<string> identityPool = new List<string>
+            { "Villager", "Villager", "Wolfman", "Wolfman", "Prophet", "Hunter", "Defender", "Witch" };
+            //2汇总各个身份的玩家期望
+            IDictionary<string, IList<int>> expectionGroup = new Dictionary<string, IList<int>>();
+            foreach(PlayerSeat seat in m_playerSeats)
+            {
+                string expection = seat.IdentityExpection;
+                if (!expectionGroup.ContainsKey(expection))
+                    expectionGroup[expection] = new List<int>();
+                expectionGroup[expection].Add(seat.SeatNo);
+            }
+            //3分配身份
+            IList<int> randomSeatNoList = new List<int>();
+            IDictionary<int, string> seatNoIdentityMapper = new Dictionary<int, string>();
+            //3.1优先分配
+            foreach(KeyValuePair<string, IList<int>> kv in expectionGroup)
+            {
+                string identity = kv.Key;
+                IList<int> seatNos = new List<int>(kv.Value);
+                while(seatNos.Count > 0)
+                {
+                    Random random = new Random();
+                    int seatNoIdx = (int)(random.NextDouble() * seatNos.Count);
+                    int seatNo = seatNos[seatNoIdx];
+                    seatNos.RemoveAt(seatNoIdx);
+                    int identityIdx = identityPool.FindIndex(a => a == identity);
+                    if(identityIdx >= 0)
+                    {
+                        seatNoIdentityMapper[seatNo] = identity;
+                        identityPool.RemoveAt(identityIdx);
+                    }
+                    else
+                    {
+                        randomSeatNoList.Add(seatNo);
+                    }
+                }
+            }
+            //3.2随机分配
+            foreach(int seatNo in randomSeatNoList)
+            {
+                Random random = new Random();
+                int identityIdx = (int)(random.NextDouble() * identityPool.Count);
+                seatNoIdentityMapper[seatNo] = identityPool[identityIdx];
+                identityPool.RemoveAt(identityIdx);
+            }
+            //4按照最终的分配情况玩家作为变量
+            foreach(KeyValuePair<int, string> kv in seatNoIdentityMapper)
+            {
+                int seatNo = kv.Key;
+                string identity = kv.Value;
+                GameIdentity identityObj = null;
+                switch (identity)
+                {
+                    case "Villager":
+                        identityObj = new Villager();
+                        break;
+                    case "Wolfman":
+                        identityObj = new Wolfman();
+                        break;
+                    case "Prophet":
+                        identityObj = new Prophet();
+                        break;
+                    case "Hunter":
+                        identityObj = new Hunter();
+                        break;
+                    case "Defender":
+                        identityObj = new Defender();
+                        break;
+                    case "Witch":
+                        identityObj = new Witch();
+                        break;
+                }
+                m_playerSeats[seatNo].Identity = identityObj;
+            }
+            //5向各个玩家广播身份信息
+            foreach(PlayerSeat seat in m_playerSeats)
+            {
+                if (seat.Connected)
+                {
+                    JObject jsonObj = new JObject();
+                    jsonObj.Add("Action", "DistributeIdentity");
+                    jsonObj.Add("Identity", GetIdentityJObject(seat.Identity));
+                    BroadMessage(jsonObj.ToString());
+                }
+            }
         }
         private void Nightfall()
         {
@@ -363,11 +490,10 @@ namespace GamePlatformServer.GameServer.GameModuels
                 stopwatch.Restart();
                 while (stopwatch.ElapsedMilliseconds < 3000)
                     yield return 0;
-                //游戏正式开始 等待3秒...
+                //游戏正式开始
                 GameStart();
-                while (stopwatch.ElapsedMilliseconds < 3000)
-                    yield return 0;
                 //分配身份
+                DistributeIdentity();
                 while (true)
                     yield return 0;
             }
@@ -386,6 +512,31 @@ namespace GamePlatformServer.GameServer.GameModuels
             if (count == onlineCount)
                 return true;
             return false;
+        }
+        private JObject GetIdentityJObject(GameIdentity identity)
+        {
+            JObject identityJObj = new JObject();
+            identityJObj.Add("IsDead", identity.isDead);
+            identityJObj.Add("IdentityType", identity.IdentityType);
+            identityJObj.Add("GameCamp", identity.GameCamp);
+            identityJObj.Add("CurrentAction", identity.CurrentAction);
+            switch (identity.IdentityType)
+            {
+                case "Defender":
+                    {
+                        Defender defender = (Defender)identity;
+                        identityJObj.Add("LastDefendNo", defender.LastDefendNo);
+                    } 
+                    break;
+                case "Witch":
+                    {
+                        Witch witch = (Witch)identity;
+                        identityJObj.Add("Antidote", witch.Antidote);
+                        identityJObj.Add("Poison", witch.Poison);
+                    }
+                    break;
+            }
+            return identityJObj;
         }
         #endregion
 
