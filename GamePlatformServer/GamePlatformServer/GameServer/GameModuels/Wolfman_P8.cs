@@ -377,6 +377,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         private void DistributeIdentity()
         {
             m_gameloopProcess = "CheckIdentity";
+            Random random = new Random();
             //1定义身份池
             List<string> identityPool = new List<string>
             { "Villager", "Villager", "Wolfman", "Wolfman", "Prophet", "Hunter", "Defender", "Witch" };
@@ -399,7 +400,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 IList<int> seatNos = new List<int>(kv.Value);
                 while(seatNos.Count > 0)
                 {
-                    Random random = new Random();
+
                     int seatNoIdx = (int)(random.NextDouble() * seatNos.Count);
                     int seatNo = seatNos[seatNoIdx];
                     seatNos.RemoveAt(seatNoIdx);
@@ -416,9 +417,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                 }
             }
             //3.2随机分配
-            foreach(int seatNo in randomSeatNoList)
+            foreach (int seatNo in randomSeatNoList)
             {
-                Random random = new Random();
                 int identityIdx = (int)(random.NextDouble() * identityPool.Count);
                 seatNoIdentityMapper[seatNo] = identityPool[identityIdx];
                 identityPool.RemoveAt(identityIdx);
