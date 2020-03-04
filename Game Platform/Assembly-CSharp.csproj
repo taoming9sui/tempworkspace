@@ -69,6 +69,8 @@
     <Compile Include="Assets\Scripts\GameActivities\Wolfman_P8\PlayerSeat.cs" />
     <Compile Include="Assets\Scripts\GameActivities\Wolfman_P8\Wolfman_P8.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
+    <Compile Include="Assets\Scripts\ResourceManager.cs" />
+    <Compile Include="Assets\Scripts\TextManager.cs" />
     <Compile Include="Assets\Scripts\UIEffects\FlyInto.cs" />
     <Compile Include="Assets\Scripts\Utils\AudioData.cs" />
     <Compile Include="Assets\Scripts\Utils\AudioPlayer.cs" />

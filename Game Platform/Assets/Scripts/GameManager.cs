@@ -8,8 +8,6 @@ using WebSocketSharp;
 public class GameManager : MonoBehaviour
 {
     static public GameManager Instance;
-    public IDictionary<string, GameInfo> GameInfoSet { get; private set; }
-    public Texture2D[] PlayerHeads { get; private set; }
     public bool HasConnection { get { return m_websocket == null ? false : m_websocket.IsAlive; } }
 
     public string serverIP = "localhost";
@@ -28,17 +26,6 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        //初始化 游戏记录信息
-        {
-            GameInfoSet = new Dictionary<string, GameInfo>();
-            GameInfoSet["Wolfman_P8"] = new GameInfo("Wolfman_P8", "狼人杀8人", "Wolfman_P8");
-        }
-        //初始化 头像记录信息
-        {
-            PlayerHeads = new Texture2D[0];
-            Texture2D[] textures = Resources.LoadAll<Texture2D>("Profile Pictrues");
-            PlayerHeads = textures;
-        }
     }
 
     private void Start()
@@ -243,20 +230,5 @@ public class GameManager : MonoBehaviour
     }
     #endregion
 
-    #region 游戏条目类
-    public class GameInfo
-    {
-        public GameInfo(string id, string name, string activity)
-        {
-            GameId = id;
-            GameName = name;
-            GameActivity = activity;
-        }
-
-        public string GameId { get; private set; }
-        public string GameName { get; private set; }
-        public string GameActivity { get; private set; }
-    }
-    #endregion
 
 }

@@ -50,8 +50,9 @@ public class MainTheme : GameActivity
                         break;
                     case "Tip":
                         {
-                            string content = data.GetValue("Content").ToString();
-                            this.TipModel(content);
+                            string resultCode = data.GetValue("Content").ToString();
+                            string text = TextManager.Instance.GetResultCodeText(resultCode);
+                            this.TipModel(text);
                         }
                         break;
                 }

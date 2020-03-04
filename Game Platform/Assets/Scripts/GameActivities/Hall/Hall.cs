@@ -33,6 +33,9 @@ public class Hall : GameActivity
         m_roomPageSize = roomItems.Length;
         //初始化计时器项目
         InitTimer();
+    }
+    private void Start()
+    {
         //初始化下拉框选项
         InitDropdown();
     }
@@ -86,8 +89,9 @@ public class Hall : GameActivity
                         break;
                     case "Tip":
                         {
-                            string content = data.GetValue("Content").ToString();
-                            this.TipModel(content);
+                            string resultCode = data.GetValue("Content").ToString();
+                            string text = TextManager.Instance.GetResultCodeText(resultCode);
+                            this.TipModel(text);
                         }
                         break;
                     case "ResponseHallInfo":
@@ -309,6 +313,32 @@ public class Hall : GameActivity
     }
     #endregion
 
+    private void InitDropdown()
+    {
+        {
+            DropdownHandler dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
+            dropdown.ClearItems();
+            dropdown.AddItem(null, "所有");
+            foreach (ResourceManager.GameInfo info in ResourceManager.Instance.GameInfoSet.Values)
+                dropdown.AddItem(info, info.GameName);
+        }
+        {
+            DropdownHandler dropdown = panelObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
+            dropdown.ClearItems();
+            foreach (ResourceManager.GameInfo info in ResourceManager.Instance.GameInfoSet.Values)
+                dropdown.AddItem(info, info.GameName);
+        }
+        {
+            DropdownHandler dropdown = panelObj.transform.Find("changeplayerinfo_model/model/head_dropdown").GetComponent<DropdownHandler>();
+            dropdown.ClearItems();
+            for (int i = 0; i < ResourceManager.Instance.PlayerHeadTextures.Length; i++)
+            {
+                Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[i];
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                dropdown.AddItem(i, "", sprite);
+            }
+        }
+    }
     private void InitTimer()
     {
         m_updateTimerSet["RoomListRequest"] = 0f;
@@ -324,32 +354,6 @@ public class Hall : GameActivity
         {
             m_updateTimerSet["RoomListRequest"] = 0f;
             this.RequestHallInfo();
-        }
-    }
-    private void InitDropdown()
-    {
-        {
-            DropdownHandler dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
-            dropdown.ClearItems();
-            dropdown.AddItem(null, "所有");
-            foreach (GameManager.GameInfo info in GameManager.Instance.GameInfoSet.Values)
-                dropdown.AddItem(info, info.GameName);
-        }
-        {
-            DropdownHandler dropdown = panelObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
-            dropdown.ClearItems();
-            foreach (GameManager.GameInfo info in GameManager.Instance.GameInfoSet.Values)
-                dropdown.AddItem(info, info.GameName);
-        }
-        {
-            DropdownHandler dropdown = panelObj.transform.Find("changeplayerinfo_model/model/head_dropdown").GetComponent<DropdownHandler>();
-            dropdown.ClearItems();
-            for (int i = 0; i < GameManager.Instance.PlayerHeads.Length; i++)
-            {
-                Texture2D texture = GameManager.Instance.PlayerHeads[i];
-                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                dropdown.AddItem(i, "", sprite);
-            }
         }
     }
     private void ClearChat()
@@ -433,7 +437,7 @@ public class Hall : GameActivity
         Text playerid_text = panelObj.transform.Find("infopanel/playerid_text").GetComponent<Text>();
         Text playername_text = panelObj.transform.Find("infopanel/playername_text").GetComponent<Text>();
         Text playerpoint_text = panelObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
-        Texture2D texture = GameManager.Instance.PlayerHeads[m_playerHeadNo];
+        Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[m_playerHeadNo];
         player_photo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         playerid_text.text = string.Format("ID：{0}", m_playerId);
         playername_text.text = m_playerName;
@@ -493,8 +497,8 @@ public class Hall : GameActivity
             roomInfo.GameId = (string)jobj.GetValue("GameId");
             string gameName = "";
             {
-                GameManager.GameInfo gameInfo = null;
-                GameManager.Instance.GameInfoSet.TryGetValue(roomInfo.GameId, out gameInfo);
+                ResourceManager.GameInfo gameInfo = null;
+                ResourceManager.Instance.GameInfoSet.TryGetValue(roomInfo.GameId, out gameInfo);
                 if (gameInfo != null)
                     gameName = gameInfo.GameName;
             }
@@ -521,7 +525,7 @@ public class Hall : GameActivity
             string gameId = "";
             {
                 DropdownHandler filtergame_dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
-                GameManager.GameInfo gameInfo = (GameManager.GameInfo)filtergame_dropdown.SelectedValue;
+                ResourceManager.GameInfo gameInfo = (ResourceManager.GameInfo)filtergame_dropdown.SelectedValue;
                 if (gameInfo != null)
                     gameId = gameInfo.GameId;
             }
@@ -627,7 +631,7 @@ public class Hall : GameActivity
     private void JoinRoomSuccess(string gameId, string roomId)
     {
         //加入成功 跳转游戏活动
-        GameManager.GameInfo gameinfo = GameManager.Instance.GameInfoSet[gameId];
+        ResourceManager.GameInfo gameinfo = ResourceManager.Instance.GameInfoSet[gameId];
         GameManager.Instance.SetActivity(gameinfo.GameActivity);
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
