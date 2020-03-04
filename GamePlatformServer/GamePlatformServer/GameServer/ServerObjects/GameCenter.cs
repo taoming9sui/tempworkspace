@@ -211,20 +211,20 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 Regex playerId_reg = new Regex(@"^[a-zA-Z0-9]{8,20}$");  //8-20位的数字/字母大小写
                 Regex password_reg = new Regex(@"^.{8,20}$"); //8-20位密码
                 if (!playerId_reg.IsMatch(playerId))
-                    throw new InfoException("用户名格式错误");
+                    throw new InfoException("gamecenter.register.playerid_illegal");
                 if (!password_reg.IsMatch(password))
-                    throw new InfoException("密码格式错误");
+                    throw new InfoException("gamecenter.register.password_illegal");
                 //写入数据库
                 m_centerDBAgent.PlayerRegister(playerId, password);
                 flag = true;
             }
             catch (InfoException ex)
             {
-                CenterUserTip(socketId, ex.Message);
+                CenterUserTip(socketId, ex.ResultCode);
             }
             catch
             {
-                CenterUserTip(socketId, "意料之外的错误");
+                CenterUserTip(socketId, "gamecenter.register.exception");
                 throw;
             }
 
@@ -246,22 +246,22 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 m_centerDBAgent.PlayerLogin(playerId, password);
                 //2检查该Socket是否已经登录账户
                 if (m_mapperSocketIdtoPlayerId.ContainsKey(socketId))
-                    throw new InfoException("你已经登录一个账户");
+                    throw new InfoException("gamecenter.login.socket_logged");
                 //3检查该用户是否已被Socket登录
                 CenterPlayer player = null;
                 m_playerSet.TryGetValue(playerId, out player);
                 if (player != null)
                     if (player.SocketId != null)
-                        throw new InfoException("该玩家已登录");
+                        throw new InfoException("gamecenter.login.player_logged");
                 flag = true;
             }
             catch (InfoException ex)
             {
-                CenterUserTip(socketId, ex.Message);
+                CenterUserTip(socketId, ex.ResultCode);
             }
             catch
             {
-                CenterUserTip(socketId, "意料之外的错误");
+                CenterUserTip(socketId, "gamecenter.login.exception");
                 throw;
             }
 
@@ -513,14 +513,14 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             if (player.InRoomId != null)
             {
-                HallUserTip(player, "已经在一个房间中");
+                HallUserTip(player, "gamecenter.createroom.playerjoined_room");
                 return;
             }
             {
-                Regex roomTitle_reg = new Regex(@"^.{0,16}$");  //3-16位任意
+                Regex roomTitle_reg = new Regex(@"^.{3,16}$");  //3-16位任意
                 if (!roomTitle_reg.IsMatch(roomCaption))
                 {
-                    HallUserTip(player, "房间名格式错误");
+                    HallUserTip(player, "gamecenter.createroom.illegal_caption");
                     return;
                 }
             }
@@ -528,7 +528,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 Regex roomPassword_reg = new Regex(@"^.{0,16}$");  //0-16位任意
                 if (!roomPassword_reg.IsMatch(roomPassword))
                 {
-                    HallUserTip(player, "房间密码格式错误");
+                    HallUserTip(player, "gamecenter.createroom.illegal_password");
                     return;
                 }
             }
@@ -558,29 +558,29 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             if (player.InRoomId != null)
             {
-                HallUserTip(player, "已经在一个房间中");
+                HallUserTip(player, "gamecenter.joinroom.playerjoined_room");
                 return;
             }
             CenterRoom room = null;
             m_roomSet.TryGetValue(roomId, out room);
             if (room == null)
             {
-                HallUserTip(player, "意料之外的房间");
+                HallUserTip(player, "gamecenter.joinroom.illegal_room");
                 return;
             }
             if (room.RoomStatus == CenterRoom.Status.Full)
             {
-                HallUserTip(player, "房间已满员");
+                HallUserTip(player, "gamecenter.joinroom.room_full");
                 return;
             }
             if (room.RoomStatus == CenterRoom.Status.Playing)
             {
-                HallUserTip(player, "该房间正在进行中");
+                HallUserTip(player, "gamecenter.joinroom.room_playing");
                 return;
             }
             if (room.RoomPassword != null && !room.RoomPassword.Equals(password))
             {
-                HallUserTip(player, "房间密码错误");
+                HallUserTip(player, "gamecenter.joinroom.password_wrong");
                 return;
             }
 
@@ -674,14 +674,19 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 //输入格式校验
                 Regex playerName_reg = new Regex(@"^.{3,12}$");  //3-12位任意
                 if (!playerName_reg.IsMatch(name))
-                    throw new InfoException("昵称格式错误");
+                    throw new InfoException("gamecenter.changeplayerinfo.playername_illegal");
                 //写入数据库
                 m_centerDBAgent.UpdatePlayerInfo(player.PlayerId, info);
                 flag = true;
             }
             catch (InfoException ex)
             {
-                HallUserTip(player, ex.Message);
+                HallUserTip(player, ex.ResultCode);
+            }
+            catch
+            {
+                HallUserTip(player, "gamecenter.changeplayerinfo.exception");
+                throw;
             }
             //入库成功
             if (flag)
