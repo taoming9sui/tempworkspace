@@ -30,7 +30,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        SetActivity("MainTheme");
+        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["MainTheme"].ActivityPrefab;
+        GameManager.Instance.SetActivity(prefab);
     }
 
     private void Update()
@@ -139,26 +140,18 @@ public class GameManager : MonoBehaviour
         Application.Quit();
 #endif
     }
-    public void SetActivity(string activity, Object param = null)
+    public void SetActivity(GameObject activityPrefab, Object param = null)
     {
         if (this.currentActivity != null)
         {
             this.currentActivity.OnActivityDisabled();
-            this.currentActivity.gameObject.SetActive(false);
+            Destroy(this.currentActivity.gameObject);
         }
 
-        Transform activityTran = this.activitiesObj.transform.Find(activity);
-        if (activityTran != null)
-        {
-            GameActivity gameActivity = activityTran.GetComponent<GameActivity>();
-            this.currentActivity = gameActivity;
-            gameActivity.gameObject.SetActive(true);
-            gameActivity.OnActivityEnabled(param);
-        }
-        else
-        {
-            Debug.Log("未定义的Activity");
-        }
+        GameObject activityObj = GameObject.Instantiate(activityPrefab, activitiesObj.transform);
+        GameActivity activity = activityObj.GetComponent<GameActivity>();
+        this.currentActivity = activity;
+        activity.OnActivityEnabled(param);
     }
     public bool SocketConnect()
     {

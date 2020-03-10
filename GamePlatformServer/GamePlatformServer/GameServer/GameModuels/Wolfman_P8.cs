@@ -91,7 +91,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         #endregion
 
-        #region 具体逻辑
+        #region 服务端变量
         private IDictionary<string, PlayerSeat> m_playerMapper;
         private IEnumerator<int> m_gameFlowLoop;
         private bool m_isPlaying = false;
@@ -175,60 +175,113 @@ namespace GamePlatformServer.GameServer.GameModuels
                 IdentityType = "Witch";
             }
         }
+        #endregion
 
+        #region JSON视图模型
+        private JObject GetModelView(PlayerSeat playerSeat)
+        {
+            JObject modelView = new JObject();
+            //1玩家列表名片状态
+            JArray playerSeatArray = GetPlayerSeatJArray();
+            modelView.Add("PlayerSeatArray", playerSeatArray);
+            //2游戏全局属性
+            JObject gameProperty = GetGamePropertyJObject();
+            modelView.Add("GameProperty", gameProperty);
+            //3该玩家当前属性
+            JObject playerProperty = GetPlayerPropertyJObject(playerSeat);
+            modelView.Add("PlayerProperty", playerProperty);
+            return modelView;
+        }
+        private JArray GetPlayerSeatJArray()
+        {
+            JArray jArray = new JArray();
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                JObject jobj = GetPlayerSeatJArrayItem(seat);
+                jArray.Add(jobj);
+            }
+            return jArray;
+        }
+        private JObject GetPlayerSeatJArrayItem(PlayerSeat playerSeat)
+        {
+            JObject jobj = new JObject();
+            jobj.Add("SeatNo", playerSeat.SeatNo);
+            jobj.Add("HasPlayer", playerSeat.HasPlayer);
+            jobj.Add("Name", playerSeat.PlayerName);
+            jobj.Add("HeadNo", playerSeat.PlayerHeadNo);
+            jobj.Add("Connected", playerSeat.Connected);
+            jobj.Add("IsSpeaking", playerSeat.isSpeaking);
+            jobj.Add("IsReady", playerSeat.isReady);
+            bool isDead = playerSeat.Identity != null ? playerSeat.Identity.isDead : false;
+            jobj.Add("IsDead", isDead);
 
+            return jobj;
+        }
+        private JObject GetGamePropertyJObject()
+        {
+            JObject jobj = new JObject();
+            {
+                jobj.Add("IsPlaying", m_isPlaying);
+                jobj.Add("PublicProcess", m_publicProcess);
+                jobj.Add("GameloopProcess", m_gameloopProcess);
+                jobj.Add("DayTime", (int)m_dayTime);
+                jobj.Add("DayNumber", m_dayNumber);
+            }
+            return jobj;
+        }
+        private JObject GetPlayerPropertyJObject(PlayerSeat playerSeat)
+        {
+            JObject jobj = new JObject();
+            {
+                jobj.Add("PlayerId", playerSeat.PlayerId);
+                jobj.Add("PlayerName", playerSeat.PlayerName);
+                jobj.Add("PlayerHeadNo", playerSeat.PlayerHeadNo);
+                jobj.Add("SeatNo", playerSeat.SeatNo);
+                jobj.Add("IsSpeaking", playerSeat.isSpeaking);
+                jobj.Add("IsReady", playerSeat.isReady);
+                JToken identityJObj = playerSeat.Identity != null ? GetIdentityJObject(playerSeat.Identity) : null;
+                jobj.Add("Identity", identityJObj);
+            }
+            return jobj;
+        }
+        private JObject GetIdentityJObject(GameIdentity identity)
+        {
+
+            JObject identityJObj = new JObject();
+            identityJObj.Add("IsDead", identity.isDead);
+            identityJObj.Add("IdentityType", identity.IdentityType);
+            identityJObj.Add("GameCamp", identity.GameCamp);
+            identityJObj.Add("CurrentAction", identity.CurrentAction);
+            switch (identity.IdentityType)
+            {
+                case "Defender":
+                    {
+                        Defender defender = (Defender)identity;
+                        identityJObj.Add("LastDefendNo", defender.LastDefendNo);
+                    }
+                    break;
+                case "Witch":
+                    {
+                        Witch witch = (Witch)identity;
+                        identityJObj.Add("Antidote", witch.Antidote);
+                        identityJObj.Add("Poison", witch.Poison);
+                    }
+                    break;
+            }
+            return identityJObj;
+        }
+        #endregion
+
+        #region 具体逻辑
         private void PlayerSynchronizeGame(string playerId)
         {
-            PlayerSeat playerSeat = null;
-            if (m_playerMapper.TryGetValue(playerId, out playerSeat))
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
             {
-                //构建JSON并返回
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "ResponseGameStatus");
-                JObject content = new JObject();
-                {
-                    //1玩家列表名片状态
-                    JArray playerSeatArray = new JArray();
-                    foreach (PlayerSeat seat in m_playerSeats)
-                    {
-                        JObject jobj = new JObject();
-                        jobj.Add("SeatNo", seat.SeatNo);
-                        jobj.Add("HasPlayer", seat.HasPlayer);
-                        jobj.Add("Name", seat.PlayerName);
-                        jobj.Add("HeadNo", seat.PlayerHeadNo);
-                        jobj.Add("Connected", seat.Connected);
-                        jobj.Add("IsSpeaking", seat.isSpeaking);
-                        jobj.Add("IsReady", seat.isReady);
-                        bool isDead = seat.Identity != null ? seat.Identity.isDead : false;
-                        jobj.Add("IsDead", isDead);
-                        playerSeatArray.Add(jobj);
-                    }
-                    content.Add("PlayerSeatArray", playerSeatArray);
-                    //2游戏全局属性
-                    JObject gameProperty = new JObject();
-                    {
-                        gameProperty.Add("IsPlaying", m_isPlaying);
-                        gameProperty.Add("PublicProcess", m_publicProcess);
-                        gameProperty.Add("GameloopProcess", m_gameloopProcess);               
-                        gameProperty.Add("DayTime", (int)m_dayTime);
-                        gameProperty.Add("DayNumber", m_dayNumber);
-                    }
-                    content.Add("GameProperty", gameProperty);
-                    //3该玩家当前属性
-                    JObject playerProperty = new JObject();
-                    {
-                        playerProperty.Add("PlayerId", playerSeat.PlayerId);
-                        playerProperty.Add("PlayerName", playerSeat.PlayerName);
-                        playerProperty.Add("PlayerHeadNo", playerSeat.PlayerHeadNo);
-                        playerProperty.Add("SeatNo", playerSeat.SeatNo);
-                        playerProperty.Add("IsSpeaking", playerSeat.isSpeaking);
-                        playerProperty.Add("IsReady", playerSeat.isReady);
-                        JToken identityJObj = playerSeat.Identity != null ? GetIdentityJObject(playerSeat.Identity) : null;
-                        playerProperty.Add("Identity", identityJObj);
-                    }
-                    content.Add("PlayerProperty", playerProperty);
-                }
-                jsonObj.Add("Content", content);
+                JObject modelViewObj = this.GetModelView(seat);
+                jsonObj.Add("ModelView", modelViewObj);
                 SendMessage(playerId, jsonObj.ToString());
             }
         }
@@ -260,16 +313,14 @@ namespace GamePlatformServer.GameServer.GameModuels
             //3通知客户端
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "SeatChange");
-            JArray content = new JArray();
+            JArray changeArray = new JArray();
             {
-                JObject changeObj = new JObject();
-                changeObj.Add("Change", "Join");
-                changeObj.Add("Name", seat.PlayerName);
-                changeObj.Add("HeadNo", seat.PlayerHeadNo);
-                changeObj.Add("SeatNo", seat.SeatNo);
-                content.Add(changeObj);
+                JObject change = new JObject(); 
+                change.Add("JPath", string.Format("PlayerSeatArray[{0}]", seat.SeatNo));
+                change.Add("Value", GetPlayerSeatJArrayItem(seat));
+                changeArray.Add(change);
             }
-            jsonObj.Add("Content", content);
+            jsonObj.Add("ModelViewChange", changeArray);
             BroadMessage(jsonObj.ToString());
         }
         private void PlayerLeaveGame(string playerId)
@@ -286,47 +337,53 @@ namespace GamePlatformServer.GameServer.GameModuels
                 seat.isReady = false;
                 seat.isSpeaking = false;
                 m_playerMapper.Remove(seat.PlayerId);
-                //2通知游戏客户端
+                //2通知客户端
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "SeatChange");
-                JArray content = new JArray();
+                JArray changeArray = new JArray();
                 {
-                    JObject changeObj = new JObject();
-                    changeObj.Add("Change", "Leave");
-                    changeObj.Add("SeatNo", seat.SeatNo);
-                    content.Add(changeObj);
+                    JObject change = new JObject();
+                    change.Add("JPath", string.Format("PlayerSeatArray[{0}]", seat.SeatNo));
+                    change.Add("Value", GetPlayerSeatJArrayItem(seat));
+                    changeArray.Add(change);
                 }
-                jsonObj.Add("Content", content);
+                jsonObj.Add("ModelViewChange", changeArray);
                 BroadMessage(jsonObj.ToString());
             }
         }
         private void PlayerReady(string playerId, bool ready)
         {
-            PlayerSeat player = null;
-            if (m_playerMapper.TryGetValue(playerId, out player))
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
             {
                 //车准备好了
-                player.isReady = ready;
+                seat.isReady = ready;
                 //响应客户端
                 {
                     JObject jsonObj = new JObject();
                     jsonObj.Add("Action", "ReadyResponse");
-                    jsonObj.Add("Ready", player.isReady);
+                    JArray changeArray = new JArray();
+                    {
+                        JObject change = new JObject();
+                        change.Add("JPath", "PlayerProperty.IsReady");
+                        change.Add("Value", ready);
+                        changeArray.Add(change);
+                    }
+                    jsonObj.Add("ModelViewChange", changeArray);
                     SendMessage(playerId, jsonObj.ToString());
                 }
                 //广播变更
                 {
                     JObject jsonObj = new JObject();
                     jsonObj.Add("Action", "SeatChange");
-                    JArray content = new JArray();
+                    JArray changeArray = new JArray();
                     {
-                        JObject changeObj = new JObject();
-                        changeObj.Add("Change", "Ready");
-                        changeObj.Add("SeatNo", player.SeatNo);
-                        changeObj.Add("IsReady", player.isReady);
-                        content.Add(changeObj);
+                        JObject change = new JObject();
+                        change.Add("JPath", string.Format("PlayerSeatArray[{0}].IsReady", seat.SeatNo));
+                        change.Add("Value", ready);
+                        changeArray.Add(change);
                     }
-                    jsonObj.Add("Content", content);
+                    jsonObj.Add("ModelViewChange", changeArray);
                     BroadMessage(jsonObj.ToString());
                 }
             }
@@ -340,13 +397,6 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
         }
 
-        private void SendGameTip(string playerId, string tip)
-        {
-            JObject jsonObj = new JObject();
-            jsonObj.Add("Action", "GameTip");
-            jsonObj.Add("Tip", tip);
-            SendMessage(playerId, jsonObj.ToString());
-        }
         private void GameReset()
         {
             //1设置变量
@@ -359,9 +409,27 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
             m_isPlaying = false;
             m_publicProcess = "PlayerReady";
-            //2发送信息
+            //2广播重置信息
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "Reset");
+            JArray changeArray = new JArray();
+            {
+                JArray playerSeatArray = GetPlayerSeatJArray();
+                JObject change1 = new JObject();
+                change1.Add("JPath", "PlayerSeatArray");
+                change1.Add("Value", playerSeatArray);
+                changeArray.Add(change1);
+                JObject gameProperty = GetGamePropertyJObject();
+                JObject change2 = new JObject();
+                change2.Add("JPath", "GameProperty");
+                change2.Add("Value", gameProperty);
+                changeArray.Add(change2);
+                JObject change3 = new JObject();
+                change3.Add("JPath", "PlayerProperty.Identity");
+                change3.Add("Value", null);
+                changeArray.Add(change3);
+            }
+            jsonObj.Add("ModelViewChange", changeArray);
             BroadMessage(jsonObj.ToString());
         }
         private void GameStartPrepare()
@@ -377,6 +445,20 @@ namespace GamePlatformServer.GameServer.GameModuels
             //2发送信息
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "StartPrepare");
+            JArray changeArray = new JArray();
+            {
+                JArray playerSeatArray = GetPlayerSeatJArray();
+                JObject change1 = new JObject();
+                change1.Add("JPath", "PlayerSeatArray");
+                change1.Add("Value", playerSeatArray);
+                changeArray.Add(change1);
+                JObject gameProperty = GetGamePropertyJObject();
+                JObject change2 = new JObject();
+                change2.Add("JPath", "GameProperty");
+                change2.Add("Value", gameProperty);
+                changeArray.Add(change2);
+            }
+            jsonObj.Add("ModelViewChange", changeArray);
             BroadMessage(jsonObj.ToString());
         }
         private void GameStart()
@@ -386,6 +468,16 @@ namespace GamePlatformServer.GameServer.GameModuels
             //2发送消息
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "GameStart");
+            JArray changeArray = new JArray();
+            {
+                JArray playerSeatArray = GetPlayerSeatJArray();
+                JObject gameProperty = GetGamePropertyJObject();
+                JObject change1 = new JObject();
+                change1.Add("JPath", "GameProperty");
+                change1.Add("Value", gameProperty);
+                changeArray.Add(change1);
+            }
+            jsonObj.Add("ModelViewChange", changeArray);
             BroadMessage(jsonObj.ToString());
         }
         private void DistributeIdentity()
@@ -471,7 +563,18 @@ namespace GamePlatformServer.GameServer.GameModuels
             {
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "DistributeIdentity");
-                jsonObj.Add("Identity", GetIdentityJObject(seat.Identity));
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "GameProperty");
+                    change1.Add("Value", GetGamePropertyJObject());
+                    changeArray.Add(change1);
+                    JObject change2 = new JObject();
+                    change2.Add("JPath", "PlayerProperty.Identity");
+                    change2.Add("Value", GetIdentityJObject(seat.Identity));
+                    changeArray.Add(change2);
+                }
+                jsonObj.Add("ModelViewChange", changeArray);
                 SendMessage(seat.PlayerId, jsonObj.ToString());
             }
         }
@@ -551,32 +654,6 @@ namespace GamePlatformServer.GameServer.GameModuels
             if (count == onlineCount)
                 return true;
             return false;
-        }
-        private JObject GetIdentityJObject(GameIdentity identity)
-        {
-
-            JObject identityJObj = new JObject();
-            identityJObj.Add("IsDead", identity.isDead);
-            identityJObj.Add("IdentityType", identity.IdentityType);
-            identityJObj.Add("GameCamp", identity.GameCamp);
-            identityJObj.Add("CurrentAction", identity.CurrentAction);
-            switch (identity.IdentityType)
-            {
-                case "Defender":
-                    {
-                        Defender defender = (Defender)identity;
-                        identityJObj.Add("LastDefendNo", defender.LastDefendNo);
-                    } 
-                    break;
-                case "Witch":
-                    {
-                        Witch witch = (Witch)identity;
-                        identityJObj.Add("Antidote", witch.Antidote);
-                        identityJObj.Add("Poison", witch.Poison);
-                    }
-                    break;
-            }
-            return identityJObj;
         }
         #endregion
 

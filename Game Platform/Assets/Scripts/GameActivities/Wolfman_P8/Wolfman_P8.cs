@@ -12,96 +12,20 @@ public class Wolfman_P8 : GameActivity
     public AudioPlayer audioPlayer;
     public PlayerSeat[] playerSeats;
 
-    #region 服务端同步数据
-    //游戏全局状态
-    private class PlayerSeatInfo
-    {
-        public int SeatNo = 0;
-        public bool HasPlayer = false;
-        public string PlayerName = "";
-        public int HeadNo = 0;
-        public bool isDead = false;
-        public bool Connected = false;
-        public bool isSpeaking = false;
-        public bool isReady = false;
-    }
-    private PlayerSeatInfo[] m_playerSeatInfos = new PlayerSeatInfo[8];
-    private bool m_isPlaying = false;
-    private string m_publicProcess = "Default";
-    private string m_gameloopProcess = "Default";
-    private int m_dayTime = 0;
-    private int m_dayNumber = 0;
-    //玩家状态
-    private string m_playerId = "";
-    private string m_playerName = "";
-    private int m_playerHeadNo = 0;
-    private int m_seatNo = 0;
-    private bool m_isReady = false;
-    private bool m_isSpeaking = false;
-    //狼人杀角色状态
-    private GameIdentity m_identity = null;
-    private class GameIdentity
-    {
-        public string IdentityType = "Default";
-        public string CurrentAction = "";
-        public bool isDead = false;
-        public int GameCamp = 0;
-    }
-    private class Villager : GameIdentity
-    {
-        public Villager()
-        {
-            IdentityType = "Villager";
-        }
-    }
-    private class Wolfman : GameIdentity
-    {
-        public Wolfman()
-        {
-            IdentityType = "Wolfman";
-        }
-    }
-    private class Prophet : GameIdentity
-    {
-        public Prophet()
-        {
-            IdentityType = "Prophet";
-        }
-    }
-    private class Hunter : GameIdentity
-    {
-        public Hunter()
-        {
-            IdentityType = "Hunter";
-        }
-    }
-    private class Defender : GameIdentity
-    {
-        public int LastDefendNo = -1;
-        public Defender()
-        {
-            IdentityType = "Defender";
-        }
-    }
-    private class Witch : GameIdentity
-    {
-        public bool Poison = true;
-        public bool Antidote = true;
-        public Witch()
-        {
-            IdentityType = "Witch";
-        }
-    }
+    #region JSON视图模型
+    private JObject m_modelViewObj = null;
+    private JsonBinder m_jsonBinder = null;
     #endregion
 
-    #region 客户端本机数据
+    #region 本机私有变量
     private string m_identitySelect = "Random";
     #endregion
 
     #region unity触发器
     private void Awake()
     {
-        InitPlayerInfos();
+        InitModelView();
+        BindModelViewEvent();
     }
     private void Update()
     {
@@ -113,10 +37,6 @@ public class Wolfman_P8 : GameActivity
     {
         //从服务器获取状态同步
         SynchronizeGameCommand();
-        //清空记录框
-        {
-            ClearGameLog();
-        }
     }
     public override void OnDisconnect()
     {
@@ -136,25 +56,22 @@ public class Wolfman_P8 : GameActivity
                 switch (action)
                 {
                     case "ResponseGameStatus":
-                        SynchronizeGameResponse((JObject)data.GetValue("Content"));
+                        SynchronizeGameResponse((JObject)data.GetValue("ModelView"));
                         break;
                     case "SeatChange":
-                        ReceiveSeatChange((JArray)data.GetValue("Content"));
-                        break;
-                    case "GameTip":
-                        ReceiveGameTip((string)data.GetValue("Tip"));
+                        ReceiveSeatChange((JArray)data.GetValue("ModelViewChange"));
                         break;
                     case "ReadyResponse":
-                        ReadyResponse((bool)data.GetValue("Ready"));
+                        ReadyResponse((JArray)data.GetValue("ModelViewChange"));
                         break;
                     case "StartPrepare":
-                        ReceiveStartPrepare();
+                        ReceiveStartPrepare((JArray)data.GetValue("ModelViewChange"));
                         break;
                     case "GameStart":
-                        ReceiveGameStart();
+                        ReceiveGameStart((JArray)data.GetValue("ModelViewChange"));
                         break;
                     case "DistributeIdentity":
-                        ReceiveDistributeIdentity((JObject)data.GetValue("Identity"));
+                        ReceiveDistributeIdentity((JArray)data.GetValue("ModelViewChange"));
                         break;
                 }
             }
@@ -178,14 +95,47 @@ public class Wolfman_P8 : GameActivity
     #endregion
 
     #region 初始化
-    private void InitPlayerInfos()
+    private void InitModelView()
     {
-        for (int i = 0; i < m_playerSeatInfos.Length; i++)
+        m_modelViewObj = new JObject();
+        //1玩家列表名片状态
+        JArray playerSeatArray = new JArray();
+        for (int i = 0; i < 8; i++)
         {
-            PlayerSeatInfo info = new PlayerSeatInfo();
-            info.SeatNo = i;
-            m_playerSeatInfos[i] = info;
+            JObject jobj = new JObject();
+            jobj.Add("SeatNo", i);
+            jobj.Add("HasPlayer", false);
+            jobj.Add("Name", "");
+            jobj.Add("HeadNo", 0);
+            jobj.Add("Connected", false);
+            jobj.Add("IsSpeaking", false);
+            jobj.Add("IsReady", false);
+            jobj.Add("IsDead", false);
+            playerSeatArray.Add(jobj);
         }
+        m_modelViewObj.Add("PlayerSeatArray", playerSeatArray);
+        //2游戏全局属性
+        JObject gameProperty = new JObject();
+        {
+            gameProperty.Add("IsPlaying", false);
+            gameProperty.Add("PublicProcess", "Default");
+            gameProperty.Add("GameloopProcess", "Default");
+            gameProperty.Add("DayTime", 0);
+            gameProperty.Add("DayNumber", 0);
+        }
+        m_modelViewObj.Add("GameProperty", gameProperty);
+        //3该玩家当前属性
+        JObject playerProperty = new JObject();
+        {
+            playerProperty.Add("PlayerId", "");
+            playerProperty.Add("PlayerName", "");
+            playerProperty.Add("PlayerHeadNo", 0);
+            playerProperty.Add("SeatNo", 0);
+            playerProperty.Add("IsSpeaking", false);
+            playerProperty.Add("IsReady", false);
+            playerProperty.Add("Identity", null);
+        }
+        m_modelViewObj.Add("PlayerProperty", playerProperty);
     }
     #endregion
 
@@ -214,107 +164,195 @@ public class Wolfman_P8 : GameActivity
     #endregion
 
     #region UI界面更新
-    private void UpdatePlayerSeat()
+    private void BindModelViewEvent()
     {
-        foreach (PlayerSeatInfo info in m_playerSeatInfos)
+        m_jsonBinder = new JsonBinder(m_modelViewObj);
+        //玩家列表
+        m_jsonBinder.AddBind("PlayerSeatArray", (jToken, arrIdxs) =>
         {
-            PlayerSeat seat = playerSeats[info.SeatNo];
-            if (info.HasPlayer)
+            JArray seatArray = (JArray)jToken;
+            foreach (JToken t in seatArray)
             {
-                Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[info.HeadNo];
+                //读JSON
+                JObject seatObj = (JObject)t;
+                int seatNo = (int)seatObj.GetValue("SeatNo");
+                bool hasPlayer = (bool)seatObj.GetValue("HasPlayer");
+                string name = (string)seatObj.GetValue("Name");
+                int headNo = (int)seatObj.GetValue("HeadNo");
+                bool connected = (bool)seatObj.GetValue("Connected");
+                bool isSpeaking = (bool)seatObj.GetValue("IsSpeaking");
+                bool isReady = (bool)seatObj.GetValue("IsReady");
+                bool isDead = (bool)seatObj.GetValue("IsDead");
+                //更新界面
+                PlayerSeat seat = playerSeats[seatNo];
+                if (hasPlayer)
+                {
+                    Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[headNo];
+                    Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    seat.SetPlayer(seatNo, sprite, name);
+                    seat.SetStasusMark(PlayerSeat.StasusMark.Ready, isReady);
+                }
+                else
+                {
+                    seat.SetPlayer(seatNo);
+                    seat.SetStasusMark(PlayerSeat.StasusMark.Ready, isReady);
+                }
+            }
+        });
+        m_jsonBinder.AddBind("PlayerSeatArray[d]", (jToken, arrIdxs) =>
+        {
+            //读JSON
+            JObject seatObj = (JObject)jToken;
+            int seatNo = (int)seatObj.GetValue("SeatNo");
+            bool hasPlayer = (bool)seatObj.GetValue("HasPlayer");
+            string name = (string)seatObj.GetValue("Name");
+            int headNo = (int)seatObj.GetValue("HeadNo");
+            bool connected = (bool)seatObj.GetValue("Connected");
+            bool isSpeaking = (bool)seatObj.GetValue("IsSpeaking");
+            bool isReady = (bool)seatObj.GetValue("IsReady");
+            bool isDead = (bool)seatObj.GetValue("IsDead");
+            //更新界面
+            PlayerSeat seat = playerSeats[seatNo];
+            if (hasPlayer)
+            {
+                Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[headNo];
                 Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                seat.SetPlayer(info.SeatNo, sprite, info.PlayerName);
-                seat.SetStasusMark(PlayerSeat.StasusMark.Ready, info.isReady);
+                seat.SetPlayer(seatNo, sprite, name);
+                seat.SetStasusMark(PlayerSeat.StasusMark.Ready, isReady);
             }
             else
             {
-                playerSeats[info.SeatNo].SetPlayer(info.SeatNo);
-                seat.SetStasusMark(PlayerSeat.StasusMark.Ready, info.isReady);
+                seat.SetPlayer(seatNo);
+                seat.SetStasusMark(PlayerSeat.StasusMark.Ready, isReady);
             }
-        }
-    }
-    private void UpdateBottomGUI()
-    {
-        //1准备界面
+        });
+        //游戏全局状态
+        m_jsonBinder.AddBind("GameProperty", (jToken, arrIdxs) =>
         {
-            bool flag = m_publicProcess == "PlayerReady";
-            GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
-            getready_panel.SetActive(flag);
-            if (flag)
+            //读JSON
+            JObject gameProperty = (JObject)jToken;
+            bool isPlaying = (bool)gameProperty.GetValue("IsPlaying");
+            string publicProcess = (string)gameProperty.GetValue("PublicProcess");
+            string gameloopProcess = (string)gameProperty.GetValue("GameloopProcess");
+            int dayTime = (int)gameProperty.GetValue("DayTime");
+            int dayNumber = (int)gameProperty.GetValue("DayNumber");
+            //准备界面切换
             {
+                bool flag = publicProcess == "PlayerReady";
+                GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
+                getready_panel.SetActive(flag);
+            }
+            //开始预备界面切换
+            {
+                bool flag = publicProcess == "StartPrepare";
+                GameObject startprepare_panel = panelObj.transform.Find("bottom/startprepare_panel").gameObject;
+                startprepare_panel.SetActive(flag);
+                if (flag)
+                {
+                    Text info_text = startprepare_panel.transform.Find("info_text").GetComponent<Text>();
+                    string name = GetIdentityName(m_identitySelect);
+                    if (string.IsNullOrEmpty(name))
+                        name = "随机";
+                    info_text.text = string.Format("游戏即将开始！你的期望身份是<color=#FFFF66>【{0}】</color>", name);
+                }
+            }
+            //游戏控制界面切换
+            {
+                bool flag = publicProcess == "GameLoop";
+                GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
+                gamecontrol_panel.SetActive(flag);
+            }
+        });
+        //玩家状态
+        m_jsonBinder.AddBind("PlayerProperty", (jToken, arrIdxs) =>
+        {
+            //读JSON
+            JObject playerProperty = (JObject)jToken;
+            string playerId = (string)playerProperty.GetValue("PlayerId");
+            string playerName = (string)playerProperty.GetValue("PlayerName");
+            int playerHeadNo = (int)playerProperty.GetValue("PlayerHeadNo");
+            int seatNo = (int)playerProperty.GetValue("SeatNo");
+            bool isSpeaking = (bool)playerProperty.GetValue("IsSpeaking");
+            bool isReady = (bool)playerProperty.GetValue("IsReady");
+            JToken identityJToken = playerProperty.GetValue("Identity");
+            //准备按钮切换
+            {
+                GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
                 GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
                 GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
-                getready_button.SetActive(!m_isReady);
-                cancelready_button.SetActive(m_isReady);
+                getready_button.SetActive(!isReady);
+                cancelready_button.SetActive(isReady);
             }
-        }
-        //2开始预备界面
-        {
-            bool flag = m_publicProcess == "StartPrepare";
-            GameObject startprepare_panel = panelObj.transform.Find("bottom/startprepare_panel").gameObject;
-            startprepare_panel.SetActive(flag);
-            if (flag)
+            //根据身份信息更新身份面板显示
+            if (identityJToken.Type == JTokenType.Object)
             {
-                Text text_text = startprepare_panel.transform.Find("info_text").GetComponent<Text>();
-                string name = GetIdentityName(m_identitySelect);
-                if (string.IsNullOrEmpty(name))
-                    name = "随机";
-                text_text.text = string.Format("游戏即将开始！你的期望身份是<color=#FFFF66>【{0}】</color>", name);
-            }
-        }
-        //3游戏控制界面
-        {
-            bool flag = m_publicProcess == "GameLoop";
-            GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
-            gamecontrol_panel.SetActive(flag);
-            if (flag)
-            {
-                //3.1根据身份信息更新身份面板显示
+                //读JSON
+                JObject identityJObj = (JObject)identityJToken;
+                bool isDead = (bool)identityJObj.GetValue("IsDead");
+                string idType = (string)identityJObj.GetValue("IdentityType");
+                int gameCamp = (int)identityJObj.GetValue("GameCamp");
+                string currentAction = (string)identityJObj.GetValue("CurrentAction");
+                //左边身份面板更新
+                GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
                 GameObject villager_panel = gamecontrol_panel.transform.Find("identity_panel/villager_panel").gameObject;
                 GameObject wolfman_panel = gamecontrol_panel.transform.Find("identity_panel/wolfman_panel").gameObject;
                 GameObject prophet_panel = gamecontrol_panel.transform.Find("identity_panel/prophet_panel").gameObject;
                 GameObject hunter_panel = gamecontrol_panel.transform.Find("identity_panel/hunter_panel").gameObject;
                 GameObject defender_panel = gamecontrol_panel.transform.Find("identity_panel/defender_panel").gameObject;
                 GameObject witch_panel = gamecontrol_panel.transform.Find("identity_panel/witch_panel").gameObject;
-                if (m_identity != null)
+                villager_panel.SetActive(idType == "Villager");
+                wolfman_panel.SetActive(idType == "Wolfman");
+                prophet_panel.SetActive(idType == "Prophet");
+                hunter_panel.SetActive(idType == "Hunter");
+                defender_panel.SetActive(idType == "Defender");
+                witch_panel.SetActive(idType == "Witch");
+                GameObject currentPanel = null;
+                switch (idType)
                 {
-                    string idType = m_identity.IdentityType;
-                    villager_panel.SetActive(idType == "Villager");
-                    wolfman_panel.SetActive(idType == "Wolfman");
-                    prophet_panel.SetActive(idType == "Prophet");
-                    hunter_panel.SetActive(idType == "Hunter");
-                    defender_panel.SetActive(idType == "Defender");
-                    witch_panel.SetActive(idType == "Witch");
-                    GameObject currentPanel = null;
-                    switch (idType)
-                    {
-                        case "Villager":
-                            currentPanel = villager_panel;                          
-                            break;
-                        case "Wolfman":
-                            currentPanel = wolfman_panel;                         
-                            break;
-                        case "Prophet":
-                            currentPanel = prophet_panel;                      
-                            break;
-                        case "Hunter":
-                            currentPanel = hunter_panel;                           
-                            break;
-                        case "Defender":
-                            currentPanel = defender_panel;
-                            break;
-                        case "Witch":
-                            currentPanel = witch_panel;
-                            break;
-                    }
-                    if(currentPanel != null)
-                    {
-                        Text seatno_text = currentPanel.transform.Find("seatno_text").GetComponent<Text>();
-                        seatno_text.text = (m_seatNo + 1).ToString();
-                    }
+                    case "Villager":
+                        currentPanel = villager_panel;
+                        break;
+                    case "Wolfman":
+                        currentPanel = wolfman_panel;
+                        break;
+                    case "Prophet":
+                        currentPanel = prophet_panel;
+                        break;
+                    case "Hunter":
+                        currentPanel = hunter_panel;
+                        break;
+                    case "Defender":
+                        currentPanel = defender_panel;
+                        break;
+                    case "Witch":
+                        currentPanel = witch_panel;
+                        break;
                 }
+                if (currentPanel != null)
+                {
+                    Text seatno_text = currentPanel.transform.Find("seatno_text").GetComponent<Text>();
+                    seatno_text.text = (seatNo + 1).ToString();
+                }
+                //右边控制面板更新
+
             }
-        }
+        });
+        m_jsonBinder.AddBind("PlayerProperty.IsReady", (jToken, arrIdxs) =>
+        {
+            //读JSON
+            bool isReady = (bool)jToken;
+            //准备按钮切换
+            {
+                GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
+                GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
+                GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
+                getready_button.SetActive(!isReady);
+                cancelready_button.SetActive(isReady);
+            }
+        });
+        //
+        //
+        //
     }
     private void ClearGameLog()
     {
@@ -347,10 +385,6 @@ public class Wolfman_P8 : GameActivity
                 break;
         }
     }
-    private void UpdateVoiceState()
-    {
-
-    }
     #endregion
 
     #region 命令和响应
@@ -367,43 +401,19 @@ public class Wolfman_P8 : GameActivity
     }
     private void SynchronizeGameResponse(JObject content)
     {
-        //1同步座位列表
+        //1座位列表
         {
             JArray playerSeatArray = (JArray)content.GetValue("PlayerSeatArray");
-            for (int i = 0; i < playerSeatArray.Count; i++)
-            {
-                //解析JSON
-                JObject jobj = (JObject)playerSeatArray[i];
-                int seatNo = (int)jobj.GetValue("SeatNo");
-                bool hasPlayer = (bool)jobj.GetValue("HasPlayer");
-                string name = (string)jobj.GetValue("Name");
-                int headNo = (int)jobj.GetValue("HeadNo");
-                bool connected = (bool)jobj.GetValue("Connected");
-                bool isReady = (bool)jobj.GetValue("IsReady");
-                bool isDead = (bool)jobj.GetValue("IsDead");
-                bool isSpeaking = (bool)jobj.GetValue("IsSpeaking");
-                //更新数据
-                PlayerSeatInfo info = m_playerSeatInfos[seatNo];
-                info.HasPlayer = hasPlayer;
-                info.PlayerName = name;
-                info.HeadNo = headNo;
-                info.Connected = connected;
-                info.isReady = isReady;
-                info.isDead = isDead;
-                info.isSpeaking = isSpeaking;
-            }
+            m_jsonBinder.SetValue("PlayerSeatArray", playerSeatArray);
         }
-        //2同步游戏变量
+        //2游戏全局状态
         {
             //解析JSON
             JObject gameProperty = (JObject)content.GetValue("GameProperty");
-            m_isPlaying = (bool)gameProperty.GetValue("IsPlaying");
-            m_publicProcess = (string)gameProperty.GetValue("PublicProcess");
-            m_gameloopProcess = (string)gameProperty.GetValue("GameloopProcess");
-            m_dayTime = (int)gameProperty.GetValue("DayTime");
-            m_dayNumber = (int)gameProperty.GetValue("DayNumber");
+            m_jsonBinder.SetValue("GameProperty", gameProperty);
             //系统提示信息
-            if (!m_isPlaying)
+            bool isPlaying = (bool)m_jsonBinder.GetValue("GameProperty.IsPlaying");
+            if (!isPlaying)
             {
                 JObject logContent = new JObject();
                 logContent.Add("LogType", "Tip");
@@ -411,26 +421,12 @@ public class Wolfman_P8 : GameActivity
                 AddGameLog(logContent);
             }
         }
-        //3同步玩家变量
+        //3玩家状态
         {
             //解析JSON
             JObject playerProperty = (JObject)content.GetValue("PlayerProperty");
-            m_playerId = (string)playerProperty.GetValue("PlayerId");
-            m_playerName = (string)playerProperty.GetValue("PlayerName");
-            m_playerHeadNo = (int)playerProperty.GetValue("PlayerHeadNo");
-            m_seatNo = (int)playerProperty.GetValue("SeatNo");
-            m_isReady = (bool)playerProperty.GetValue("IsReady");
-            m_isSpeaking = (bool)playerProperty.GetValue("IsSpeaking");
-            JToken identityJObj = playerProperty.GetValue("Identity");
-            if (identityJObj.Type == JTokenType.Object)
-                m_identity = GetIdentityObj((JObject)identityJObj);
-            else
-                m_identity = null;
+            m_jsonBinder.SetValue("PlayerProperty", playerProperty);
         }
-        //4更新界面
-        UpdateBottomGUI();
-        UpdatePlayerSeat();
-        UpdateVoiceState();
     }
     private void ExitGameCommand()
     {
@@ -446,7 +442,8 @@ public class Wolfman_P8 : GameActivity
     }
     private void ExitGameResponse()
     {
-        GameManager.Instance.SetActivity("Hall");
+        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["Hall"].ActivityPrefab;
+        GameManager.Instance.SetActivity(prefab);
     }
     private void ReadyCommand(bool ready)
     {
@@ -460,95 +457,46 @@ public class Wolfman_P8 : GameActivity
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
-    private void ReadyResponse(bool ready)
+    private void ReadyResponse(JArray changeArray)
     {
-        //1同步变量
-        m_isReady = ready;
-        //2更新界面
-        UpdateBottomGUI();
+        foreach(JToken jToken in changeArray)
+        {
+            JObject change = (JObject)jToken;
+            string jPath = (string)change.GetValue("JPath");
+            JToken value = change.GetValue("Value");
+            m_jsonBinder.SetValue(jPath, value);
+        }
     }
 
-    private void ReceiveSeatChange(JArray content)
+    private void ReceiveSeatChange(JArray changeArray)
     {
-        //1同步变量
-        foreach(JToken token in content)
+        foreach (JToken jToken in changeArray)
         {
-            if(token.Type == JTokenType.Object)
-            {
-                JObject changeObj = (JObject)token;
-                //更新数据
-                string change = (string)changeObj.GetValue("Change");
-                switch (change)
-                {
-                    case "Join":
-                        {
-                            int seatNo = (int)changeObj.GetValue("SeatNo");
-                            int headNo = (int)changeObj.GetValue("HeadNo");
-                            string name = (string)changeObj.GetValue("Name");
-                            PlayerSeatInfo info = m_playerSeatInfos[seatNo];
-                            info.HasPlayer = true;
-                            info.PlayerName = name;
-                            info.HeadNo = headNo;
-                            info.Connected = true;
-                            info.isReady = false;
-                            info.isDead = false;
-                            info.isSpeaking = false;
-                        }
-                        break;
-                    case "Leave":
-                        {
-                            int seatNo = (int)changeObj.GetValue("SeatNo");
-                            PlayerSeatInfo info = m_playerSeatInfos[seatNo];
-                            info.HasPlayer = false;
-                            info.PlayerName = "";
-                            info.HeadNo = 0;
-                            info.Connected = false;
-                            info.isReady = false;
-                            info.isDead = false;
-                            info.isSpeaking = false;
-                        }
-                        break;
-                    case "Ready":
-                        {
-                            int seatNo = (int)changeObj.GetValue("SeatNo");
-                            bool isReady = (bool)changeObj.GetValue("IsReady");
-                            PlayerSeatInfo info = m_playerSeatInfos[seatNo];
-                            info.isReady = isReady;
-                        }
-                        break;
-                }
-            }
+            JObject change = (JObject)jToken;
+            string jPath = (string)change.GetValue("JPath");
+            JToken value = change.GetValue("Value");
+            m_jsonBinder.SetValue(jPath, value);
         }
-        //2更新界面
-        UpdatePlayerSeat();
     }
-    private void ReceiveGameTip(string tip)
+    private void ReceiveGameReset(JArray changeArray)
     {
-        JObject logContent = new JObject();
-        logContent.Add("LogType", "Tip");
-        logContent.Add("Text", tip);
-        AddGameLog(logContent);
+        foreach (JToken jToken in changeArray)
+        {
+            JObject change = (JObject)jToken;
+            string jPath = (string)change.GetValue("JPath");
+            JToken value = change.GetValue("Value");
+            m_jsonBinder.SetValue(jPath, value);
+        }
     }
-    private void ReceiveGameReset()
-    {
-        //重置变量
-        m_isPlaying = false;
-        m_publicProcess = "PlayerReady";
-        m_isReady = false;
-        m_identity = null;
-        //切换界面
-        UpdateBottomGUI();
-    }
-    private void ReceiveStartPrepare()
+    private void ReceiveStartPrepare(JArray changeArray)
     {
         //1同步变量
-        m_isReady = false;
-        m_isSpeaking = false;
-        m_isPlaying = true;
-        m_publicProcess = "StartPrepare";
-        foreach (PlayerSeatInfo seatInfo in m_playerSeatInfos)
+        foreach (JToken jToken in changeArray)
         {
-            seatInfo.isReady = false;
+            JObject change = (JObject)jToken;
+            string jPath = (string)change.GetValue("JPath");
+            JToken value = change.GetValue("Value");
+            m_jsonBinder.SetValue(jPath, value);
         }
         //2发送身份选择指令
         {
@@ -569,15 +517,17 @@ public class Wolfman_P8 : GameActivity
             logContent.Add("Text", "游戏将要开始！");
             AddGameLog(logContent);
         }
-        //4更新界面
-        UpdatePlayerSeat();
-        UpdateBottomGUI();
-        UpdateVoiceState();
     }
-    private void ReceiveGameStart()
+    private void ReceiveGameStart(JArray changeArray)
     {
         //1同步变量
-        m_publicProcess = "GameLoop";
+        foreach (JToken jToken in changeArray)
+        {
+            JObject change = (JObject)jToken;
+            string jPath = (string)change.GetValue("JPath");
+            JToken value = change.GetValue("Value");
+            m_jsonBinder.SetValue(jPath, value);
+        }
         //2法官通告 开始游戏
         {
             ClearGameLog();
@@ -586,23 +536,26 @@ public class Wolfman_P8 : GameActivity
             logContent.Add("Text", "游戏开始！");
             AddGameLog(logContent);
         }
-        //3更新界面
-        UpdateBottomGUI();
     }
-    private void ReceiveDistributeIdentity(JObject identityJObj)
+    private void ReceiveDistributeIdentity(JArray changeArray)
     {
-        m_gameloopProcess = "CheckIdentity";
-        m_identity = GetIdentityObj(identityJObj);
-        //1法官通告身份信息
+        //1同步变量
+        foreach (JToken jToken in changeArray)
+        {
+            JObject change = (JObject)jToken;
+            string jPath = (string)change.GetValue("JPath");
+            JToken value = change.GetValue("Value");
+            m_jsonBinder.SetValue(jPath, value);
+        }
+        //2法官通告身份信息
         {
             JObject logContent = new JObject();
             logContent.Add("LogType", "Judge");
-            string text = string.Format("你的身份是<color=#FF0033>【{0}】</color>", GetIdentityName(m_identity.IdentityType));
+            string identityType = (string)m_jsonBinder.GetValue("PlayerProperty.Identity.IdentityType");
+            string text = string.Format("你的身份是<color=#FF0033>【{0}】</color>", GetIdentityName(identityType));
             logContent.Add("Text", text);
             AddGameLog(logContent);
         }
-        //2刷新界面
-        UpdateBottomGUI();
     }
     #endregion
 
@@ -632,49 +585,6 @@ public class Wolfman_P8 : GameActivity
                 break;
         }
         return name;
-    }
-    private GameIdentity GetIdentityObj(JObject identityJObj)
-    {
-        GameIdentity identityObj = null;
-        string identityType = (string)identityJObj.GetValue("IdentityType");
-        bool isDead = (bool)identityJObj.GetValue("IsDead");
-        int gameCamp = (int)identityJObj.GetValue("GameCamp");
-        string currentAction = (string)identityJObj.GetValue("CurrentAction");
-        switch (identityType)
-        {
-            case "Villager":
-                identityObj = new Villager();
-                break;
-            case "Wolfman":
-                identityObj = new Wolfman();
-                break;
-            case "Prophet":
-                identityObj = new Prophet();
-                break;
-            case "Hunter":
-                identityObj = new Hunter();
-                break;
-            case "Defender":
-                identityObj = new Defender();
-                {
-                    Defender defender = (Defender)identityObj;
-                    defender.LastDefendNo = (int)identityJObj.GetValue("LastDefendNo");
-                }
-                break;
-            case "Witch":
-                identityObj = new Witch();
-                {
-                    Witch witch = (Witch)identityObj;
-                    witch.Antidote = (bool)identityJObj.GetValue("Antidote");
-                    witch.Poison = (bool)identityJObj.GetValue("Poison");
-                }
-                break;
-        }
-        identityObj.isDead = isDead;
-        identityObj.GameCamp = gameCamp;
-        identityObj.CurrentAction = currentAction;
-
-        return identityObj;
     }
     #endregion
 }

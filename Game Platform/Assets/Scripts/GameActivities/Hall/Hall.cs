@@ -49,8 +49,6 @@ public class Hall : GameActivity
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
-        //清空聊天框
-        ClearChat();
         //请求房间列表
         RequestHallInfo();
         //请求玩家信息
@@ -60,7 +58,6 @@ public class Hall : GameActivity
     }
     public override void OnDisconnect()
     {
-        GameManager.Instance.SetActivity("MainTheme");
     }
     public override void OnConnect()
     {
@@ -320,13 +317,13 @@ public class Hall : GameActivity
             dropdown.ClearItems();
             dropdown.AddItem(null, "所有");
             foreach (ResourceManager.GameInfo info in ResourceManager.Instance.GameInfoSet.Values)
-                dropdown.AddItem(info, info.GameName);
+                dropdown.AddItem(info, info.GameText);
         }
         {
             DropdownHandler dropdown = panelObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
             foreach (ResourceManager.GameInfo info in ResourceManager.Instance.GameInfoSet.Values)
-                dropdown.AddItem(info, info.GameName);
+                dropdown.AddItem(info, info.GameText);
         }
         {
             DropdownHandler dropdown = panelObj.transform.Find("changeplayerinfo_model/model/head_dropdown").GetComponent<DropdownHandler>();
@@ -368,7 +365,8 @@ public class Hall : GameActivity
     }
     private void LogoutSuccess()
     {
-        GameManager.Instance.SetActivity("MainTheme");
+        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["MainTheme"].ActivityPrefab;
+        GameManager.Instance.SetActivity(prefab);
     }
     private void SendChat(string chat)
     {
@@ -500,7 +498,7 @@ public class Hall : GameActivity
                 ResourceManager.GameInfo gameInfo = null;
                 ResourceManager.Instance.GameInfoSet.TryGetValue(roomInfo.GameId, out gameInfo);
                 if (gameInfo != null)
-                    gameName = gameInfo.GameName;
+                    gameName = gameInfo.GameText;
             }
             roomInfo.GameName = gameName;
             roomInfo.Caption = (string)jobj.GetValue("RoomCaption");
@@ -632,7 +630,8 @@ public class Hall : GameActivity
     {
         //加入成功 跳转游戏活动
         ResourceManager.GameInfo gameinfo = ResourceManager.Instance.GameInfoSet[gameId];
-        GameManager.Instance.SetActivity(gameinfo.GameActivity);
+        GameObject prefab = ResourceManager.Instance.ActivityInfoSet[gameinfo.ActivityId].ActivityPrefab;
+        GameManager.Instance.SetActivity(prefab);
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {

@@ -199,7 +199,8 @@ public class MainTheme : GameActivity
     }
     private void LoginSuccess()
     {
-        GameManager.Instance.SetActivity("Hall");
+        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["Hall"].ActivityPrefab;
+        GameManager.Instance.SetActivity(prefab);
     }
     private void RegisterSuccess()
     {
