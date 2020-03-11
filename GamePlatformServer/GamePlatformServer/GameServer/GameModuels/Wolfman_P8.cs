@@ -470,7 +470,6 @@ namespace GamePlatformServer.GameServer.GameModuels
             jsonObj.Add("Action", "GameStart");
             JArray changeArray = new JArray();
             {
-                JArray playerSeatArray = GetPlayerSeatJArray();
                 JObject gameProperty = GetGamePropertyJObject();
                 JObject change1 = new JObject();
                 change1.Add("JPath", "GameProperty");
@@ -557,30 +556,54 @@ namespace GamePlatformServer.GameServer.GameModuels
                 }
                 m_playerSeats[seatNo].Identity = identityObj;
             }
-            //5更新状态变量 向玩家发送身份信息
+            //5更新状态变量 向玩家同步更新信息
             m_gameloopProcess = "CheckIdentity";
             foreach (PlayerSeat seat in m_playerSeats)
             {
                 JObject jsonObj = new JObject();
-                jsonObj.Add("Action", "DistributeIdentity");
-                JArray changeArray = new JArray();
-                {
-                    JObject change1 = new JObject();
-                    change1.Add("JPath", "GameProperty");
-                    change1.Add("Value", GetGamePropertyJObject());
-                    changeArray.Add(change1);
-                    JObject change2 = new JObject();
-                    change2.Add("JPath", "PlayerProperty.Identity");
-                    change2.Add("Value", GetIdentityJObject(seat.Identity));
-                    changeArray.Add(change2);
+                jsonObj.Add("Action", "GameLoopProcess");
+                JObject content = new JObject();
+                {   
+                    JArray changeArray = new JArray();
+                    {
+                        JObject change1 = new JObject();
+                        change1.Add("JPath", "GameProperty");
+                        change1.Add("Value", GetGamePropertyJObject());
+                        changeArray.Add(change1);
+                        JObject change2 = new JObject();
+                        change2.Add("JPath", "PlayerProperty.Identity");
+                        change2.Add("Value", GetIdentityJObject(seat.Identity));
+                        changeArray.Add(change2);
+                    }
+                    content.Add("ModelViewChange", changeArray);
+                    content.Add("Process", "DistributeIdentity");
                 }
-                jsonObj.Add("ModelViewChange", changeArray);
+                jsonObj.Add("Content", content);
                 SendMessage(seat.PlayerId, jsonObj.ToString());
             }
         }
         private void NightCloseEye()
         {
-
+            //1设置变量
+            m_gameloopProcess = "NightCloseEye";
+            //2发送消息
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "GameLoopProcess");
+            JObject content = new JObject();
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject gameProperty = GetGamePropertyJObject();
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "GameProperty");
+                    change1.Add("Value", gameProperty);
+                    changeArray.Add(change1);
+                }
+                content.Add("ModelViewChange", changeArray);
+                content.Add("Process", "NightCloseEye");
+            }
+            jsonObj.Add("Content", content);
+            BroadMessage(jsonObj.ToString());
         }
         private void DayOpenEye()
         {
@@ -635,7 +658,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                     //聚众发言
 
                     //聚众投票
-
+                    while (true)
+                        yield return 0;
                     yield return 0;
                 }
             }
