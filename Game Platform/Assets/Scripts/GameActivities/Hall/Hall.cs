@@ -14,6 +14,7 @@ public class Hall : GameActivity
     public GameObject tipModelObj;
     public AudioPlayer audioPlayer;
     public AudioMixer audioMixer;
+    public LocalizationDictionary localDic;
     public RoomItem[] roomItems;
 
     private IDictionary<string, float> m_updateTimerSet = new Dictionary<string, float>();
@@ -87,7 +88,7 @@ public class Hall : GameActivity
                     case "Tip":
                         {
                             string resultCode = data.GetValue("Content").ToString();
-                            string text = TextManager.Instance.GetResultCodeText(resultCode);
+                            string text = localDic.GetLocalText(resultCode);
                             this.TipModel(text);
                         }
                         break;
@@ -316,21 +317,21 @@ public class Hall : GameActivity
             DropdownHandler dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
             dropdown.AddItem(null, "所有");
-            foreach (ResourceManager.GameInfo info in ResourceManager.Instance.GameInfoSet.Values)
-                dropdown.AddItem(info, info.GameText);
+            foreach (ResourceManager.GameInfo info in ResourceManager.Instance.Local.GameInfoSet.Values)
+                dropdown.AddItem(info, info.GameName);
         }
         {
             DropdownHandler dropdown = panelObj.transform.Find("createroom_model/model/creategame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
-            foreach (ResourceManager.GameInfo info in ResourceManager.Instance.GameInfoSet.Values)
-                dropdown.AddItem(info, info.GameText);
+            foreach (ResourceManager.GameInfo info in ResourceManager.Instance.Local.GameInfoSet.Values)
+                dropdown.AddItem(info, info.GameName);
         }
         {
             DropdownHandler dropdown = panelObj.transform.Find("changeplayerinfo_model/model/head_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
-            for (int i = 0; i < ResourceManager.Instance.PlayerHeadTextures.Length; i++)
+            for (int i = 0; i < ResourceManager.Instance.Local.PlayerHeadTextures.Length; i++)
             {
-                Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[i];
+                Texture2D texture = ResourceManager.Instance.Local.PlayerHeadTextures[i];
                 Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
                 dropdown.AddItem(i, "", sprite);
             }
@@ -365,7 +366,7 @@ public class Hall : GameActivity
     }
     private void LogoutSuccess()
     {
-        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["MainTheme"].ActivityPrefab;
+        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["MainTheme"].ActivityPrefab;
         GameManager.Instance.SetActivity(prefab);
     }
     private void SendChat(string chat)
@@ -435,7 +436,7 @@ public class Hall : GameActivity
         Text playerid_text = panelObj.transform.Find("infopanel/playerid_text").GetComponent<Text>();
         Text playername_text = panelObj.transform.Find("infopanel/playername_text").GetComponent<Text>();
         Text playerpoint_text = panelObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
-        Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[m_playerHeadNo];
+        Texture2D texture = ResourceManager.Instance.Local.PlayerHeadTextures[m_playerHeadNo];
         player_photo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         playerid_text.text = string.Format("ID：{0}", m_playerId);
         playername_text.text = m_playerName;
@@ -496,9 +497,9 @@ public class Hall : GameActivity
             string gameName = "";
             {
                 ResourceManager.GameInfo gameInfo = null;
-                ResourceManager.Instance.GameInfoSet.TryGetValue(roomInfo.GameId, out gameInfo);
+                ResourceManager.Instance.Local.GameInfoSet.TryGetValue(roomInfo.GameId, out gameInfo);
                 if (gameInfo != null)
-                    gameName = gameInfo.GameText;
+                    gameName = gameInfo.GameName;
             }
             roomInfo.GameName = gameName;
             roomInfo.Caption = (string)jobj.GetValue("RoomCaption");
@@ -629,8 +630,8 @@ public class Hall : GameActivity
     private void JoinRoomSuccess(string gameId, string roomId)
     {
         //加入成功 跳转游戏活动
-        ResourceManager.GameInfo gameinfo = ResourceManager.Instance.GameInfoSet[gameId];
-        GameObject prefab = ResourceManager.Instance.ActivityInfoSet[gameinfo.ActivityId].ActivityPrefab;
+        ResourceManager.GameInfo gameinfo = ResourceManager.Instance.Local.GameInfoSet[gameId];
+        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet[gameinfo.ActivityId].ActivityPrefab;
         GameManager.Instance.SetActivity(prefab);
     }
     private IEnumerator DoAction_Delay(System.Action action, float delay)

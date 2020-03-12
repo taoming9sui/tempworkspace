@@ -32,7 +32,6 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         #region 通用对外属性
         abstract public string GameId { get; }
-        abstract public string GameName { get; }
         abstract public int MaxPlayerCount { get; }
         abstract public bool IsOpened { get; }
         #endregion

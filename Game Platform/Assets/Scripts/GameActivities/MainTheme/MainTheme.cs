@@ -9,9 +9,9 @@ public class MainTheme : GameActivity
     public GameObject cameraObj;
     public GameObject panelObj;
     public GameObject sceneObj;
-    public AudioPlayer audioPlayer;
     public GameObject tipModelObj;
-
+    public AudioPlayer audioPlayer;
+    public LocalizationDictionary localDic;
 
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
@@ -51,7 +51,7 @@ public class MainTheme : GameActivity
                     case "Tip":
                         {
                             string resultCode = data.GetValue("Content").ToString();
-                            string text = TextManager.Instance.GetResultCodeText(resultCode);
+                            string text = localDic.GetLocalText(resultCode);
                             this.TipModel(text);
                         }
                         break;
@@ -199,7 +199,7 @@ public class MainTheme : GameActivity
     }
     private void LoginSuccess()
     {
-        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["Hall"].ActivityPrefab;
+        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["Hall"].ActivityPrefab;
         GameManager.Instance.SetActivity(prefab);
     }
     private void RegisterSuccess()

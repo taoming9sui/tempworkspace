@@ -6,59 +6,57 @@ public class ResourceManager : MonoBehaviour
 {
     static public ResourceManager Instance;
 
-    public IDictionary<string, ActivityInfo> ActivityInfoSet { get; private set; }
-    public IDictionary<string, GameInfo> GameInfoSet { get; private set; }
-    public Texture2D[] PlayerHeadTextures { get; private set; }
+    public ResourceMeta[] metaList;
+
+    [System.Serializable]
+    public class ActivityInfo
+    {
+        public string ActivityId;
+        public GameObject ActivityPrefab;
+    }
+    [System.Serializable]
+    public class GameInfo
+    {
+        public string GameId;
+        public string GameName;
+        public string ActivityId;
+    }
+    [System.Serializable]
+    public class ResourceMeta
+    {
+        public ActivityInfo[] activityInfos;
+        public IDictionary<string, ActivityInfo> ActivityInfoSet;
+        public GameInfo[] gameInfos;
+        public IDictionary<string, GameInfo> GameInfoSet;
+        public Texture2D[] playerHeadTextures;
+        public Texture2D[] PlayerHeadTextures { get { return playerHeadTextures; } }
+
+        public void Init()
+        {
+            ActivityInfoSet = new Dictionary<string, ActivityInfo>();
+            foreach(ActivityInfo info in activityInfos)
+                ActivityInfoSet.Add(info.ActivityId, info);
+
+            GameInfoSet = new Dictionary<string, GameInfo>();
+            foreach (GameInfo info in gameInfos)
+                GameInfoSet.Add(info.GameId, info);
+        }
+    }
+
+   
 
     private void Awake()
     {
         Instance = this;
-        //初始化 活动资源注册
+        foreach(ResourceMeta meta in metaList)
         {
-            ActivityInfoSet = new Dictionary<string, ActivityInfo>();
-            GameObject mainTheme = Resources.Load<GameObject>("Prefabs/MainTheme/MainTheme");
-            ActivityInfoSet["MainTheme"] = new ActivityInfo("MainTheme", mainTheme);
-            GameObject hall = Resources.Load<GameObject>("Prefabs/Hall/Hall");
-            ActivityInfoSet["Hall"] = new ActivityInfo("MainTheme", hall);
-            GameObject wolfman_P8 = Resources.Load<GameObject>("Prefabs/Wolfman_P8/Wolfman_P8");
-            ActivityInfoSet["Wolfman_P8"] = new ActivityInfo("Wolfman_P8", wolfman_P8);
-        }
-        //初始化 游戏资源注册
-        {
-            GameInfoSet = new Dictionary<string, GameInfo>();
-            GameInfoSet["Wolfman_P8"] = new GameInfo("Wolfman_P8", "狼人杀", "Wolfman_P8");
-        }
-        //初始化 头像资源注册
-        {
-            PlayerHeadTextures = new Texture2D[0];
-            Texture2D[] textures = Resources.LoadAll<Texture2D>("Images/Profile Pictrues");
-            PlayerHeadTextures = textures;
+            meta.Init();
         }
     }
 
-
-    public class ActivityInfo
+    public ResourceMeta Local
     {
-        public string ActivityId { get; private set; }
-        public GameObject ActivityPrefab { get; private set; }
-
-        public ActivityInfo(string id, GameObject activityPrefab)
-        {
-            ActivityId = id;
-            ActivityPrefab = activityPrefab;
-        }
+        get { return metaList[0]; }
     }
-    public class GameInfo
-    {
-        public GameInfo(string id, string text, string activityId)
-        {
-            GameId = id;
-            GameText = text;
-            ActivityId = activityId;
-        }
 
-        public string GameId { get; private set; }
-        public string GameText { get; private set; }
-        public string ActivityId { get; private set; }
-    }
 }

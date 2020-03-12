@@ -868,6 +868,66 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &1974646533201766932
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2272367414356699002}
+  - component: {fileID: 1330216291471121147}
+  m_Layer: 0
+  m_Name: Localization
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2272367414356699002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1974646533201766932}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 487.40146, y: 422.45935, z: -7957.125}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 6257628786545732529}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1330216291471121147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1974646533201766932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 955e852d657bfc640bcc39d852438a93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dictionaryItems:
+  - unisersalText: resultcode.register.playerid_illegal
+    localText: "\u7528\u6237ID\u683C\u5F0F\u4E0D\u6B63\u786E"
+  - unisersalText: resultcode.register.password_illegal
+    localText: "\u5BC6\u7801\u683C\u5F0F\u4E0D\u6B63\u786E"
+  - unisersalText: resultcode.register.multiple_register
+    localText: "\u8BE5\u7528\u6237\u5DF2\u88AB\u6CE8\u518C"
+  - unisersalText: resultcode.register.exception
+    localText: "\u7528\u6237\u6CE8\u518C\uFF1A\u610F\u5916\u9519\u8BEF"
+  - unisersalText: resultcode.login.idpassword_wrong
+    localText: "\u7528\u6237\u540D\u5BC6\u7801\u9519\u8BEF"
+  - unisersalText: resultcode.login.socket_logged
+    localText: "\u5DF2\u7ECF\u767B\u5F55\u4E86\u4E00\u4E2A\u8D26\u53F7"
+  - unisersalText: resultcode.login.player_logged
+    localText: "\u8BE5\u73A9\u5BB6\u5DF2\u88AB\u767B\u5F55"
+  - unisersalText: resultcode.login.exception
+    localText: "\u7528\u6237\u767B\u5F55\uFF1A\u610F\u5916\u9519\u8BEF"
 --- !u!1 &2196414217639154589
 GameObject:
   m_ObjectHideFlags: 0
@@ -2227,7 +2287,7 @@ Transform:
   - {fileID: 2854126987431304036}
   - {fileID: 6864394289719693476}
   m_Father: {fileID: 6257628786545732529}
-  m_RootOrder: 1
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &383768383315011214
 MonoBehaviour:
@@ -3609,9 +3669,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 6257628787268137538}
-  - {fileID: 9155047513573017588}
   - {fileID: 6456221207993886683}
   - {fileID: 6257628787630347854}
+  - {fileID: 9155047513573017588}
+  - {fileID: 2272367414356699002}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3630,8 +3691,9 @@ MonoBehaviour:
   cameraObj: {fileID: 6257628787268137539}
   panelObj: {fileID: 5362507497054588374}
   sceneObj: {fileID: 6257628787630347855}
-  audioPlayer: {fileID: 383768383315011214}
   tipModelObj: {fileID: 8382422670689753771}
+  audioPlayer: {fileID: 383768383315011214}
+  localDic: {fileID: 1330216291471121147}
 --- !u!1 &6257628787268137539
 GameObject:
   m_ObjectHideFlags: 0
@@ -3743,7 +3805,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 6257628786545732529}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6284244999232558914
 GameObject:
@@ -3778,7 +3840,7 @@ RectTransform:
   m_Children:
   - {fileID: 4713718160623011520}
   m_Father: {fileID: 6257628786545732529}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}

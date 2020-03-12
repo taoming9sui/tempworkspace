@@ -10,6 +10,7 @@ public class Wolfman_P8 : GameActivity
     public GameObject panelObj;
     public GameObject sceneObj;
     public AudioPlayer audioPlayer;
+    public LocalizationDictionary localDic;
     public PlayerSeat[] playerSeats;
 
     #region JSON视图模型
@@ -178,7 +179,7 @@ public class Wolfman_P8 : GameActivity
         PlayerSeat seat = playerSeats[seatNo];
         if (hasPlayer)
         {
-            Texture2D texture = ResourceManager.Instance.PlayerHeadTextures[headNo];
+            Texture2D texture = ResourceManager.Instance.Local.PlayerHeadTextures[headNo];
             Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
             seat.SetPlayer(seatNo, sprite, name);
             seat.SetStasusMark(PlayerSeat.StasusMark.Ready, isReady);
@@ -189,7 +190,7 @@ public class Wolfman_P8 : GameActivity
             seat.SetStasusMark(PlayerSeat.StasusMark.Ready, isReady);
         }
     }
-    private void UpdateGamePropertyUI(JObject gamePropertyJObj)
+    private void UpdateBottomUI(JObject gamePropertyJObj, JObject playerPropertyJObj)
     {
         //读JSON
         bool isPlaying = (bool)gamePropertyJObj.GetValue("IsPlaying");
@@ -197,11 +198,25 @@ public class Wolfman_P8 : GameActivity
         string gameloopProcess = (string)gamePropertyJObj.GetValue("GameloopProcess");
         int dayTime = (int)gamePropertyJObj.GetValue("DayTime");
         int dayNumber = (int)gamePropertyJObj.GetValue("DayNumber");
+        string playerId = (string)playerPropertyJObj.GetValue("PlayerId");
+        string playerName = (string)playerPropertyJObj.GetValue("PlayerName");
+        int playerHeadNo = (int)playerPropertyJObj.GetValue("PlayerHeadNo");
+        int seatNo = (int)playerPropertyJObj.GetValue("SeatNo");
+        bool isSpeaking = (bool)playerPropertyJObj.GetValue("IsSpeaking");
+        bool isReady = (bool)playerPropertyJObj.GetValue("IsReady");
+        JToken identityJToken = playerPropertyJObj.GetValue("Identity");
         //准备界面切换
         {
             bool flag = publicProcess == "PlayerReady";
             GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
             getready_panel.SetActive(flag);
+            if (flag)
+            {
+                GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
+                GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
+                getready_button.SetActive(!isReady);
+                cancelready_button.SetActive(isReady);
+            }
         }
         //开始预备界面切换
         {
@@ -222,35 +237,16 @@ public class Wolfman_P8 : GameActivity
             bool flag = publicProcess == "GameLoop";
             GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
             gamecontrol_panel.SetActive(flag);
-            //流程控制面板切换
-            UpdateGameloopProcessUI();
+            //身份界面切换
+            if (identityJToken.Type == JTokenType.Object)
+            {
+                JObject identityJObj = (JObject)identityJToken;
+                UpdateGameIdentityUI(gamePropertyJObj, identityJObj);
+            }
         }
+
     }
-    private void UpdatePlayerPropertyUI(JObject playerPropertyJObj)
-    {
-        //读JSON
-        string playerId = (string)playerPropertyJObj.GetValue("PlayerId");
-        string playerName = (string)playerPropertyJObj.GetValue("PlayerName");
-        int playerHeadNo = (int)playerPropertyJObj.GetValue("PlayerHeadNo");
-        int seatNo = (int)playerPropertyJObj.GetValue("SeatNo");
-        bool isSpeaking = (bool)playerPropertyJObj.GetValue("IsSpeaking");
-        bool isReady = (bool)playerPropertyJObj.GetValue("IsReady");
-        JToken identityJToken = playerPropertyJObj.GetValue("Identity");
-        //准备按钮切换
-        {
-            GameObject getready_panel = panelObj.transform.Find("bottom/getready_panel").gameObject;
-            GameObject getready_button = getready_panel.transform.Find("getready_button").gameObject;
-            GameObject cancelready_button = getready_panel.transform.Find("cancelready_button").gameObject;
-            getready_button.SetActive(!isReady);
-            cancelready_button.SetActive(isReady);
-        }
-        //身份状态更新
-        if (identityJToken.Type == JTokenType.Object)
-        {
-            UpdateGameIdentityUI((JObject)identityJToken);
-        }      
-    }
-    private void UpdateGameIdentityUI(JObject identityJObj)
+    private void UpdateGameIdentityUI(JObject gamePropertyJObj, JObject identityJObj)
     {
         //读JSON
         bool isDead = (bool)identityJObj.GetValue("IsDead");
@@ -305,27 +301,17 @@ public class Wolfman_P8 : GameActivity
                 seatno_text.text = (seatNo + 1).ToString();
             }
         }
-        //流程控制面板切换
-        UpdateGameloopProcessUI();
-    }
-    private void UpdateGameloopProcessUI()
-    {
-        GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
-        GameObject process_panel = gamecontrol_panel.transform.Find("process_panel").gameObject;
-        JObject gamePropertyJObj = (JObject)m_modelViewBinder.GetValue("GameProperty");
-        JToken identityJToken = (JToken)m_modelViewBinder.GetValue("PlayerProperty.Identity");
-        if(identityJToken.Type == JTokenType.Object)
+        //右边流程面板更新
         {
-            JObject identityJObj = (JObject)identityJToken;
+            GameObject process_panel = gamecontrol_panel.transform.Find("process_panel").gameObject;
             string gameloopProcess = (string)gamePropertyJObj.GetValue("GameloopProcess");
-            string currentAction = (string)identityJObj.GetValue("CurrentAction");
             if (currentAction != "Default")
             {
 
             }
             else
             {
-                GameObject checkidentity_panel = process_panel.transform.Find("checkidentity_panel").gameObject;              
+                GameObject checkidentity_panel = process_panel.transform.Find("checkidentity_panel").gameObject;
                 {
                     checkidentity_panel.SetActive(gameloopProcess == "CheckIdentity");
                     string identityType = (string)identityJObj.GetValue("IdentityType");
@@ -362,20 +348,16 @@ public class Wolfman_P8 : GameActivity
         //游戏全局状态
         m_modelViewBinder.AddBind("GameProperty", (jToken, arrIdxs) =>
         {
-
-            JObject gameProperty = (JObject)jToken;
-            UpdateGamePropertyUI(gameProperty);
+            JObject gamePropertyJObj = (JObject)m_modelViewBinder.GetValue("GameProperty");
+            JObject playerPropertyJObj = (JObject)m_modelViewBinder.GetValue("PlayerProperty");
+            UpdateBottomUI(gamePropertyJObj, playerPropertyJObj);
         });
         //玩家状态
         m_modelViewBinder.AddBind("PlayerProperty", (jToken, arrIdxs) =>
         {
-            JObject playerProperty = (JObject)jToken;
-            UpdatePlayerPropertyUI(playerProperty);
-        });
-        m_modelViewBinder.AddBind("PlayerProperty.Identity", (jToken, arrIdxs) =>
-        {
-            JObject identity = (JObject)jToken;
-            UpdateGameIdentityUI(identity);
+            JObject gamePropertyJObj = (JObject)m_modelViewBinder.GetValue("GameProperty");
+            JObject playerPropertyJObj = (JObject)m_modelViewBinder.GetValue("PlayerProperty");
+            UpdateBottomUI(gamePropertyJObj, playerPropertyJObj);
         });
         //
     }
@@ -467,7 +449,7 @@ public class Wolfman_P8 : GameActivity
     }
     private void ExitGameResponse()
     {
-        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["Hall"].ActivityPrefab;
+        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["Hall"].ActivityPrefab;
         GameManager.Instance.SetActivity(prefab);
     }
     private void ReadyCommand(bool ready)

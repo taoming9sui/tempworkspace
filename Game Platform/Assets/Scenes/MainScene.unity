@@ -120,6 +120,87 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &331839544
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 331839546}
+  - component: {fileID: 331839545}
+  m_Layer: 0
+  m_Name: ResourceManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &331839545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 331839544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd6cb6b0635eb23478e69bd7360dcfe5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  metaList:
+  - activityInfos:
+    - ActivityId: MainTheme
+      ActivityPrefab: {fileID: 6257628786545732534, guid: f3aa8ae44bbdc044d8493f1ec85be3fd,
+        type: 3}
+    - ActivityId: Hall
+      ActivityPrefab: {fileID: 3539346960680240606, guid: 5e23b298ff3bf324385fb92cc5417ff4,
+        type: 3}
+    - ActivityId: Wolfman_P8
+      ActivityPrefab: {fileID: 8460327931440896055, guid: db8c0c7cb8d86ca4eaa304e283b2f9d0,
+        type: 3}
+    gameInfos:
+    - GameId: Wolfman_P8
+      GameName: "\u72FC\u4EBA\u67408\u4EBA"
+      ActivityId: Wolfman_P8
+    playerHeadTextures:
+    - {fileID: 2800000, guid: 7d26fdcec5c82c34080f4f5ae02b204a, type: 3}
+    - {fileID: 2800000, guid: 9bda0b45ff81e3e40957fa4de067fdc2, type: 3}
+    - {fileID: 2800000, guid: b31ad9162c58f144986dcb898d349309, type: 3}
+    - {fileID: 2800000, guid: 72ee4a9c137a1cb4d915d0b99c89cc4d, type: 3}
+    - {fileID: 2800000, guid: b5f0242c518b77341a76a74c8b14ee7d, type: 3}
+    - {fileID: 2800000, guid: 0ed41040248f0284fb977717a68826f8, type: 3}
+    - {fileID: 2800000, guid: a95437bafeb04b246a7be8c0addb142a, type: 3}
+    - {fileID: 2800000, guid: f1d8da238cd68ea4a8337c3c5eaae08d, type: 3}
+    - {fileID: 2800000, guid: e053a41488746c34b8f7fb0ef19009b6, type: 3}
+    - {fileID: 2800000, guid: 4abdb64457008da47ae6cdc768ff4ec7, type: 3}
+    - {fileID: 2800000, guid: 828d48dda94d2dc49b4e5a33d0cbc146, type: 3}
+    - {fileID: 2800000, guid: d75636fef3df371408c4c3fb0543aba4, type: 3}
+    - {fileID: 2800000, guid: ce21c70a7603cd9479df44642ec41517, type: 3}
+    - {fileID: 2800000, guid: e4321960df9cbb240a05f129210b3cec, type: 3}
+    - {fileID: 2800000, guid: dd214b7e62e5c3c4daed5c8fcfd3fd8d, type: 3}
+    - {fileID: 2800000, guid: 3c971e7a235d70b4ab43d9252b1618d0, type: 3}
+    - {fileID: 2800000, guid: 83805e747c9af7844a1edaa87913d369, type: 3}
+    - {fileID: 2800000, guid: 52241454491d11f488000d41e4c27c3c, type: 3}
+    - {fileID: 2800000, guid: 0d0e12319ff56ec458cde24e1512b3a4, type: 3}
+    - {fileID: 2800000, guid: 8d29133b545822644ba2f2845d333f7c, type: 3}
+    - {fileID: 2800000, guid: 07cdeed768bb2ae439f2aaea41e43e7b, type: 3}
+    - {fileID: 2800000, guid: 923c9e2659a377b418e56715bb024ce3, type: 3}
+--- !u!4 &331839546
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 331839544}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &435409685
 GameObject:
   m_ObjectHideFlags: 0
@@ -148,7 +229,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &670338889
 GameObject:
@@ -160,8 +241,6 @@ GameObject:
   m_Component:
   - component: {fileID: 670338890}
   - component: {fileID: 670338891}
-  - component: {fileID: 670338893}
-  - component: {fileID: 670338892}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -201,30 +280,6 @@ MonoBehaviour:
   activitiesObj: {fileID: 435409685}
   currentActivity: {fileID: 0}
   defaultCamera: {fileID: 1384128336}
---- !u!114 &670338892
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 670338889}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 955e852d657bfc640bcc39d852438a93, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &670338893
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 670338889}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dd6cb6b0635eb23478e69bd7360dcfe5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1384128334
 GameObject:
   m_ObjectHideFlags: 0

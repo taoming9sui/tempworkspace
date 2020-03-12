@@ -47,7 +47,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     {
                         bool hasOne = reader.HasRows;
                         if (hasOne)
-                            throw new InfoException("gamecenter.register.multiple_register");
+                            throw new InfoException("resultcode.register.multiple_register");
                     }
                 }
                 //填写注册表单
@@ -104,14 +104,14 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     {
                         bool hasOne = reader.Read();
                         if (!hasOne)
-                            throw new InfoException("gamecenter.login.idpassword_wrong");
+                            throw new InfoException("resultcode.login.idpassword_wrong");
 
                         string password_salt = reader["password_salt"].ToString();
                         string password_md5 = reader["password_md5"].ToString();
                         string input_md5 = SecurityHelper.CreateMD5(password + password_salt);
                         //验证是否成功
                         if (!input_md5.Equals(password_md5))
-                            throw new InfoException("gamecenter.login.idpassword_wrong");
+                            throw new InfoException("resultcode.login.idpassword_wrong");
                     }
                 }
             }

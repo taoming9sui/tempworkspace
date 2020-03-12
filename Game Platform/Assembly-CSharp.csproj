@@ -70,7 +70,6 @@
     <Compile Include="Assets\Scripts\GameActivities\Wolfman_P8\Wolfman_P8.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\ResourceManager.cs" />
-    <Compile Include="Assets\Scripts\TextManager.cs" />
     <Compile Include="Assets\Scripts\UIEffects\FlyInto.cs" />
     <Compile Include="Assets\Scripts\Utils\AudioData.cs" />
     <Compile Include="Assets\Scripts\Utils\AudioPlayer.cs" />
@@ -78,6 +77,7 @@
     <Compile Include="Assets\Scripts\Utils\CustomValue.cs" />
     <Compile Include="Assets\Scripts\Utils\DropdownHandler.cs" />
     <Compile Include="Assets\Scripts\Utils\JsonBinder.cs" />
+    <Compile Include="Assets\Scripts\Utils\LocalizationDictionary.cs" />
     <Compile Include="Assets\Scripts\Utils\MessageContainer.cs" />
     <Compile Include="Assets\Scripts\Utils\ModelDialog.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\client_publicdefinitions.cs" />

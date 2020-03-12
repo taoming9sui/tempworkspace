@@ -30,8 +30,6 @@ namespace GamePlatformServer.GameServer.GameModuels
         #region 游戏规格信息
         public override string GameId { get { return "Wolfman_P8"; } }
 
-        public override string GameName { get { return "狼人杀8人"; } }
-
         public override int MaxPlayerCount { get { return 8; } }
 
         public override bool IsOpened { get { return !m_isPlaying; } }

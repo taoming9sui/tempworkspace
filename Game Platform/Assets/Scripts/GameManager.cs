@@ -30,7 +30,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        GameObject prefab = ResourceManager.Instance.ActivityInfoSet["MainTheme"].ActivityPrefab;
+        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["MainTheme"].ActivityPrefab;
         GameManager.Instance.SetActivity(prefab);
     }
 
