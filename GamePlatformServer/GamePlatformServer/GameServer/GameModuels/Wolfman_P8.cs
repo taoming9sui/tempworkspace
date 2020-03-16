@@ -76,8 +76,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                 case "ReadyCommand":
                     PlayerReady(playerId, (bool)jsonObj.GetValue("Ready"));
                     break;
-                case "IdentityExpectionCommand":
+                case "SetIdentityExpectionCommand":
                     PlayerSetIdentityExpection(playerId, (string)jsonObj.GetValue("IdentityExpection"));
+                    break;
+                case "IdentityOperationCommand":
+                    PlayerIdentityOperation(playerId, (JObject)jsonObj.GetValue("Detail"));
                     break;
             }
         }
@@ -112,6 +115,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public string IdentityExpection = "Random";
             public bool isSpeaking = false;
             public bool isReady = false;
+            public long WaitTimestamp = 0;
             public GameIdentity Identity = null;
         }
         private PlayerSeat[] m_playerSeats;
@@ -237,6 +241,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 jobj.Add("SeatNo", playerSeat.SeatNo);
                 jobj.Add("IsSpeaking", playerSeat.isSpeaking);
                 jobj.Add("IsReady", playerSeat.isReady);
+                jobj.Add("WaitTimestamp", playerSeat.WaitTimestamp);
                 JToken identityJObj = playerSeat.Identity != null ? GetIdentityJObject(playerSeat.Identity) : null;
                 jobj.Add("Identity", identityJObj);
             }
@@ -388,10 +393,18 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private void PlayerSetIdentityExpection(string playerId, string idExpection)
         {
-            PlayerSeat player = null;
-            if (m_playerMapper.TryGetValue(playerId, out player))
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
             {
-                player.IdentityExpection = idExpection;
+                seat.IdentityExpection = idExpection;
+            }
+        }
+        private void PlayerIdentityOperation(string playerId, JObject detailJObj)
+        {
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
+            {
+
             }
         }
 
@@ -429,6 +442,21 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
             jsonObj.Add("ModelViewChange", changeArray);
             BroadMessage(jsonObj.ToString());
+        }
+        private bool IsAllReady()
+        {
+            int count = 0;
+            int onlineCount = 0;
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                if (seat.isReady)
+                    count++;
+                if (seat.HasPlayer)
+                    onlineCount++;
+            }
+            if (count == onlineCount)
+                return true;
+            return false;
         }
         private void GameStartPrepare()
         {
@@ -554,14 +582,20 @@ namespace GamePlatformServer.GameServer.GameModuels
                 }
                 m_playerSeats[seatNo].Identity = identityObj;
             }
-            //5更新状态变量 向玩家同步更新信息
+            //5更新状态变量
             m_gameloopProcess = "CheckIdentity";
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(10).Ticks;
+                seat.WaitTimestamp = waitTimeStamp;
+            }
+            //6客户端同步更新消息
             foreach (PlayerSeat seat in m_playerSeats)
             {
                 JObject jsonObj = new JObject();
                 jsonObj.Add("Action", "GameLoopProcess");
                 JObject content = new JObject();
-                {   
+                {
                     JArray changeArray = new JArray();
                     {
                         JObject change1 = new JObject();
@@ -569,8 +603,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                         change1.Add("Value", GetGamePropertyJObject());
                         changeArray.Add(change1);
                         JObject change2 = new JObject();
-                        change2.Add("JPath", "PlayerProperty.Identity");
-                        change2.Add("Value", GetIdentityJObject(seat.Identity));
+                        change2.Add("JPath", "PlayerProperty");
+                        change2.Add("Value", GetPlayerPropertyJObject(seat));
                         changeArray.Add(change2);
                     }
                     content.Add("ModelViewChange", changeArray);
@@ -602,6 +636,72 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
             jsonObj.Add("Content", content);
             BroadMessage(jsonObj.ToString());
+        }
+        private void DefenderDefend_Choose()
+        {
+            //1列举出守卫玩家
+            IList<PlayerSeat> defenderSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                if (seat.Identity != null)
+                {
+                    if (seat.Identity.IdentityType == "Defender")
+                        return true;
+                }
+                return false;
+            }));
+            //2切换当前动作-》守卫抉择
+            foreach(PlayerSeat defenderSeat in defenderSeats)
+            {
+                Defender defender = (Defender)defenderSeat.Identity;
+                defender.CurrentAction = "Defender_Defend";
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat defenderSeat in defenderSeats)
+            {
+                JObject jsonObj = new JObject();
+                jsonObj.Add("Action", "IdentityActionChoose");
+                JObject content = new JObject();
+                {
+                    JArray changeArray = new JArray();
+                    {
+                        JObject change1 = new JObject();
+                        change1.Add("JPath", "PlayerProperty.Identity");
+                        change1.Add("Value", GetIdentityJObject(defenderSeat.Identity));
+                        changeArray.Add(change1);
+                    }
+                    content.Add("ModelViewChange", changeArray);
+                    content.Add("IdentityAction", "Defender_Defend");
+                }
+                jsonObj.Add("Content", content);
+                SendMessage(defenderSeat.PlayerId, jsonObj.ToString());
+            }
+        }
+        private bool DefenderDefend_Wait()
+        {
+            //等待所有守卫做出选择 或者时间结束
+            int count = 0;
+            int okCount = 0;
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                if(seat.Identity != null)
+                {
+                    if(seat.Identity.IdentityType == "Defender")
+                    {
+                        Defender defender = (Defender)seat.Identity;
+                        count++;
+                        if (defender.CurrentAction == "Default")
+                            okCount++;
+                    }
+                }
+            }
+
+            if (count == okCount)
+                return true;
+            return false;
+        }
+        private void DefenderDefend_Result()
+        {
+
         }
         private void DayOpenEye()
         {
@@ -642,7 +742,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                     while (stopwatch.ElapsedMilliseconds < 3000)
                         yield return 0;
                     //守卫行动
-
+                    DefenderDefend_Choose();
+                    stopwatch.Restart();
+                    while (stopwatch.ElapsedMilliseconds < 10000 || DefenderDefend_Wait())
+                        yield return 0;
+                    DefenderDefend_Result();
                     //预言家行动
 
                     //狼人行动
@@ -661,21 +765,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                     yield return 0;
                 }
             }
-        }
-        private bool IsAllReady()
-        {
-            int count = 0;
-            int onlineCount = 0;
-            foreach (PlayerSeat seat in m_playerSeats)
-            {
-                if (seat.isReady)
-                    count++;
-                if (seat.HasPlayer)
-                    onlineCount++;
-            }
-            if (count == onlineCount)
-                return true;
-            return false;
         }
         #endregion
 

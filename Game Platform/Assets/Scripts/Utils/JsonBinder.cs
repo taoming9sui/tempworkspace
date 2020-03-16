@@ -7,8 +7,21 @@ using UnityEngine;
 
 public class JsonBinder
 {
+    private class BindActionItem
+    {
+        public string TemplatePath;
+        public System.Action<JToken, int[]> UpdateAction;
+        public IDictionary<string, int[]> ChangeRecordSet;
+
+        public BindActionItem(string templatePath, System.Action<JToken, int[]> updateAction)
+        {
+            this.TemplatePath = templatePath;
+            this.UpdateAction = updateAction;
+            this.ChangeRecordSet = new Dictionary<string, int[]>();
+        }
+    }
     private JToken m_jsonObj;
-    private IDictionary<string, System.Action<JToken, int[]>> m_bindActions = new Dictionary<string, System.Action<JToken, int[]>>();
+    private IDictionary<string, BindActionItem> m_bindItemSet = new Dictionary<string, BindActionItem>();
 
     public JsonBinder(JObject jObject)
     {
@@ -18,6 +31,21 @@ public class JsonBinder
     public JsonBinder(JArray jArray)
     {
         m_jsonObj = jArray;
+    }
+
+    public void ApplyUpdate()
+    {
+        foreach(BindActionItem item in m_bindItemSet.Values)
+        {
+            foreach(KeyValuePair<string, int[]> kv in item.ChangeRecordSet)
+            {
+                string jsonPath = kv.Key;
+                JToken jToken = m_jsonObj.SelectToken(jsonPath);
+                int[] arrParams = kv.Value;
+                item.UpdateAction(jToken, arrParams);     
+            }
+            item.ChangeRecordSet.Clear();
+        }
     }
 
     public void SetValue(string jsonPath, JToken value)
@@ -90,7 +118,7 @@ public class JsonBinder
             }
         }
         //3按照路径从下到上触发事件
-        while(pathPartList.Count > 0)
+        while (pathPartList.Count > 0)
         {
             string path = string.Join("", pathPartList);
             string templatePath = "";
@@ -98,19 +126,17 @@ public class JsonBinder
             {
                 Regex reg = new Regex(@"\[(\d+)\]");
                 MatchCollection matchCollection = reg.Matches(path);
-                foreach(Match match in matchCollection)
+                foreach (Match match in matchCollection)
                 {
                     string arridx = match.Groups[1].Value;
                     arrParamList.Add(int.Parse(arridx));
                 }
                 templatePath = reg.Replace(path, "[d]");
             }
-
-            if (m_bindActions.ContainsKey(templatePath))
+            if (m_bindItemSet.ContainsKey(templatePath))
             {
-                System.Action<JToken, int[]> bindAction = m_bindActions[templatePath];
-                JToken pathValue = m_jsonObj.SelectToken(path);
-                bindAction(pathValue, arrParamList.ToArray());
+                BindActionItem bindItem = m_bindItemSet[templatePath];
+                bindItem.ChangeRecordSet[path] = arrParamList.ToArray();
                 break;
             }
             pathPartList.RemoveAt(pathPartList.Count - 1);
@@ -205,12 +231,10 @@ public class JsonBinder
                 }
                 templatePath = reg.Replace(path, "[d]");
             }
-
-            if (m_bindActions.ContainsKey(templatePath))
+            if (m_bindItemSet.ContainsKey(templatePath))
             {
-                System.Action<JToken, int[]> bindAction = m_bindActions[templatePath];
-                JToken pathValue = m_jsonObj.SelectToken(path);
-                bindAction(pathValue, arrParamList.ToArray());
+                BindActionItem bindItem = m_bindItemSet[templatePath];
+                bindItem.ChangeRecordSet[path] = arrParamList.ToArray();
                 break;
             }
             pathPartList.RemoveAt(pathPartList.Count - 1);
@@ -220,17 +244,17 @@ public class JsonBinder
     public void AddBind(string templatePath, System.Action<JToken, int[]> updateAction)
     {
         //绑定更新事件
-        m_bindActions.Add(templatePath, updateAction);
+        BindActionItem newItem = new BindActionItem(templatePath, updateAction);
+        m_bindItemSet.Add(templatePath, newItem);
     }
 
     public void RemoveBind(string templatePath)
     {
-        //解绑更新事件
-        m_bindActions.Remove(templatePath);
+        m_bindItemSet.Remove(templatePath);
     }
 
     public void ClearBind()
     {
-        m_bindActions.Clear();
+        m_bindItemSet.Clear();
     }
 }

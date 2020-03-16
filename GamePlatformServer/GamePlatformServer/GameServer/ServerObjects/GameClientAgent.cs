@@ -63,11 +63,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
             m_socketPath = path;
             //WebSocket监听
             m_socketServer = new WebSocketServer(String.Format("ws://0.0.0.0:{0}", m_socketPort.ToString()));
-            m_socketServer.AddWebSocketService(m_socketPath, ()=>
+            m_socketServer.WebSocketServices.AddService<PlayerSocket>(m_socketPath, (socket) =>
             {
-                PlayerSocket socket = new PlayerSocket();
                 socket.m_serverContainer = m_serverContainer;
-                return socket;
             });
         }
 

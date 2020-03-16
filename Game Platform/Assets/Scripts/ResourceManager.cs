@@ -6,7 +6,10 @@ public class ResourceManager : MonoBehaviour
 {
     static public ResourceManager Instance;
 
-    public ResourceMeta[] metaList;
+    public ResourceMeta[] resourceMetas;
+    public string localLanguage;
+
+    private ResourceMeta m_localMeta;
 
     [System.Serializable]
     public class ActivityInfo
@@ -24,6 +27,7 @@ public class ResourceManager : MonoBehaviour
     [System.Serializable]
     public class ResourceMeta
     {
+        public string language;
         public ActivityInfo[] activityInfos;
         public IDictionary<string, ActivityInfo> ActivityInfoSet;
         public GameInfo[] gameInfos;
@@ -42,21 +46,28 @@ public class ResourceManager : MonoBehaviour
                 GameInfoSet.Add(info.GameId, info);
         }
     }
-
-   
-
+ 
     private void Awake()
     {
         Instance = this;
-        foreach(ResourceMeta meta in metaList)
+        foreach(ResourceMeta meta in resourceMetas)
         {
             meta.Init();
+        }
+        foreach (ResourceMeta meta in resourceMetas)
+        {
+            if(meta.language == localLanguage)
+            {
+                m_localMeta = meta;
+                break;
+            }
+            m_localMeta = resourceMetas[0];
         }
     }
 
     public ResourceMeta Local
     {
-        get { return metaList[0]; }
+        get { return m_localMeta; }
     }
 
 }

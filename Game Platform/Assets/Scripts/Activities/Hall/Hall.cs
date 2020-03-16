@@ -264,24 +264,27 @@ public class Hall : GameActivity
     }
     public void SetMasterVol(Slider slider)
     {
-        if (slider.value < -39)
+        float decibel = 20 * Mathf.Log10(slider.value);
+        if (decibel < -39)
             audioMixer.SetFloat("MasterVolume", -80);
         else
-            audioMixer.SetFloat("MasterVolume", slider.value);
+            audioMixer.SetFloat("MasterVolume", decibel);
     }
     public void SetBGMVol(Slider slider)
     {
-        if (slider.value < -39)
+        float decibel = 20 * Mathf.Log10(slider.value);
+        if (decibel < -39)
             audioMixer.SetFloat("BGMVolume", -80);
         else
-            audioMixer.SetFloat("BGMVolume", slider.value);
+            audioMixer.SetFloat("BGMVolume", decibel);
     }
     public void SetSoundVol(Slider slider)
     {
-        if (slider.value < -39)
+        float decibel = 20 * Mathf.Log10(slider.value);
+        if (decibel < -39)
             audioMixer.SetFloat("SoundVolume", -80);
         else
-            audioMixer.SetFloat("SoundVolume", slider.value);
+            audioMixer.SetFloat("SoundVolume", decibel);
     }
     public void ConfigButton()
     {
@@ -294,20 +297,10 @@ public class Hall : GameActivity
         audioMixer.GetFloat("MasterVolume", out float masterVol);
         audioMixer.GetFloat("BGMVolume", out float bgmVol);
         audioMixer.GetFloat("SoundVolume", out float soundVol);
-        masterSlider.value = masterVol;
-        bgmSlider.value = bgmVol;
-        soundSlider.value = soundVol;
-        modelDialog.ModelShow((code) =>
-        {
-            switch (code)
-            {
-                case "confirm":
-                    {
-
-                    }
-                    break;
-            }
-        });
+        masterSlider.value = Mathf.Pow(10, masterVol / 20); 
+        bgmSlider.value = Mathf.Pow(10, bgmVol / 20);
+        soundSlider.value = Mathf.Pow(10, soundVol / 20);
+        modelDialog.ModelShow();
     }
     #endregion
 

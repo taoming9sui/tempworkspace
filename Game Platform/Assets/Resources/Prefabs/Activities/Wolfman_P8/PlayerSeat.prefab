@@ -162,7 +162,6 @@ GameObject:
   - component: {fileID: 889924151127577565}
   - component: {fileID: 7448600844606103038}
   - component: {fileID: 1052760942489037825}
-  - component: {fileID: 2802228145195294796}
   m_Layer: 0
   m_Name: PlayerSeat
   m_TagString: Untagged
@@ -272,25 +271,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &2802228145195294796
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 219353509781363610}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8296e3e18350934f8b7e11485e9811f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  headImage: {fileID: 7396138954198839520}
-  nameText: {fileID: 3458880457938573939}
-  seatNumber: {fileID: 5496833436515654270}
-  defaultHead: {fileID: 21300000, guid: 1f123977a7bd53542b702e65652bf060, type: 3}
-  checkedMark: {fileID: 6140987400665565437}
-  readyMark: {fileID: 8819760104850917070}
-  speakingMark: {fileID: 5781385047079305691}
 --- !u!1 &1216314136223039807
 GameObject:
   m_ObjectHideFlags: 0
@@ -457,7 +437,7 @@ GameObject:
   - component: {fileID: 8632063812685292831}
   - component: {fileID: 4010062930767398899}
   m_Layer: 0
-  m_Name: number
+  m_Name: number_text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -677,7 +657,7 @@ GameObject:
   - component: {fileID: 8703433367690548231}
   - component: {fileID: 1335908791780404138}
   m_Layer: 0
-  m_Name: check_mark
+  m_Name: selected_mark
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -723,7 +703,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.12259703, g: 0.8962264, b: 0.23024638, a: 0.87058824}
+  m_Color: {r: 0.12259703, g: 1, b: 0.23024638, a: 0.87058824}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:

@@ -5,4 +5,5 @@ using UnityEngine;
 public class CustomValue : MonoBehaviour
 {
     public string stringValue = "";
+    public int intValue = 0;
 }

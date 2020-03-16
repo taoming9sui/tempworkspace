@@ -217,6 +217,9 @@ public class GameManager : MonoBehaviour
         {
             if (m_websocket.IsAlive)
             {
+#if DEBUG
+                Debug.Log(jsonData.ToString());
+#endif
                 m_websocket.Send(jsonData.ToString());
             }
         }
