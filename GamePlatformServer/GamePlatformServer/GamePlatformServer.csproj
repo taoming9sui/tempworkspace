@@ -69,7 +69,8 @@
   <ItemGroup>
     <Compile Include="Exceptions\InfoException.cs" />
     <Compile Include="GameServer\GameModuels\GameModuelLoader.cs" />
-    <Compile Include="GameServer\GameModuels\Wolfman_P8.cs" />
+    <Compile Include="GameServer\GameModuels\Wolfman_P8\Wolfman_P8.cs" />
+    <Compile Include="GameServer\GameModuels\Wolfman_P8\Wolfman_P8_Logic.cs" />
     <Compile Include="GameServer\GameServerContainer.cs" />
     <Compile Include="GameServer\GameModuels\GameModuel.cs" />
     <Compile Include="GameServer\ServerObjects\GameCenterDBAgent.cs" />

@@ -67,6 +67,7 @@
     <Compile Include="Assets\Scripts\Activities\Hall\RoomItem.cs" />
     <Compile Include="Assets\Scripts\Activities\MainTheme\MainTheme.cs" />
     <Compile Include="Assets\Scripts\Activities\Wolfman_P8\Wolfman_P8.cs" />
+    <Compile Include="Assets\Scripts\Activities\Wolfman_P8\Wolfman_P8_Logic.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\ResourceManager.cs" />
     <Compile Include="Assets\Scripts\UIComponents\CanvasAdapter.cs" />

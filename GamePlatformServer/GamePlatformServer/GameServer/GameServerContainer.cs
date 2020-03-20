@@ -31,19 +31,22 @@ namespace GamePlatformServer.GameServer
         {
             try
             {
-                //开启GameCenter
+                //初始化实例
                 LogHelper.LogInfo("初始化GameCenter……");
                 m_center = new GameCenter(this, m_sqliteConnStr);
-                m_center.Start();
-                //开启GameClientAgent
                 LogHelper.LogInfo(string.Format("初始化GameClientAgent在{0}", m_socketPort));
                 m_clientAgent = new GameClientAgent(this, m_socketPort, m_socketPath);
+                //启动实例
+                LogHelper.LogInfo("启动GameCenter……");
+                m_center.Start();
+                LogHelper.LogInfo("启动GameClientAgent……");
                 m_clientAgent.Start();
-                //服务启动
-                LogHelper.LogInfo("服务器启动成功！");
+                //成功
+                LogHelper.LogInfo("服务器启动完成！");
             }
             catch(Exception ex)
             {
+                //失败
                 LogHelper.LogError(ex.Message + "|" + ex.StackTrace);
                 LogHelper.LogInfo("服务器启动失败:" + ex.Message);
             }
@@ -53,13 +56,14 @@ namespace GamePlatformServer.GameServer
         {
             try
             {
-                //关闭GameClientAgent
-                if(m_clientAgent != null)
+                //停止实例
+                LogHelper.LogInfo("停止GameClientAgent……");
+                if (m_clientAgent != null)
                     m_clientAgent.Stop();
-                //关闭GameCenter
+                LogHelper.LogInfo("停止GameCenter……");
                 if (m_center != null)
                     m_center.Stop();
-                //关闭成功
+                //成功
                 LogHelper.LogInfo("服务器已关闭!");
             }
             catch (Exception ex)
