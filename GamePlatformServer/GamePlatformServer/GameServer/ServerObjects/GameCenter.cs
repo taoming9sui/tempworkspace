@@ -18,7 +18,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
     {
         public class QueueEventArgs : EventArgs
         {
-            public enum MessageType { None, Client_Center, Client_Hall, Client_Room };
+            public enum MessageType { None, Client_Center, Client_Hall, Client_Room, Room_Hall };
 
             public MessageType Type { get; set; }
             public string Data { get; set; }
@@ -126,6 +126,9 @@ namespace GamePlatformServer.GameServer.ServerObjects
                             break;
                         case QueueEventArgs.MessageType.Client_Room:
                             this.OnClient_Room(eventArgs.Data, (string)eventArgs.Param1);
+                            break;
+                        case QueueEventArgs.MessageType.Room_Hall:
+                            this.OnRoom_Hall(eventArgs.Data, (string)eventArgs.Param1);
                             break;
                     }
                 }
@@ -384,8 +387,7 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 CenterPlayer player = null;
                 {
                     string playerId = null;
-                    m_mapperSocketIdtoPlayerId.TryGetValue(socketId, out playerId);
-                    if (playerId != null)
+                    if (m_mapperSocketIdtoPlayerId.TryGetValue(socketId, out playerId))
                         m_playerSet.TryGetValue(playerId, out player);
                 }
                 if(player != null)
@@ -418,6 +420,25 @@ namespace GamePlatformServer.GameServer.ServerObjects
                     }
                 }            
 
+            }
+            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
+        }
+        private void OnRoom_Hall(string data, string playerId)
+        {
+            try
+            {
+                CenterPlayer player = null;
+                if (m_playerSet.TryGetValue(playerId, out player))
+                {
+                    JObject jsonObj = JObject.Parse(data);
+                    string action = jsonObj.GetValue("Action").ToString();
+                    switch (action)
+                    {
+                        case "LeaveRoom":
+                            PlayerLeaveRoom(player);
+                            break;
+                    }
+                }
             }
             catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
         }

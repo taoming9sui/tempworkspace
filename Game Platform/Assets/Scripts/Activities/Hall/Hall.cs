@@ -309,7 +309,8 @@ public class Hall : GameActivity
         {
             DropdownHandler dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
             dropdown.ClearItems();
-            dropdown.AddItem(null, "所有");
+            string allItemText = localDic.GetLocalText("text.hall.dropdown_all");
+            dropdown.AddItem(null, allItemText);
             foreach (ResourceManager.GameInfo info in ResourceManager.Instance.Local.GameInfoSet.Values)
                 dropdown.AddItem(info, info.GameName);
         }
@@ -431,9 +432,9 @@ public class Hall : GameActivity
         Text playerpoint_text = panelObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
         Texture2D texture = ResourceManager.Instance.Local.PlayerHeadTextures[m_playerHeadNo];
         player_photo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-        playerid_text.text = string.Format("ID：{0}", m_playerId);
+        playerid_text.text = m_playerId;
         playername_text.text = m_playerName;
-        playerpoint_text.text = string.Format("点数：{0}", m_playerPoint);
+        playerpoint_text.text = m_playerPoint.ToString();
     }
     private void SendChangePlayerInfo(string name, int headNo)
     {
@@ -455,7 +456,7 @@ public class Hall : GameActivity
         {
             //更新Ping显示
             Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/ping_text").GetComponent<Text>();
-            playercount_text.text = dt < 0 ? "失败" : string.Format("{0}ms", dt);
+            playercount_text.text = dt < 0 ? localDic.GetLocalText("text.hall.ping_fail") : string.Format("{0}ms", dt);
         });
         //获取大厅信息
         JObject requestJson = new JObject();

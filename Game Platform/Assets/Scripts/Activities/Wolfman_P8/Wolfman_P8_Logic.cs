@@ -162,10 +162,8 @@ public partial class Wolfman_P8 : GameActivity
                     int targetSeatNo = m_voteTargetSeatNo;
                     if (targetSeatNo == -1)
                     {
-                        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                        sb.AppendLine("需要一个目标");
-                        sb.Append("点击头像，选择目标");
-                        AddGameLog(GameLogType.Tip, sb.ToString());
+                        string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_needtarget_logtip");
+                        AddGameLog(GameLogType.Tip, text);
                     }
                     else
                     {
@@ -197,7 +195,8 @@ public partial class Wolfman_P8 : GameActivity
             case GameLogType.Tip:
                 {
                     System.Text.StringBuilder builder = new System.Text.StringBuilder();
-                    builder.AppendLine("<color=#FF6633>【提示】</color>");
+                    string title = localDic.GetLocalText("text.wolfman_p8.logtitle_tip");
+                    builder.AppendLine(title);
                     builder.Append(logText);
                     message_container.AddMessage(builder.ToString());
                 }
@@ -205,7 +204,8 @@ public partial class Wolfman_P8 : GameActivity
             case GameLogType.Judge:
                 {
                     System.Text.StringBuilder builder = new System.Text.StringBuilder();
-                    builder.AppendLine("<color=#660000>【法官】</color>");
+                    string title = localDic.GetLocalText("text.wolfman_p8.logtitle_judge");
+                    builder.AppendLine(title);
                     builder.Append(logText);
                     message_container.AddMessage(builder.ToString());
                 }
@@ -308,7 +308,7 @@ public partial class Wolfman_P8 : GameActivity
         bool isSpeaking = (bool)playerSeatJObj.GetValue("IsSpeaking");
         bool isReady = (bool)playerSeatJObj.GetValue("IsReady");
         bool isDead = (bool)playerSeatJObj.GetValue("IsDead");
-        //更新界面
+        //更新玩家头像列表
         GameObject seatObj = playerSeatObjs[seatNo];
         if (hasPlayer)
         {
@@ -350,7 +350,9 @@ public partial class Wolfman_P8 : GameActivity
             if (flag)
             {
                 Text info_text = startprepare_panel.transform.Find("info_text").GetComponent<Text>();
-                info_text.text = "游戏即将开始！";
+                string uname = GetIdentityExpectionName(m_identitySelect);
+                string templateText = localDic.GetLocalText("template.wolfman_p8.gamepreparestart_info");
+                info_text.text = string.Format(templateText, localDic.GetLocalText(uname));
 
                 CountdownBar countdown_bar = startprepare_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
                 countdown_bar.StartCountdown(3f);
@@ -364,18 +366,14 @@ public partial class Wolfman_P8 : GameActivity
             //身份界面切换
             if (identityJToken.Type == JTokenType.Object)
             {
-                UpdateCaptionUI(gamePropertyJObj, playerPropertyJObj);
-                UpdateIdentityUI(gamePropertyJObj, playerPropertyJObj);
+                UpdateCaptionUI(gamePropertyJObj);
+                UpdateIdentityUI(playerPropertyJObj);
                 UpdateProcessUI(gamePropertyJObj, playerPropertyJObj);
             }
         }
 
     }
-    private void UpdateCaptionUI(JObject gamePropertyJObj, JObject playerPropertyJObj)
-    {
-
-    }
-    private void UpdateIdentityUI(JObject gamePropertyJObj, JObject playerPropertyJObj)
+    private void UpdateIdentityUI(JObject playerPropertyJObj)
     {
         //读JSON
         JObject identityJObj = (JObject)playerPropertyJObj.GetValue("Identity");
@@ -443,11 +441,13 @@ public partial class Wolfman_P8 : GameActivity
             GameObject defender_defend_panel = process_panel.transform.Find("defender_defend_panel").gameObject;
             {
                 bool flag = currentAction == CurrentActionType.Defender_Defend;
-                defender_defend_panel.SetActive(flag);
-
-                float seconds = GetWaitSeconds(waitTimeStamp);
-                CountdownBar countdown_bar = defender_defend_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
-                countdown_bar.StartCountdown(seconds);
+                defender_defend_panel.SetActive(flag); 
+                if (flag)
+                {
+                    float seconds = GetWaitSeconds(waitTimeStamp);
+                    CountdownBar countdown_bar = defender_defend_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
+                    countdown_bar.StartCountdown(seconds);
+                }
             }
             GameObject checkidentity_panel = process_panel.transform.Find("checkidentity_panel").gameObject;
             {
@@ -456,10 +456,9 @@ public partial class Wolfman_P8 : GameActivity
                 if (flag)
                 {
                     Text info_text = checkidentity_panel.transform.Find("info_text").GetComponent<Text>();
-                    string name = GetIdentityName(identityType);
-                    if (string.IsNullOrEmpty(name))
-                        name = "随机";
-                    info_text.text = string.Format("你的身份牌是<color=#FFFF66>【{0}】</color>\n<color=#FFCC33> 冷静一下 开始你的表演</color>", name);
+                    string uname = GetIdentityName(identityType);
+                    string templateText = localDic.GetLocalText("template.wolfman_p8.checkidentity_info");
+                    info_text.text = string.Format(templateText, localDic.GetLocalText(uname));
 
                     float seconds = GetWaitSeconds(waitTimeStamp);
                     CountdownBar countdown_bar = checkidentity_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
@@ -472,6 +471,34 @@ public partial class Wolfman_P8 : GameActivity
                 nightcloseeye_panel.SetActive(flag);
             }
         }
+    }
+    private void UpdateCaptionUI(JObject gamePropertyJObj)
+    {
+        //读JSON
+        GameloopProcessState gameloopProcess = (GameloopProcessState)(int)gamePropertyJObj.GetValue("GameloopProcess");
+        DayTime dayTime = (DayTime)(int)gamePropertyJObj.GetValue("DayTime");
+        int dayNumber = (int)gamePropertyJObj.GetValue("DayNumber");
+
+        GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
+        GameObject caption_panel = gamecontrol_panel.transform.Find("caption_panel").gameObject;
+
+        GameObject checkidentity_caption = caption_panel.transform.Find("checkidentity_caption").gameObject;
+        {
+            bool flag = gameloopProcess == GameloopProcessState.CheckIdentity;
+            checkidentity_caption.SetActive(flag);
+        }
+        GameObject nightcloseeye_caption = caption_panel.transform.Find("nightcloseeye_caption").gameObject;
+        {
+            bool flag = gameloopProcess == GameloopProcessState.NightCloseEye;
+            nightcloseeye_caption.SetActive(flag);
+            if (flag)
+            {
+                string templateText = localDic.GetLocalText("template.wolfman_p8.nightcloseeye_caption");
+                string text = string.Format(templateText, dayNumber);
+                nightcloseeye_caption.GetComponent<Text>().text = text;
+            }
+        }
+
     }
     #endregion
 
@@ -553,7 +580,7 @@ public partial class Wolfman_P8 : GameActivity
         bool isPlaying = (bool)m_modelViewBinder.GetValue("GameProperty.IsPlaying");
         if (!isPlaying)
         {
-            string text = "当房间满员，且所有玩家已准备时，游戏将自动开始";
+            string text = localDic.GetLocalText("text.wolfman_p8.newjoin_logtip");
             AddGameLog(GameLogType.Tip, text);
         }
     }
@@ -627,7 +654,7 @@ public partial class Wolfman_P8 : GameActivity
                     BaseFunctionCommand(BaseFunctionType.SetIdentityExpection, parms);
                     //2准备开始游戏的消息
                     {
-                        string text = "游戏将要开始！";
+                        string text = localDic.GetLocalText("text.wolfman_p8.gamepreparestart_logtip");
                         AddGameLog(GameLogType.Judge, text);
                     }
                 }
@@ -637,7 +664,7 @@ public partial class Wolfman_P8 : GameActivity
                     //法官通告 开始游戏
                     {
                         ClearGameLog();
-                        string text = "游戏开始！";
+                        string text = localDic.GetLocalText("text.wolfman_p8.gamestart_logtip");
                         AddGameLog(GameLogType.Judge, text);
                     }
                 }
@@ -669,7 +696,9 @@ public partial class Wolfman_P8 : GameActivity
             case GameloopProcessState.CheckIdentity:
                 {
                     GameIdentityType identityType = (GameIdentityType)(int)m_modelViewBinder.GetValue("PlayerProperty.Identity.IdentityType");
-                    string text = string.Format("你的身份是<color=#FF0033>【{0}】</color>", GetIdentityName(identityType));
+                    string uname = GetIdentityName(identityType);
+                    string templateText = localDic.GetLocalText("template.wolfman_p8.checkidentity_logjudge");
+                    string text = string.Format(templateText, localDic.GetLocalText(uname));
                     AddGameLog(GameLogType.Judge, text);
                 }
                 break;
@@ -679,7 +708,7 @@ public partial class Wolfman_P8 : GameActivity
                     int dayNumber = (int)m_modelViewBinder.GetValue("GameProperty.DayNumber");
                     if (dayNumber == 1)
                     {
-                        string text = "游戏正式开始！第一个夜晚来临！";
+                        string text = localDic.GetLocalText("text.wolfman_p8.firstnight_logjudge");
                         AddGameLog(GameLogType.Judge, text);
                     }
                 }
@@ -712,28 +741,54 @@ public partial class Wolfman_P8 : GameActivity
     #endregion
 
     #region 工具函数
+    private string GetIdentityExpectionName(string identityExpection)
+    {
+        string name = "text.wolfman_p8.identityexpection_random";
+        switch (identityExpection)
+        {
+            case "Villager":
+                name = "text.wolfman_p8.identityexpection_villager";
+                break;
+            case "Wolfman":
+                name = "text.wolfman_p8.identityexpection_wolfman";
+                break;
+            case "Prophet":
+                name = "text.wolfman_p8.identityexpection_prophet";
+                break;
+            case "Hunter":
+                name = "text.wolfman_p8.identityexpection_hunter";
+                break;
+            case "Defender":
+                name = "text.wolfman_p8.identityexpection_defender";
+                break;
+            case "Witch":
+                name = "text.wolfman_p8.identityexpection_witch";
+                break;
+        }
+        return name;
+    }
     private string GetIdentityName(GameIdentityType identityType)
     {
         string name = "";
         switch (identityType)
         {
             case GameIdentityType.Villager:
-                name = "村民";
+                name = "text.wolfman_p8.identityname_villager";
                 break;
             case GameIdentityType.Wolfman:
-                name = "狼人";
+                name = "text.wolfman_p8.identityname_wolfman";
                 break;
             case GameIdentityType.Prophet:
-                name = "先知";
+                name = "text.wolfman_p8.identityname_prophet";
                 break;
             case GameIdentityType.Hunter:
-                name = "猎人";
+                name = "text.wolfman_p8.identityname_hunter";
                 break;
             case GameIdentityType.Defender:
-                name = "守卫";
+                name = "text.wolfman_p8.identityname_defender";
                 break;
             case GameIdentityType.Witch:
-                name = "女巫";
+                name = "text.wolfman_p8.identityname_witch";
                 break;
         }
         return name;

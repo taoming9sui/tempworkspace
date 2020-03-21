@@ -32,6 +32,7 @@ public class LocalizationDictionary : MonoBehaviour
     public class Item
     {
         public string unisersalText;
+        [TextArea]
         public string localText;
     }
 

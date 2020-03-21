@@ -194,7 +194,8 @@ public class MainTheme : GameActivity
         }
         else
         {
-            TipModel("两次密码输入不一致");
+            string text = localDic.GetLocalText("text.register.repeatpassword_wrong");
+            TipModel(text);
         }
     }
     private void LoginSuccess()
@@ -204,7 +205,8 @@ public class MainTheme : GameActivity
     }
     private void RegisterSuccess()
     {
-        TipModel("注册成功");
+        string text = localDic.GetLocalText("text.register.success");
+        TipModel(text);
         SetStage("login");
     }
 }

@@ -48,10 +48,12 @@ namespace GamePlatformServer.GameServer.GameModuels
 
         protected override void OnPlayerReconnect(string playerId)
         {
+            ReceiveReconnect(playerId);
         }
 
         protected override void OnPlayerDisconnect(string playerId)
         {
+            ReceiveDisconnect(playerId);
         }
 
         protected override void OnPlayerJoin(string playerId, PlayerInfo info)

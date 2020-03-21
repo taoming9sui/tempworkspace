@@ -330,6 +330,14 @@ namespace GamePlatformServer.GameServer.GameModuels
                 BroadSeatChange(SeatChangeType.Leave, changeArray);
             }
         }
+        private void ReceiveDisconnect(string playerId)
+        {
+
+        }
+        private void ReceiveReconnect(string playerId)
+        {
+
+        }
         private void ReceiveSynchronizeState(string playerId)
         {
             ReturnSynchronizeState(playerId);
@@ -408,13 +416,13 @@ namespace GamePlatformServer.GameServer.GameModuels
                             Defender defender = (Defender)seat.Identity;
                             if (defender.LastDefendNo == targetSeatNo)
                             {
-                                ReturnGameTip(playerId, GameTipType.CommonLog, "text.wolfman_p8.defender_continuous_defend");
+                                ReturnGameTip(playerId, GameTipType.CommonLog, "text.wolfman_p8.actiondecide_defender_continuousdefend_logtip");
                                 return;
                             }
                             PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
                             if (targetSeat.Identity.isDead)
                             {
-                                ReturnGameTip(playerId, GameTipType.CommonLog, "text.wolfman_p8.dead_target");
+                                ReturnGameTip(playerId, GameTipType.CommonLog, "text.wolfman_p8.actiondecide_deadtarget_logtip");
                                 return;
                             }
                             //守卫守人
@@ -438,7 +446,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                 }
             }
         }
-
 
         private void ReturnSynchronizeState(string playerId)
         {

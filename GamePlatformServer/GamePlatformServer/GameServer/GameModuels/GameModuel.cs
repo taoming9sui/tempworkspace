@@ -188,6 +188,16 @@ namespace GamePlatformServer.GameServer.GameModuels
                 m_serverContainer.ClientAgent.PushMessage(eventArgs);
             }
         }
+        protected void KickPlayer(string playerId)
+        {
+            GameCenter.QueueEventArgs eventArgs = new GameCenter.QueueEventArgs();
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "LeaveRoom");
+            eventArgs.Type = GameCenter.QueueEventArgs.MessageType.Room_Hall;
+            eventArgs.Data = jsonObj.ToString();
+            eventArgs.Param1 = playerId;
+            m_serverContainer.Center.PushMessage(eventArgs);
+        }
         #endregion
 
 
