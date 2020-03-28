@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="-40.434957"
-     inkscape:cy="229.32614"
+     inkscape:zoom="2.8284271"
+     inkscape:cx="43.50945"
+     inkscape:cy="378.2192"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -261,5 +261,29 @@
          x="50.920139"
          y="249.51314"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.05555582px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';fill:#ffffff;fill-opacity:1;stroke-width:0.26458335">  查   </tspan></text>
+    <ellipse
+       style="fill:#ff5050;fill-opacity:1;stroke:#000000;stroke-width:0.58523488;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:0.14630871, 0.14630871;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
+       id="path824-6-0-8"
+       cx="17.4625"
+       cy="189.04999"
+       rx="10.290715"
+       ry="10.290716"
+       inkscape:export-filename="D:\PG\git-tempworkspace\Game Platform\Assets\Resources\Images\Wolfman\确定.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05555582px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458335"
+       x="9.6451397"
+       y="191.30481"
+       id="text887-81-9-1"
+       inkscape:export-filename="D:\PG\git-tempworkspace\Game Platform\Assets\Resources\Images\Wolfman\确定.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         id="tspan885-3-66-4"
+         x="9.6451397"
+         y="191.30481"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.05555582px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';fill:#ffffff;fill-opacity:1;stroke-width:0.26458335">确 定  </tspan></text>
   </g>
 </svg>

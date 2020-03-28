@@ -13,6 +13,9 @@ public partial class Wolfman_P8 : GameActivity
     public LocalizationDictionary localDic;
     public GameObject[] playerSeatObjs;
     public Sprite defaultHead;
+    public GameObject commonLogItemPrefab;
+    public GameObject tipModelObj;
+    public GameObject infoModelObj;
 
     #region unity触发器
     private void Awake()
@@ -61,10 +64,12 @@ public partial class Wolfman_P8 : GameActivity
                     case "GameTip":
                         ReceiveGameTip(
                             (GameTipType)(int)data.SelectToken("Content.TipType"),
-                            (string)data.SelectToken("Content.TipText"));
+                            (JObject)data.SelectToken("Content.Params"));
                         break;
                     case "JudgeAnnounce":
-
+                        ReceiveJudgeAnnounce(
+                            (JudgeAnnounceType)(int)data.SelectToken("Content.AnnounceType"),
+                            (JObject)data.SelectToken("Content.Params"));
                         break;
                     case "BaseFunctionResult":
                         ReceiveBaseFunctionResult(
@@ -73,7 +78,10 @@ public partial class Wolfman_P8 : GameActivity
                             (JArray)data.SelectToken("Content.ModelViewChange"));
                         break;
                     case "IdentityFunctionResult":
-
+                        ReceiveIdentityFunctionResult(
+                            (IdentityFunctionType)(int)data.SelectToken("Content.FunctionType"),
+                            (JObject)data.SelectToken("Content.ResultDetail"),
+                            (JArray)data.SelectToken("Content.ModelViewChange"));
                         break;
                     case "PublicProcess":
                         ReceivePublicProcess(

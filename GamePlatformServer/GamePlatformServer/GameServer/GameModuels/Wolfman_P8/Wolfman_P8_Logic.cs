@@ -22,7 +22,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private enum CurrentActionType
         {
-            Default, Defender_Defend, Wolfman_Kill, Hunter_Revenge, Witch_Magic, Prophet_Foresee, Square_Speak, Square_Vote
+            Default, Defender_Defend, Wolfman_Kill, Hunter_Revenge, Witch_Magic, Prophet_Foresee, Square_Speak, Square_Vote, LastWord
         }
         private enum ActionDecisionType
         {
@@ -32,8 +32,9 @@ namespace GamePlatformServer.GameServer.GameModuels
             Prophet_Foresee_Excute, Prophet_Foresee_Abandon,
             Witch_Magic_Poison, Witch_Magic_Save, Witch_Magic_Abandon,
             Hunter_Revenge_Excute, Hunter_Revenge_Abandon,
-            Square_Speak_Begin, Square_Speak_End,
-            Square_Vote_Excute, Square_Vote_Abandon
+            Square_Speak_Begin, Square_Speak_End, Square_Speak_Abandon,
+            Square_Vote_Excute, Square_Vote_Abandon,
+            LastWord_Begin, LastWord_End, LastWord_Abandon,
         }
         private enum ActionIntentionType
         {
@@ -47,6 +48,10 @@ namespace GamePlatformServer.GameServer.GameModuels
         {
             Default, Poison, Save, Defend, Kill, BanishTicket
         }
+        private enum OperationResultType
+        {
+            Default, Saved, Defended, Poisoned, Killed, Banned, Revenged
+        }
         private enum BaseFunctionType
         {
             Default, GameReady, SetIdentityExpection, TestVoice
@@ -58,21 +63,47 @@ namespace GamePlatformServer.GameServer.GameModuels
         private enum IdentityTranslateType
         {
             Default, GoDead,
-            Defender_Defend_Begin, Defender_Defend_End
+            Defender_Defend_Begin, Defender_Defend_End,
+            Prophet_Foresee_Begin, Prophet_Foresee_End
         }
         private enum IdentityFunctionType
         {
-            Default
+            Default,
+            Prophet_ForeseeLog
         }
         private enum GameTipType
         {
-            Default, CommonLog
+            Default, CommonLog, CommonModel, PlayerChangeLog
         }
         private enum JudgeAnnounceType
         {
-            Default
+            Default,
+            DistributeIdentity_Result,
+            Defender_Defend_Excute, Defender_Defend_Abandon,
+            Wolfman_Kill_Excute, Wolfman_Kill_Abandon,
+            Prophet_Foresee_Excute, Prophet_Foresee_Abandon,
+            Witch_Magic_Poison, Witch_Magic_Save, Witch_Magic_Abandon,
+            Hunter_Revenge_Excute, Hunter_Revenge_Abandon,
+            Foresee_Result,
+            Revenge_Report,
+            Speak_Begin, Speak_Abandon, Speak_End,
+            LastWord_Begin, LastWord_Abandon, LastWord_End,
+            Square_Vote_Report, LastNight_Report, GameOverLog_Report
+        }
+        private enum GameOverLogType
+        {
+            Default,
+            Start, DistributeIdentity, NightCloseEye, DayOpenEye, End,
+            Defender_Defend,
+            Wolfman_Kill,
+            Prophet_Foresee,
+            Witch_Magic,
+            Hunter_Revenge,
+            Square_Vote,
+            LastNight
         }
         private enum DayTime { Default, Night, Day };
+        private enum IdentityCamp { Default, Villager, Wolfman }
         #endregion
 
         #region 服务端变量
@@ -98,7 +129,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public bool isSpeaking = false;
             public bool isReady = false;
             public long WaitTimestamp = 0;
-            public GameIdentity Identity = null;
+            public GameIdentity Identity = new GameIdentity();
         }
         private PlayerSeat[] m_playerSeats;
         private class OperationFlag
@@ -116,7 +147,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public GameIdentityType IdentityType = GameIdentityType.Default;
             public CurrentActionType CurrentAction = CurrentActionType.Default;
             public bool isDead = false;
-            public int GameCamp = 0;
+            public IdentityCamp GameCamp =  IdentityCamp.Default;
             public ActionIntention Intention = new ActionIntention();
             public IList<OperationFlag> FlagList = new List<OperationFlag>();
 
@@ -130,6 +161,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public Villager()
             {
                 IdentityType = GameIdentityType.Villager;
+                GameCamp = IdentityCamp.Villager;
             }
         }
         private class Wolfman : GameIdentity
@@ -137,13 +169,16 @@ namespace GamePlatformServer.GameServer.GameModuels
             public Wolfman()
             {
                 IdentityType = GameIdentityType.Wolfman;
+                GameCamp = IdentityCamp.Wolfman;
             }
         }
         private class Prophet : GameIdentity
         {
+            public IDictionary<int, GameIdentityType> ForeseeLog = new Dictionary<int, GameIdentityType>();
             public Prophet()
             {
                 IdentityType = GameIdentityType.Prophet;
+                GameCamp = IdentityCamp.Villager;
             }
         }
         private class Hunter : GameIdentity
@@ -151,6 +186,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public Hunter()
             {
                 IdentityType = GameIdentityType.Hunter;
+                GameCamp = IdentityCamp.Villager;
             }
         }
         private class Defender : GameIdentity
@@ -159,6 +195,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public Defender()
             {
                 IdentityType = GameIdentityType.Defender;
+                GameCamp = IdentityCamp.Villager;
             }
         }
         private class Witch : GameIdentity
@@ -169,6 +206,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public Witch()
             {
                 IdentityType = GameIdentityType.Witch;
+                GameCamp = IdentityCamp.Villager;
             }
         }
         #endregion
@@ -208,8 +246,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             jobj.Add("Connected", playerSeat.Connected);
             jobj.Add("IsSpeaking", playerSeat.isSpeaking);
             jobj.Add("IsReady", playerSeat.isReady);
-            bool isDead = playerSeat.Identity != null ? playerSeat.Identity.isDead : false;
-            jobj.Add("IsDead", isDead);
+            jobj.Add("IsDead", playerSeat.Identity.isDead);
 
             return jobj;
         }
@@ -236,8 +273,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 jobj.Add("IsSpeaking", playerSeat.isSpeaking);
                 jobj.Add("IsReady", playerSeat.isReady);
                 jobj.Add("WaitTimestamp", playerSeat.WaitTimestamp);
-                JToken identityJObj = playerSeat.Identity != null ? GetIdentityJObject(playerSeat.Identity) : null;
-                jobj.Add("Identity", identityJObj);
+                jobj.Add("Identity", GetIdentityJObject(playerSeat.Identity));
             }
             return jobj;
         }
@@ -247,7 +283,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             JObject identityJObj = new JObject();
             identityJObj.Add("IsDead", identity.isDead);
             identityJObj.Add("IdentityType", (int)identity.IdentityType);
-            identityJObj.Add("GameCamp", identity.GameCamp);
+            identityJObj.Add("GameCamp", (int)identity.GameCamp);
             identityJObj.Add("CurrentAction", (int)identity.CurrentAction);
             switch (identity.IdentityType)
             {
@@ -319,7 +355,17 @@ namespace GamePlatformServer.GameServer.GameModuels
                 seat.isReady = false;
                 seat.isSpeaking = false;
                 m_playerMapper.Remove(seat.PlayerId);
-                //2通知客户端
+                //2如果是中途退出 公布消息
+                if (m_isPlaying)
+                {
+                    JObject parms = new JObject();
+                    {
+                        parms.Add("Template", "template.wolfman_p8.playerleave_logtip");
+                        parms.Add("SeatNo", seat.SeatNo);
+                    }
+                    BroadGameTip(GameTipType.PlayerChangeLog, parms);
+                }
+                //3客户端座位列表更新
                 JArray changeArray = new JArray();
                 {
                     JObject change = new JObject();
@@ -328,15 +374,58 @@ namespace GamePlatformServer.GameServer.GameModuels
                     changeArray.Add(change);
                 }
                 BroadSeatChange(SeatChangeType.Leave, changeArray);
+
             }
         }
         private void ReceiveDisconnect(string playerId)
         {
-
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
+            {
+                //1设置座位状态
+                seat.Connected = false;
+                //2公布消息
+                JObject parms = new JObject();
+                {
+                    parms.Add("Template", "template.wolfman_p8.playerdisconnect_logtip");
+                    parms.Add("SeatNo", seat.SeatNo);
+                }
+                BroadGameTip(GameTipType.PlayerChangeLog, parms);
+                //3客户端座位列表更新
+                JArray changeArray = new JArray();
+                {
+                    JObject change = new JObject();
+                    change.Add("JPath", string.Format("PlayerSeatArray[{0}]", seat.SeatNo));
+                    change.Add("Value", GetPlayerSeatJArrayItem(seat));
+                    changeArray.Add(change);
+                }
+                BroadSeatChange(SeatChangeType.Disconnect, changeArray);
+            }
         }
         private void ReceiveReconnect(string playerId)
         {
-
+            PlayerSeat seat = null;
+            if (m_playerMapper.TryGetValue(playerId, out seat))
+            {
+                //1设置座位状态
+                seat.Connected = false;
+                //2公布消息
+                JObject parms = new JObject();
+                {
+                    parms.Add("Template", "template.wolfman_p8.playerreconnect_logtip");
+                    parms.Add("SeatNo", seat.SeatNo);
+                }
+                BroadGameTip(GameTipType.PlayerChangeLog, parms);
+                //3客户端座位列表更新
+                JArray changeArray = new JArray();
+                {
+                    JObject change = new JObject();
+                    change.Add("JPath", string.Format("PlayerSeatArray[{0}]", seat.SeatNo));
+                    change.Add("Value", GetPlayerSeatJArrayItem(seat));
+                    changeArray.Add(change);
+                }
+                BroadSeatChange(SeatChangeType.Reconnect, changeArray);
+            }
         }
         private void ReceiveSynchronizeState(string playerId)
         {
@@ -395,7 +484,26 @@ namespace GamePlatformServer.GameServer.GameModuels
             {
                 switch (functionType)
                 {
-                    default:
+                    case IdentityFunctionType.Prophet_ForeseeLog:
+                        {
+                            if(seat.Identity.IdentityType == GameIdentityType.Prophet)
+                            {
+                                Prophet prophet = (Prophet)seat.Identity;
+                                JObject details = new JObject();
+                                {
+                                    JArray logs = new JArray();
+                                    foreach (KeyValuePair<int, GameIdentityType> kv in prophet.ForeseeLog)
+                                    {
+                                        JObject logItem = new JObject();
+                                        logItem.Add("SeatNo", kv.Key);
+                                        logItem.Add("IdentityType", (int)kv.Value);
+                                        logs.Add(logItem);
+                                    }
+                                    details.Add("ForeseeLogs", logs);
+                                }
+                                ReturnIdentityFunctionResult(seat.PlayerId, IdentityFunctionType.Prophet_ForeseeLog, details, new JArray());
+                            }
+                        }
                         break;
                 }
             }
@@ -414,15 +522,21 @@ namespace GamePlatformServer.GameServer.GameModuels
                             if (seat.Identity.CurrentAction != CurrentActionType.Defender_Defend)
                                 return;
                             Defender defender = (Defender)seat.Identity;
+                            //不能连续守同一个人
                             if (defender.LastDefendNo == targetSeatNo)
                             {
-                                ReturnGameTip(playerId, GameTipType.CommonLog, "text.wolfman_p8.actiondecide_defender_continuousdefend_logtip");
+                                JObject parms = new JObject();
+                                parms.Add("Text", "text.wolfman_p8.actiondecide_defend_continuous_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
+                            //不能守死人
                             PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
                             if (targetSeat.Identity.isDead)
                             {
-                                ReturnGameTip(playerId, GameTipType.CommonLog, "text.wolfman_p8.actiondecide_deadtarget_logtip");
+                                JObject parms = new JObject();
+                                parms.Add("Text", "text.wolfman_p8.actiondecide_deadtarget_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
                             //守卫守人
@@ -443,9 +557,60 @@ namespace GamePlatformServer.GameServer.GameModuels
                             defender.Intention.IntentionType = ActionIntentionType.Default;
                         }
                         break;
+                    case ActionDecisionType.Prophet_Foresee_Excute:
+                        {
+                            if (seat.Identity.IdentityType != GameIdentityType.Prophet)
+                                return;
+                            if (seat.Identity.CurrentAction != CurrentActionType.Prophet_Foresee)
+                                return;
+                            Prophet prophet  = (Prophet)seat.Identity;
+                            PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
+                            //不能验死人
+                            if (targetSeat.Identity.isDead)
+                            {
+                                JObject parms = new JObject();
+                                parms.Add("Text", "text.wolfman_p8.actiondecide_deadtarget_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms);
+                                return;
+                            }
+                            //不能验自己
+                            if(targetSeat.SeatNo == seat.SeatNo)
+                            {
+                                JObject parms = new JObject();
+                                parms.Add("Text", "text.wolfman_p8.actiondecide_foresee_self_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms);
+                                return;
+                            }
+                            //不能重复验
+                            if (prophet.ForeseeLog.ContainsKey(targetSeatNo))
+                            {
+                                JObject parms = new JObject();
+                                parms.Add("Text", "text.wolfman_p8.actiondecide_foresee_repeat_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms);
+                                return;
+                            }
+                            //先知验人
+                            prophet.CurrentAction = CurrentActionType.Default;
+                            prophet.Intention.IntentionType = ActionIntentionType.Foresee;
+                            prophet.Intention.TargetSeatNo = targetSeat.SeatNo;
+                        }
+                        break;
+                    case ActionDecisionType.Prophet_Foresee_Abandon:
+                        {
+                            if (seat.Identity.IdentityType != GameIdentityType.Prophet)
+                                return;
+                            if (seat.Identity.CurrentAction != CurrentActionType.Prophet_Foresee)
+                                return;
+                            //先知不做动作
+                            Prophet prophet = (Prophet)seat.Identity;
+                            prophet.CurrentAction = CurrentActionType.Default;
+                            prophet.Intention.IntentionType = ActionIntentionType.Default;
+                        }
+                        break;
                 }
             }
         }
+
 
         private void ReturnSynchronizeState(string playerId)
         {
@@ -490,17 +655,29 @@ namespace GamePlatformServer.GameServer.GameModuels
             jsonObj.Add("Content", content);
             BroadMessage(jsonObj.ToString());
         }
-        private void ReturnGameTip(string playerId, GameTipType tipType, string tipText)
+        private void ReturnGameTip(string playerId, GameTipType tipType, JObject parms)
         {
             JObject jsonObj = new JObject();
             jsonObj.Add("Action", "GameTip");
             JObject content = new JObject();
             {
                 content.Add("TipType", (int)tipType);
-                content.Add("TipText", tipText);
+                content.Add("Params", parms);
             }
             jsonObj.Add("Content", content);
             SendMessage(playerId, jsonObj.ToString());
+        }
+        private void BroadGameTip(GameTipType tipType, JObject parms)
+        {
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "GameTip");
+            JObject content = new JObject();
+            {
+                content.Add("TipType", (int)tipType);
+                content.Add("Params", parms);
+            }
+            jsonObj.Add("Content", content);
+            BroadMessage(jsonObj.ToString());
         }
         private void ReturnJudgeAnnounce(string playerId, JudgeAnnounceType announceType, JObject parms)
         {
@@ -598,30 +775,35 @@ namespace GamePlatformServer.GameServer.GameModuels
             {
                 seat.isReady = false;
                 seat.isSpeaking = false;
-                seat.Identity = null;
+                seat.Identity = new GameIdentity();
                 seat.IdentityExpection = GameIdentityType.Default;
             }
             m_isPlaying = false;
             m_publicProcess = PublicProcessState.PlayerReady;
             //2广播重置信息
-            JArray changeArray = new JArray();
             {
                 JArray playerSeatArray = GetPlayerSeatJArray();
+                JObject gameProperty = GetGamePropertyJObject();
+                JObject playerProperty = GetPlayerPropertyJObject(m_playerSeats[0]);
+
+                JArray changeArray = new JArray();
                 JObject change1 = new JObject();
                 change1.Add("JPath", "PlayerSeatArray");
                 change1.Add("Value", playerSeatArray);
                 changeArray.Add(change1);
-                JObject gameProperty = GetGamePropertyJObject();
+
                 JObject change2 = new JObject();
                 change2.Add("JPath", "GameProperty");
                 change2.Add("Value", gameProperty);
                 changeArray.Add(change2);
+
                 JObject change3 = new JObject();
-                change3.Add("JPath", "PlayerProperty.Identity");
-                change3.Add("Value", null);
+                change3.Add("JPath", "PlayerProperty");
+                change3.Add("Value", playerProperty);
                 changeArray.Add(change3);
-            }
-            BroadPublicProcess(PublicProcessState.PlayerReady, changeArray);
+
+                BroadPublicProcess(PublicProcessState.PlayerReady, changeArray);
+            }        
         }
         private bool IsAllReady()
         {
@@ -801,14 +983,11 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
             BroadGameloopProcess(GameloopProcessState.NightCloseEye, changeArray);
         }
-        private void DefenderDefend_Choose()
+        private void DefenderDefend_Begin()
         {
             //1列举出守卫玩家
             IList<PlayerSeat> defenderSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
             {
-                //排除空对象
-                if (seat.Identity == null)
-                    return false;
                 //排除掉死亡的玩家
                 if (seat.Identity.isDead)
                     return false;
@@ -850,15 +1029,12 @@ namespace GamePlatformServer.GameServer.GameModuels
             int okCount = 0;
             foreach (PlayerSeat seat in m_playerSeats)
             {
-                if (seat.Identity != null)
+                if (seat.Identity.IdentityType == GameIdentityType.Defender)
                 {
-                    if (seat.Identity.IdentityType == GameIdentityType.Defender)
-                    {
-                        Defender defender = (Defender)seat.Identity;
-                        count++;
-                        if (defender.CurrentAction == CurrentActionType.Default)
-                            okCount++;
-                    }
+                    Defender defender = (Defender)seat.Identity;
+                    count++;
+                    if (defender.CurrentAction == CurrentActionType.Default)
+                        okCount++;
                 }
             }
 
@@ -866,8 +1042,187 @@ namespace GamePlatformServer.GameServer.GameModuels
                 return true;
             return false;
         }
-        private void DefenderDefend_Result()
+        private void DefenderDefend_End()
         {
+            //1列举出守卫玩家
+            IList<PlayerSeat> defenderSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是守卫的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Defender)
+                    return false;
+
+                return true;
+            }));
+            //2读取守卫所作意图 增加flag
+            foreach (PlayerSeat defenderSeat in defenderSeats)
+            {
+                Defender defender = (Defender)defenderSeat.Identity;
+                ActionIntention intention = defender.Intention;
+                if(intention.IntentionType == ActionIntentionType.Defend)
+                {
+                    int seatNo = intention.TargetSeatNo;
+                    //
+                    defender.LastDefendNo = seatNo;
+                    //
+                    PlayerSeat targetSeat = m_playerSeats[seatNo];
+                    OperationFlag flag = new OperationFlag();
+                    flag.FlagType = OperationFlagType.Defend;
+                    flag.SourceSeatNo = defenderSeat.SeatNo;
+                    targetSeat.Identity.FlagList.Add(flag);
+                    //
+                    JObject parms = new JObject();
+                    {
+                        parms.Add("SeatNo", seatNo);
+                    }
+                    ReturnJudgeAnnounce(defenderSeat.PlayerId, JudgeAnnounceType.Defender_Defend_Excute, parms);
+                }
+                else
+                {
+                    //
+                    defender.LastDefendNo = -1;
+                    //
+                    JObject parms = new JObject();
+                    ReturnJudgeAnnounce(defenderSeat.PlayerId, JudgeAnnounceType.Defender_Defend_Abandon, parms);
+                }
+                intention.TargetSeatNo = -1;
+                intention.IntentionType = ActionIntentionType.Default;
+                defender.CurrentAction = CurrentActionType.Default;
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat defenderSeat in defenderSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.Identity.CurrentAction");
+                    change1.Add("Value", (int)defenderSeat.Identity.CurrentAction);
+                    changeArray.Add(change1);
+                }
+                ReturnIdentityTranslate(defenderSeat.PlayerId, IdentityTranslateType.Defender_Defend_End, changeArray);
+            }
+        }
+        private void ProphetForesee_Begin()
+        {
+            //1列举出先知玩家
+            IList<PlayerSeat> prophetSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是先知的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Prophet)
+                    return false;
+
+                return true;
+            }));
+            //2切换当前动作-》先知验人
+            foreach (PlayerSeat prophetSeat in prophetSeats)
+            {
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(10).Ticks;
+                prophetSeat.WaitTimestamp = waitTimeStamp;
+                Prophet prophet = (Prophet)prophetSeat.Identity;
+                prophet.CurrentAction = CurrentActionType.Prophet_Foresee;
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat defenderSeat in prophetSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.WaitTimestamp");
+                    change1.Add("Value", defenderSeat.WaitTimestamp);
+                    changeArray.Add(change1);
+                    JObject change2 = new JObject();
+                    change2.Add("JPath", "PlayerProperty.Identity.CurrentAction");
+                    change2.Add("Value", (int)defenderSeat.Identity.CurrentAction);
+                    changeArray.Add(change2);
+                }
+                ReturnIdentityTranslate(defenderSeat.PlayerId, IdentityTranslateType.Prophet_Foresee_Begin, changeArray);
+            }
+        }
+        private bool ProphetForesee_Wait()
+        {
+            //等待所有先知做出选择 或者时间结束
+            int count = 0;
+            int okCount = 0;
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                if (seat.Identity.IdentityType == GameIdentityType.Prophet)
+                {
+                    Prophet prophet = (Prophet)seat.Identity;
+                    count++;
+                    if (prophet.CurrentAction == CurrentActionType.Default)
+                        okCount++;
+                }
+            }
+
+            if (count == okCount)
+                return true;
+            return false;
+        }
+        private void ProphetForesee_End()
+        {
+            //1列举出先知玩家
+            IList<PlayerSeat> prophetSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是先知的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Prophet)
+                    return false;
+
+                return true;
+            }));
+            //2读取先知的验人目标 返回查验信息
+            foreach (PlayerSeat prophetSeat in prophetSeats)
+            {
+                Prophet prophet = (Prophet)prophetSeat.Identity;
+                ActionIntention intention = prophet.Intention;
+                if (intention.IntentionType == ActionIntentionType.Foresee)
+                {
+                    int seatNo = intention.TargetSeatNo;
+                    //
+                    JObject parms1 = new JObject();
+                    {
+                        parms1.Add("SeatNo", seatNo);
+                    }
+                    ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Prophet_Foresee_Excute, parms1);
+                    //
+                    PlayerSeat targetSeat = m_playerSeats[seatNo];
+                    GameIdentityType identityType = targetSeat.Identity.IdentityType;
+                    JObject parms2 = new JObject();
+                    {
+                        parms2.Add("SeatNo", seatNo);
+                        parms2.Add("IdentityType", (int)identityType);
+                    }
+                    prophet.ForeseeLog[seatNo] = identityType;
+                    ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Foresee_Result, parms2);
+                }
+                else
+                {
+                    JObject parms = new JObject();
+                    ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Prophet_Foresee_Abandon, parms);
+                }
+                intention.TargetSeatNo = -1;
+                intention.IntentionType = ActionIntentionType.Default;
+                prophet.CurrentAction = CurrentActionType.Default;
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat prophetSeat in prophetSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.Identity.CurrentAction");
+                    change1.Add("Value", (int)prophetSeat.Identity.CurrentAction);
+                    changeArray.Add(change1);
+                }
+                ReturnIdentityTranslate(prophetSeat.PlayerId, IdentityTranslateType.Prophet_Foresee_End, changeArray);
+            }
         }
         private IEnumerator<int> JudgeMainLoop()
         {
@@ -904,13 +1259,17 @@ namespace GamePlatformServer.GameServer.GameModuels
                     while (stopwatch.ElapsedMilliseconds < 3000)
                         yield return 0;
                     //守卫行动
-                    DefenderDefend_Choose();
+                    DefenderDefend_Begin();
                     stopwatch.Restart();
                     while (stopwatch.ElapsedMilliseconds < 10000 && !DefenderDefend_Wait())
                         yield return 0;
-                    DefenderDefend_Result();
+                    DefenderDefend_End();
                     //预言家行动
-
+                    ProphetForesee_Begin();
+                    stopwatch.Restart();
+                    while (stopwatch.ElapsedMilliseconds < 10000 && !ProphetForesee_Wait())
+                        yield return 0;
+                    ProphetForesee_End();
                     //狼人行动
 
                     //女巫行动

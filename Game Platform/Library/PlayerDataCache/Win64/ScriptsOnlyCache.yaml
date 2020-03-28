@@ -1,14 +1,19 @@
 ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
+    - AudioPlayer
     - CanvasAdapter
+    - CountdownBar
+    - CustomValue
     - DropdownHandler
     - GameManager
     - Hall
+    - LocalizationDictionary
     - MainTheme
     - ModelDialog
-    - PlayerHead
+    - ResourceManager
     - RoomItem
+    - VerticalContainer
     - Wolfman_P8
     Unity.2D.Tilemap.Editor.dll:
     - UnityEditor.Tilemaps.GridPaintingState
@@ -24,7 +29,6 @@ ScriptsOnlyBuild:
     - UnityEditor.Graphs.AnimatorControllerTool
     UnityEditor.TestRunner.dll:
     - UnityEditor.TestTools.TestRunner.Api.CallbacksHolder
-    - UnityEditor.TestTools.TestRunner.TestListCacheData
     UnityEngine.UI.dll:
     - UnityEngine.EventSystems.EventSystem
     - UnityEngine.EventSystems.StandaloneInputModule
@@ -39,11 +43,12 @@ ScriptsOnlyBuild:
     - UnityEngine.UI.RectMask2D
     - UnityEngine.UI.ScrollRect
     - UnityEngine.UI.Scrollbar
+    - UnityEngine.UI.Slider
     - UnityEngine.UI.Text
     - UnityEngine.UI.Toggle
     - UnityEngine.UI.ToggleGroup
+    - UnityEngine.UI.VerticalLayoutGroup
     com.unity.multiplayer-hlapi.Runtime.dll:
-    - UnityEngine.Networking.NetworkCallbacks
     - UnityEngine.Networking.NetworkIdentity
   sceneClasses:
     Assets/Scenes/MainScene.unity:
@@ -69,12 +74,18 @@ ScriptsOnlyBuild:
       Script: {instanceID: 0}
     - Class: 81
       Script: {instanceID: 0}
+    - Class: 82
+      Script: {instanceID: 0}
+    - Class: 83
+      Script: {instanceID: 0}
     - Class: 104
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 9786}
+      Script: {instanceID: 9784}
     - Class: 114
-      Script: {instanceID: 9836}
+      Script: {instanceID: 9834}
+    - Class: 114
+      Script: {instanceID: 9876}
     - Class: 114
       Script: {instanceID: 9934}
     - Class: 114
@@ -82,61 +93,73 @@ ScriptsOnlyBuild:
     - Class: 114
       Script: {instanceID: 9938}
     - Class: 114
-      Script: {instanceID: 9998}
+      Script: {instanceID: 10000}
     - Class: 114
-      Script: {instanceID: 10002}
+      Script: {instanceID: 10004}
     - Class: 114
-      Script: {instanceID: 10010}
+      Script: {instanceID: 10012}
     - Class: 114
-      Script: {instanceID: 10038}
+      Script: {instanceID: 10040}
     - Class: 114
-      Script: {instanceID: 10048}
+      Script: {instanceID: 10050}
     - Class: 114
-      Script: {instanceID: 10180}
+      Script: {instanceID: 10182}
     - Class: 114
-      Script: {instanceID: 10264}
+      Script: {instanceID: 10266}
     - Class: 114
-      Script: {instanceID: 10304}
+      Script: {instanceID: 10306}
     - Class: 114
-      Script: {instanceID: 10428}
+      Script: {instanceID: 10430}
     - Class: 114
-      Script: {instanceID: 10546}
+      Script: {instanceID: 10452}
     - Class: 114
-      Script: {instanceID: 10560}
+      Script: {instanceID: 10550}
     - Class: 114
-      Script: {instanceID: 10806}
+      Script: {instanceID: 10564}
     - Class: 114
-      Script: {instanceID: 10986}
+      Script: {instanceID: 10810}
     - Class: 114
-      Script: {instanceID: 11054}
+      Script: {instanceID: 10990}
     - Class: 114
-      Script: {instanceID: 11100}
+      Script: {instanceID: 11000}
     - Class: 114
-      Script: {instanceID: 11270}
+      Script: {instanceID: 11060}
     - Class: 114
-      Script: {instanceID: 11284}
+      Script: {instanceID: 11106}
     - Class: 114
-      Script: {instanceID: 11348}
+      Script: {instanceID: 11168}
     - Class: 114
-      Script: {instanceID: 11450}
+      Script: {instanceID: 11256}
     - Class: 114
-      Script: {instanceID: 11606}
+      Script: {instanceID: 11278}
     - Class: 114
-      Script: {instanceID: 11648}
+      Script: {instanceID: 11292}
     - Class: 114
-      Script: {instanceID: 11654}
+      Script: {instanceID: 11360}
     - Class: 114
-      Script: {instanceID: 11942}
+      Script: {instanceID: 11462}
     - Class: 114
-      Script: {instanceID: 11954}
+      Script: {instanceID: 11618}
     - Class: 114
-      Script: {instanceID: 12108}
+      Script: {instanceID: 11660}
     - Class: 114
-      Script: {instanceID: 12124}
+      Script: {instanceID: 11666}
     - Class: 114
-      Script: {instanceID: 12140}
+      Script: {instanceID: 11780}
     - Class: 114
-      Script: {instanceID: 12182}
+      Script: {instanceID: 11956}
+    - Class: 114
+      Script: {instanceID: 12120}
+    - Class: 114
+      Script: {instanceID: 12136}
+    - Class: 114
+      Script: {instanceID: 12152}
+    - Class: 114
+      Script: {instanceID: 12172}
+    - Class: 114
+      Script: {instanceID: 12194}
+    - Class: 114
+      Script: {instanceID: 12198}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -154,6 +177,12 @@ ScriptsOnlyBuild:
     - Class: 223
       Script: {instanceID: 0}
     - Class: 224
+      Script: {instanceID: 0}
+    - Class: 241
+      Script: {instanceID: 0}
+    - Class: 243
+      Script: {instanceID: 0}
+    - Class: 245
       Script: {instanceID: 0}
   scriptHashData:
   - hash:
@@ -194,6 +223,12 @@ ScriptsOnlyBuild:
     className: TeamSpeakAndroidEventHandler
   - hash:
       serializedVersion: 2
+      Hash: caad41b1d23d871fd393fb06fc090796
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: ResourceManager
+  - hash:
+      serializedVersion: 2
       Hash: 5bd9a19c7b5f76c563418e28f48a561b
     assemblyName: com.unity.multiplayer-hlapi.Runtime.dll
     namespaceName: UnityEngine.Networking
@@ -222,6 +257,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.Timeline.dll
     namespaceName: UnityEngine.Timeline
     className: GroupTrack
+  - hash:
+      serializedVersion: 2
+      Hash: 58b50e53feb16161c03144fe96715dad
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: FlyInto
   - hash:
       serializedVersion: 2
       Hash: a5781dc71a671b1ad2b38de19f24b71f
@@ -282,6 +323,18 @@ ScriptsOnlyBuild:
     assemblyName: com.unity.multiplayer-hlapi.Runtime.dll
     namespaceName: UnityEngine.Networking
     className: NetworkTransform
+  - hash:
+      serializedVersion: 2
+      Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
+    assemblyName: UnityEngine.Advertisements.dll
+    namespaceName: UnityEngine.Advertisements
+    className: CallbackExecutor
+  - hash:
+      serializedVersion: 2
+      Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
+    assemblyName: UnityEngine.Advertisements.dll
+    namespaceName: UnityEngine.Advertisements.Editor
+    className: Placeholder
   - hash:
       serializedVersion: 2
       Hash: 7ab0e790220bdca831fdd886b339039d
@@ -360,6 +413,12 @@ ScriptsOnlyBuild:
     assemblyName: UnityEngine.UI.dll
     namespaceName: UnityEngine.UI
     className: Mask
+  - hash:
+      serializedVersion: 2
+      Hash: 248d92c722de74f44eb190aa4bc33c35
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: AudioPlayer
   - hash:
       serializedVersion: 2
       Hash: d251bf88db6c95a6b1aa0b69298da9ef
@@ -518,6 +577,12 @@ ScriptsOnlyBuild:
     className: RemoteTestResultSender
   - hash:
       serializedVersion: 2
+      Hash: c67a8db08566db60488d6810ecb2b82c
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: VerticalContainer
+  - hash:
+      serializedVersion: 2
       Hash: 4fd8bf02e3089425d3502e26c44ba31a
     assemblyName: Unity.TextMeshPro.dll
     namespaceName: TMPro
@@ -552,6 +617,12 @@ ScriptsOnlyBuild:
     assemblyName: com.unity.multiplayer-hlapi.Runtime.dll
     namespaceName: UnityEngine.Networking
     className: NetworkStartPosition
+  - hash:
+      serializedVersion: 2
+      Hash: ead97fd3eb1ffc0654ef278955c26834
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: CustomValue
   - hash:
       serializedVersion: 2
       Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
@@ -644,7 +715,7 @@ ScriptsOnlyBuild:
     className: TextMeshProUGUI
   - hash:
       serializedVersion: 2
-      Hash: 58235f59015da852c2c4f22590b11302
+      Hash: 057867c8b6e1e3e015beb6ff958ffd29
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Wolfman_P8
@@ -668,7 +739,7 @@ ScriptsOnlyBuild:
     className: GraphicRaycaster
   - hash:
       serializedVersion: 2
-      Hash: 53a4f6cb061c44b5d07b11e8fddaef42
+      Hash: 80d01833476e0d74e32e2c5de5996b37
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: Hall
@@ -678,6 +749,12 @@ ScriptsOnlyBuild:
     assemblyName: UnityEngine.TestRunner.dll
     namespaceName: UnityEngine.TestTools
     className: BeforeAfterTestCommandState
+  - hash:
+      serializedVersion: 2
+      Hash: 038e7a6019585468f38d59f1a0387716
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: LocalizationDictionary
   - hash:
       serializedVersion: 2
       Hash: 1dcb82730d983b77cec736c6ef19f814
@@ -710,16 +787,10 @@ ScriptsOnlyBuild:
     className: NetworkAnimator
   - hash:
       serializedVersion: 2
-      Hash: 948e303c8e5732e50883dd4fc0ccffb0
+      Hash: f8d7133ef630c7e32c12273757cdf76f
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: MainTheme
-  - hash:
-      serializedVersion: 2
-      Hash: d7779181aa72c6e615b2caf43b625892
-    assemblyName: Assembly-CSharp.dll
-    namespaceName: 
-    className: PlayerHead
   - hash:
       serializedVersion: 2
       Hash: df434544c9f7b33d1cc7e635b180d279
@@ -812,6 +883,12 @@ ScriptsOnlyBuild:
     className: ToggleGroup
   - hash:
       serializedVersion: 2
+      Hash: f555ef8a8520692908732184cee4b0b2
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: CountdownBar
+  - hash:
+      serializedVersion: 2
       Hash: c3d3430df9e3ea95e3e3d587961390fb
     assemblyName: Unity.Timeline.dll
     namespaceName: UnityEngine.Timeline
@@ -819,4 +896,4 @@ ScriptsOnlyBuild:
   platform: 19
   scenePathNames:
   - Assets/Scenes/MainScene.unity
-  playerPath: "D:/\u65B0\u5EFA\u6587\u4EF6\u5939/Game Platform.exe"
+  playerPath: D:/war3/Game Platform.exe

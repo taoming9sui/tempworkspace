@@ -80,6 +80,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                         (BaseFunctionType)(int)jsonObj.SelectToken("Content.FunctionType"),
                         (JObject)jsonObj.SelectToken("Content.Params"));
                     break;
+                case "IdentityFunction":
+                    RecevieIdentityFunction(playerId,
+                        (IdentityFunctionType)(int)jsonObj.SelectToken("Content.FunctionType"),
+                        (JObject)jsonObj.SelectToken("Content.Params"));
+                    break;
                 case "IdentityActionDecide":
                     ReceiveIdentityActionDecide(playerId, 
                         (ActionDecisionType)(int)jsonObj.SelectToken("Content.DecisionType"),

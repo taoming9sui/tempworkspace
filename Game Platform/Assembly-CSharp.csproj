@@ -73,8 +73,8 @@
     <Compile Include="Assets\Scripts\UIComponents\CanvasAdapter.cs" />
     <Compile Include="Assets\Scripts\UIComponents\CountdownBar.cs" />
     <Compile Include="Assets\Scripts\UIComponents\DropdownHandler.cs" />
-    <Compile Include="Assets\Scripts\UIComponents\MessageContainer.cs" />
     <Compile Include="Assets\Scripts\UIComponents\ModelDialog.cs" />
+    <Compile Include="Assets\Scripts\UIComponents\VerticalContainer.cs" />
     <Compile Include="Assets\Scripts\UIEffects\FlyInto.cs" />
     <Compile Include="Assets\Scripts\Utils\AudioData.cs" />
     <Compile Include="Assets\Scripts\Utils\AudioPlayer.cs" />

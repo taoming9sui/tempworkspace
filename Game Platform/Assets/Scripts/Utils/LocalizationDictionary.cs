@@ -28,6 +28,15 @@ public class LocalizationDictionary : MonoBehaviour
         return "";
     }
 
+    [ContextMenu("Sort Items")]
+    public void SortItems()
+    {
+        System.Array.Sort(dictionaryItems, (a, b) =>
+        {
+            return string.Compare(a.unisersalText, b.unisersalText);
+        });
+    }
+
     [System.Serializable]
     public class Item
     {

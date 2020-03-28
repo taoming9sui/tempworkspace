@@ -9,6 +9,8 @@ public class MainTheme : GameActivity
     public GameObject cameraObj;
     public GameObject panelObj;
     public GameObject sceneObj;
+    public GameObject connectingModelObj;
+    public GameObject connectErrorModelObj;
     public GameObject tipModelObj;
     public AudioPlayer audioPlayer;
     public LocalizationDictionary localDic;
@@ -16,19 +18,17 @@ public class MainTheme : GameActivity
     #region 活动触发器
     public override void OnActivityEnabled(Object param)
     {
-        if (GameManager.Instance.HasConnection)
-            SetStage("login");
-        else
-            SetStage("connect");
+        SetStage("login");
         audioPlayer.PlayBGM("MainThemeBGM1");
     }
     public override void OnDisconnect()
     {
+        ConnectingModel(false);
         ConnectErrorModel();
     }
     public override void OnConnect()
     {
-        SetStage("login");
+        ConnectingModel(false);
     }
     public override void OnMessage(JObject jsonData)
     {
@@ -68,21 +68,22 @@ public class MainTheme : GameActivity
     #region UI交互脚本
     public void ConnectErrorModel()
     {
-        GameObject modelObj = panelObj.transform.Find("connecterror_model").gameObject;
-        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
-        modelDialog.ModelShow((code) =>{
-            switch (code)
-            {
-                case "confirm":
-                    {
-                        StartCoroutine(DoAction_Delay(() =>
-                        {
-                            GameManager.Instance.SocketConnect();
-                        }, 0.2f));
-                    }
-                    break;
-            }
-        });
+        ModelDialog modelDialog = connectErrorModelObj.GetComponent<ModelDialog>();
+        modelDialog.ModelShow();
+    }
+    public void ConnectingModel(bool show)
+    {
+        ModelDialog modelDialog = connectingModelObj.GetComponent<ModelDialog>();
+        if (show)
+        {
+            modelDialog.ModelShow();
+        }
+        else
+        {
+            modelDialog.ModelCancel();
+        }
+        
+        
     }
     public void TipModel(string tip)
     {
@@ -90,7 +91,7 @@ public class MainTheme : GameActivity
         GameObject modelObj = GameObject.Instantiate(tipModelObj, panelObj.transform);
         //2显示该克隆对象
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
-        Text tip_text = modelObj.transform.Find("tip_text").GetComponent<Text>();
+        Text tip_text = modelObj.transform.Find("model/tip_text").GetComponent<Text>();
         tip_text.text = tip;
         //3确定后移除该克隆
         modelDialog.ModelShow((code)=>
@@ -100,23 +101,12 @@ public class MainTheme : GameActivity
     }
     public void SetStage(string code)
     {
-        GameObject connect_panel = panelObj.transform.Find("connect").gameObject;
         GameObject login_panel = panelObj.transform.Find("login").gameObject;
         GameObject register_panel = panelObj.transform.Find("register").gameObject;
-        connect_panel.SetActive(false);
         login_panel.SetActive(false);
         register_panel.SetActive(false);
         switch (code)
         {     
-            case "connect":
-                {
-                    connect_panel.SetActive(true);
-                    StartCoroutine(DoAction_Delay(() =>
-                    {
-                        GameManager.Instance.SocketConnect();
-                    }, 0.2f));
-                }
-                break;
             case "login":
                 {
                     login_panel.SetActive(true);
@@ -163,13 +153,33 @@ public class MainTheme : GameActivity
         yield return new WaitForSeconds(delay);
         action();
     }
+    private void TryConnect(System.Action callBack)
+    {
+        bool connected = GameManager.Instance.HasConnection;
+        if (connected)
+        {
+            callBack();
+        }
+        else
+        {
+            ConnectingModel(true);
+            StartCoroutine(DoAction_Delay(() =>
+            {
+                GameManager.Instance.SocketConnect();
+                if (GameManager.Instance.HasConnection)
+                    callBack();
+            }, 0.1f));
+        }
+    }
     private void SendLogin()
     {
         GameObject login_panel = panelObj.transform.Find("login").gameObject;
         string playerId = login_panel.transform.Find("playerid_input").GetComponent<InputField>().text;
         string password = login_panel.transform.Find("password_input").GetComponent<InputField>().text;
-        //尝试登录
-        GameManager.Instance.PlayerLogin(playerId, password);
+        TryConnect(() => {
+            //尝试登录
+            GameManager.Instance.PlayerLogin(playerId, password);
+        });
     }
     private void SendRegister()
     {
@@ -180,17 +190,19 @@ public class MainTheme : GameActivity
         string repeat = register_panel.transform.Find("repeat_input").GetComponent<InputField>().text;
         if(password == repeat)
         {
-            //尝试登录
-            JObject registerJson = new JObject();
-            registerJson.Add("Type", "Client_Center");
-            JObject data = new JObject();
-            {
-                data.Add("Action", "Register");
-                data.Add("PlayerId", playerId);
-                data.Add("Password", password);
-            }
-            registerJson.Add("Data", data); ;
-            GameManager.Instance.SendMessage(registerJson);
+            TryConnect(() => {
+                //尝试注册
+                JObject registerJson = new JObject();
+                registerJson.Add("Type", "Client_Center");
+                JObject data = new JObject();
+                {
+                    data.Add("Action", "Register");
+                    data.Add("PlayerId", playerId);
+                    data.Add("Password", password);
+                }
+                registerJson.Add("Data", data); ;
+                GameManager.Instance.SendMessage(registerJson);
+            });
         }
         else
         {
