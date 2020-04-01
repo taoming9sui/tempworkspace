@@ -64,12 +64,15 @@ namespace GamePlatformServer.GameServer.GameModuels
         {
             Default, GoDead,
             Defender_Defend_Begin, Defender_Defend_End,
-            Prophet_Foresee_Begin, Prophet_Foresee_End
+            Prophet_Foresee_Begin, Prophet_Foresee_End,
+            Wolfman_Kill_Begin, Wolfman_Kill_End
         }
         private enum IdentityFunctionType
         {
             Default,
-            Prophet_ForeseeLog
+            Prophet_ForeseeLog,
+            Wolfman_BodyLanguage,
+            Wolfman_Whisper
         }
         private enum GameTipType
         {
@@ -89,6 +92,11 @@ namespace GamePlatformServer.GameServer.GameModuels
             Speak_Begin, Speak_Abandon, Speak_End,
             LastWord_Begin, LastWord_Abandon, LastWord_End,
             Square_Vote_Report, LastNight_Report, GameOverLog_Report
+        }
+        private enum BodyLanguageType
+        {
+            Default,
+            Nod, LOL
         }
         private enum GameOverLogType
         {
@@ -166,6 +174,8 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private class Wolfman : GameIdentity
         {
+            public int WhisperTime = 0;
+
             public Wolfman()
             {
                 IdentityType = GameIdentityType.Wolfman;
@@ -501,7 +511,82 @@ namespace GamePlatformServer.GameServer.GameModuels
                                     }
                                     details.Add("ForeseeLogs", logs);
                                 }
-                                ReturnIdentityFunctionResult(seat.PlayerId, IdentityFunctionType.Prophet_ForeseeLog, details, new JArray());
+                                ReturnIdentityFunctionResult(
+                                    seat.PlayerId, IdentityFunctionType.Prophet_ForeseeLog, details, new JArray());
+                            }
+                        }
+                        break;
+                    case IdentityFunctionType.Wolfman_Whisper:
+                        {
+                            if(seat.Identity.IdentityType == GameIdentityType.Wolfman)
+                            {
+                                //0筛选条件
+                                Wolfman wolfman = (Wolfman)seat.Identity;
+                                if (wolfman.CurrentAction != CurrentActionType.Wolfman_Kill)
+                                    return;
+                                //1密语次数减1
+                                if (wolfman.WhisperTime <= 0) 
+                                    return;
+                                wolfman.WhisperTime--;
+                                //2列举出狼人玩家
+                                IList<PlayerSeat> wolfmanSeats = new List<PlayerSeat>(m_playerSeats.Where((s) =>
+                                {
+                                    //排除掉死亡的玩家
+                                    if (s.Identity.isDead)
+                                        return false;
+                                    //排除掉不是狼人的玩家
+                                    if (s.Identity.IdentityType != GameIdentityType.Wolfman)
+                                        return false;
+                                    return true;
+                                }));
+                                //3返回悄悄话
+                                string whisper = (string)parms.GetValue("Whisper");
+                                if (whisper.Length > 2)
+                                    whisper = whisper.Substring(0, 2);
+                                foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
+                                {
+                                    JObject details = new JObject();
+                                    {
+                                        details.Add("SeatNo", seat.SeatNo);
+                                        details.Add("Whisper", whisper);
+                                    }
+                                    ReturnIdentityFunctionResult(
+                                        wolfmanSeat.PlayerId, IdentityFunctionType.Wolfman_Whisper, details, new JArray());
+                                }
+                            }         
+                        }
+                        break;
+                    case IdentityFunctionType.Wolfman_BodyLanguage:
+                        {
+                            if (seat.Identity.IdentityType == GameIdentityType.Wolfman)
+                            {
+                                //0筛选条件
+                                Wolfman wolfman = (Wolfman)seat.Identity;
+                                if (wolfman.CurrentAction != CurrentActionType.Wolfman_Kill)
+                                    return;
+                                //1列举出狼人玩家
+                                IList<PlayerSeat> wolfmanSeats = new List<PlayerSeat>(m_playerSeats.Where((s) =>
+                                {
+                                    //排除掉死亡的玩家
+                                    if (s.Identity.isDead)
+                                        return false;
+                                    //排除掉不是狼人的玩家
+                                    if (s.Identity.IdentityType != GameIdentityType.Wolfman)
+                                        return false;
+                                    return true;
+                                }));
+                                //2返回悄悄话
+                                int bodyLanguageType = (int)parms.GetValue("BodyLanguageType");
+                                foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
+                                {
+                                    JObject details = new JObject();
+                                    {
+                                        details.Add("SeatNo", seat.SeatNo);
+                                        details.Add("BodyLanguageType", bodyLanguageType);
+                                    }
+                                    ReturnIdentityFunctionResult(
+                                        wolfmanSeat.PlayerId, IdentityFunctionType.Wolfman_BodyLanguage, details, new JArray());
+                                }
                             }
                         }
                         break;
@@ -522,7 +607,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                             if (seat.Identity.CurrentAction != CurrentActionType.Defender_Defend)
                                 return;
                             Defender defender = (Defender)seat.Identity;
-                            //不能连续守同一个人
+                            //条件:不能连续守同一个人
                             if (defender.LastDefendNo == targetSeatNo)
                             {
                                 JObject parms = new JObject();
@@ -530,7 +615,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
-                            //不能守死人
+                            //条件:不能守死人
                             PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
                             if (targetSeat.Identity.isDead)
                             {
@@ -539,7 +624,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
-                            //守卫守人
+                            //抉择结束 确定守卫意图
                             defender.CurrentAction = CurrentActionType.Default;
                             defender.Intention.IntentionType = ActionIntentionType.Defend;
                             defender.Intention.TargetSeatNo = targetSeat.SeatNo;
@@ -565,7 +650,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             Prophet prophet  = (Prophet)seat.Identity;
                             PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
-                            //不能验死人
+                            //条件:不能验死人
                             if (targetSeat.Identity.isDead)
                             {
                                 JObject parms = new JObject();
@@ -573,7 +658,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
-                            //不能验自己
+                            //条件:不能验自己
                             if(targetSeat.SeatNo == seat.SeatNo)
                             {
                                 JObject parms = new JObject();
@@ -581,7 +666,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
-                            //不能重复验
+                            //条件:不能重复验
                             if (prophet.ForeseeLog.ContainsKey(targetSeatNo))
                             {
                                 JObject parms = new JObject();
@@ -589,7 +674,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 ReturnGameTip(playerId, GameTipType.CommonModel, parms);
                                 return;
                             }
-                            //先知验人
+                            //抉择结束 确定先知意图
                             prophet.CurrentAction = CurrentActionType.Default;
                             prophet.Intention.IntentionType = ActionIntentionType.Foresee;
                             prophet.Intention.TargetSeatNo = targetSeat.SeatNo;
@@ -605,6 +690,34 @@ namespace GamePlatformServer.GameServer.GameModuels
                             Prophet prophet = (Prophet)seat.Identity;
                             prophet.CurrentAction = CurrentActionType.Default;
                             prophet.Intention.IntentionType = ActionIntentionType.Default;
+                        }
+                        break;
+                    case ActionDecisionType.Wolfman_Kill_Excute:
+                        {
+                            if (seat.Identity.IdentityType != GameIdentityType.Wolfman)
+                                return;
+                            if (seat.Identity.CurrentAction != CurrentActionType.Wolfman_Kill)
+                                return;
+                            Wolfman wolfman = (Wolfman)seat.Identity;
+                            PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
+                            //条件:不能刀死人
+                            if (targetSeat.Identity.isDead)
+                            {
+                                JObject parms1 = new JObject();
+                                parms1.Add("Text", "text.wolfman_p8.actiondecide_deadtarget_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms1);
+                                return;
+                            }
+                            //裁判消息
+                            JObject parms2 = new JObject();
+                            {
+                                parms2.Add("SeatNo", targetSeat.SeatNo);
+                            }
+                            ReturnJudgeAnnounce(seat.PlayerId, JudgeAnnounceType.Wolfman_Kill_Excute, parms2);
+                            //抉择结束 确定狼人意图
+                            wolfman.CurrentAction = CurrentActionType.Default;
+                            wolfman.Intention.IntentionType = ActionIntentionType.Kill;
+                            wolfman.Intention.TargetSeatNo = targetSeat.SeatNo;
                         }
                         break;
                 }
@@ -1056,7 +1169,7 @@ namespace GamePlatformServer.GameServer.GameModuels
 
                 return true;
             }));
-            //2读取守卫所作意图 增加flag
+            //2读取守卫所作意图 增加flag 返回响应
             foreach (PlayerSeat defenderSeat in defenderSeats)
             {
                 Defender defender = (Defender)defenderSeat.Identity;
@@ -1087,9 +1200,9 @@ namespace GamePlatformServer.GameServer.GameModuels
                     JObject parms = new JObject();
                     ReturnJudgeAnnounce(defenderSeat.PlayerId, JudgeAnnounceType.Defender_Defend_Abandon, parms);
                 }
+                //重置意图
                 intention.TargetSeatNo = -1;
                 intention.IntentionType = ActionIntentionType.Default;
-                defender.CurrentAction = CurrentActionType.Default;
             }
             //3客户端同步更新消息
             foreach (PlayerSeat defenderSeat in defenderSeats)
@@ -1127,20 +1240,20 @@ namespace GamePlatformServer.GameServer.GameModuels
                 prophet.CurrentAction = CurrentActionType.Prophet_Foresee;
             }
             //3客户端同步更新消息
-            foreach (PlayerSeat defenderSeat in prophetSeats)
+            foreach (PlayerSeat prophetSeat in prophetSeats)
             {
                 JArray changeArray = new JArray();
                 {
                     JObject change1 = new JObject();
                     change1.Add("JPath", "PlayerProperty.WaitTimestamp");
-                    change1.Add("Value", defenderSeat.WaitTimestamp);
+                    change1.Add("Value", prophetSeat.WaitTimestamp);
                     changeArray.Add(change1);
                     JObject change2 = new JObject();
                     change2.Add("JPath", "PlayerProperty.Identity.CurrentAction");
-                    change2.Add("Value", (int)defenderSeat.Identity.CurrentAction);
+                    change2.Add("Value", (int)prophetSeat.Identity.CurrentAction);
                     changeArray.Add(change2);
                 }
-                ReturnIdentityTranslate(defenderSeat.PlayerId, IdentityTranslateType.Prophet_Foresee_Begin, changeArray);
+                ReturnIdentityTranslate(prophetSeat.PlayerId, IdentityTranslateType.Prophet_Foresee_Begin, changeArray);
             }
         }
         private bool ProphetForesee_Wait()
@@ -1207,9 +1320,9 @@ namespace GamePlatformServer.GameServer.GameModuels
                     JObject parms = new JObject();
                     ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Prophet_Foresee_Abandon, parms);
                 }
+                //重置意图
                 intention.TargetSeatNo = -1;
                 intention.IntentionType = ActionIntentionType.Default;
-                prophet.CurrentAction = CurrentActionType.Default;
             }
             //3客户端同步更新消息
             foreach (PlayerSeat prophetSeat in prophetSeats)
@@ -1222,6 +1335,102 @@ namespace GamePlatformServer.GameServer.GameModuels
                     changeArray.Add(change1);
                 }
                 ReturnIdentityTranslate(prophetSeat.PlayerId, IdentityTranslateType.Prophet_Foresee_End, changeArray);
+            }
+        }
+        private void WolfmanKill_Begin()
+        {
+            //1列举出狼人玩家
+            IList<PlayerSeat> wolfmanSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是狼人的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Wolfman)
+                    return false;
+
+                return true;
+            }));
+            //2切换当前动作-》狼人谋杀
+            foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
+            {
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(15).Ticks;
+                wolfmanSeat.WaitTimestamp = waitTimeStamp;
+                Wolfman wolfman = (Wolfman)wolfmanSeat.Identity;
+                wolfman.CurrentAction = CurrentActionType.Wolfman_Kill;
+                //HARDCODE 三次密语机会
+                wolfman.WhisperTime = 3;
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.WaitTimestamp");
+                    change1.Add("Value", wolfmanSeat.WaitTimestamp);
+                    changeArray.Add(change1);
+                    JObject change2 = new JObject();
+                    change2.Add("JPath", "PlayerProperty.Identity.CurrentAction");
+                    change2.Add("Value", (int)wolfmanSeat.Identity.CurrentAction);
+                    changeArray.Add(change2);
+                }
+                ReturnIdentityTranslate(wolfmanSeat.PlayerId, IdentityTranslateType.Wolfman_Kill_Begin, changeArray);
+            }
+        }
+        private bool WolfmanKill_Wait()
+        {
+            return false;
+        }
+        private void WolfmanKill_End()
+        {
+            //1列举出狼人玩家
+            IList<PlayerSeat> wolfmanSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是狼人的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Wolfman)
+                    return false;
+
+                return true;
+            }));
+            //2狼人所作意图 增加flag
+            foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
+            {
+                Wolfman wolfman = (Wolfman)wolfmanSeat.Identity;
+                ActionIntention intention = wolfman.Intention;
+                if (intention.IntentionType == ActionIntentionType.Kill)
+                {
+                    int seatNo = intention.TargetSeatNo;
+                    //
+                    PlayerSeat targetSeat = m_playerSeats[seatNo];
+                    OperationFlag flag = new OperationFlag();
+                    flag.FlagType = OperationFlagType.Kill;
+                    flag.SourceSeatNo = wolfmanSeat.SeatNo;
+                    targetSeat.Identity.FlagList.Add(flag);
+                }
+                else
+                {
+                    JObject parms = new JObject();
+                    ReturnJudgeAnnounce(wolfmanSeat.PlayerId, JudgeAnnounceType.Wolfman_Kill_Abandon, parms);
+                }
+                //重置意图
+                intention.TargetSeatNo = -1;
+                intention.IntentionType = ActionIntentionType.Default;
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.Identity.CurrentAction");
+                    change1.Add("Value", (int)wolfmanSeat.Identity.CurrentAction);
+                    changeArray.Add(change1);
+                }
+                ReturnIdentityTranslate(wolfmanSeat.PlayerId, IdentityTranslateType.Wolfman_Kill_End, changeArray);
             }
         }
         private IEnumerator<int> JudgeMainLoop()
@@ -1271,7 +1480,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                         yield return 0;
                     ProphetForesee_End();
                     //狼人行动
-
+                    WolfmanKill_Begin();
+                    stopwatch.Restart();
+                    while (stopwatch.ElapsedMilliseconds < 15000 && !WolfmanKill_Wait())
+                        yield return 0;
+                    WolfmanKill_End();
                     //女巫行动
 
                     //白天请睁眼

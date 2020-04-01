@@ -470,7 +470,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8086796764717628001
 RectTransform:
   m_ObjectHideFlags: 0
@@ -614,8 +614,8 @@ GameObject:
   - component: {fileID: 4014965234335579301}
   - component: {fileID: 2117570542444870567}
   - component: {fileID: 8579271948329339019}
-  - component: {fileID: 3104907006593358468}
-  - component: {fileID: 7830978554860728636}
+  - component: {fileID: 1881029027052991502}
+  - component: {fileID: 2827448438357599199}
   m_Layer: 0
   m_Name: RoomItem
   m_TagString: Untagged
@@ -683,7 +683,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &3104907006593358468
+--- !u!114 &1881029027052991502
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -692,7 +692,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7726693601054540507}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Navigation:
@@ -723,10 +723,14 @@ MonoBehaviour:
     m_DisabledTrigger: Disabled
   m_Interactable: 1
   m_TargetGraphic: {fileID: 8579271948329339019}
-  m_OnClick:
+  toggleTransition: 1
+  graphic: {fileID: 6225762940437329015}
+  m_Group: {fileID: 0}
+  onValueChanged:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &7830978554860728636
+  m_IsOn: 0
+--- !u!114 &2827448438357599199
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -735,6 +739,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 7726693601054540507}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b0e0cf91a66162439f3ea3e899d1a31, type: 3}
+  m_Script: {fileID: 11500000, guid: 6f99c0d9367db604ba38dd5401046fac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  stringValue: 
+  intValue: 0

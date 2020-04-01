@@ -24,7 +24,7 @@ public class MainTheme : GameActivity
     public override void OnDisconnect()
     {
         ConnectingModel(false);
-        ConnectErrorModel();
+        ConnectErrorModel(true);
     }
     public override void OnConnect()
     {
@@ -66,10 +66,17 @@ public class MainTheme : GameActivity
     #endregion
 
     #region UI交互脚本
-    public void ConnectErrorModel()
+    public void ConnectErrorModel(bool show)
     {
         ModelDialog modelDialog = connectErrorModelObj.GetComponent<ModelDialog>();
-        modelDialog.ModelShow();
+        if (show)
+        {
+            modelDialog.ModelShow();
+        }
+        else
+        {
+            modelDialog.ModelCancel();
+        }
     }
     public void ConnectingModel(bool show)
     {
@@ -81,9 +88,7 @@ public class MainTheme : GameActivity
         else
         {
             modelDialog.ModelCancel();
-        }
-        
-        
+        }   
     }
     public void TipModel(string tip)
     {

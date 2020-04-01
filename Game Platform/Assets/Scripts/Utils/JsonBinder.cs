@@ -22,15 +22,18 @@ public class JsonBinder
     }
     private JToken m_jsonObj;
     private IDictionary<string, BindActionItem> m_bindItemSet = new Dictionary<string, BindActionItem>();
+    private System.Action<System.Exception> m_catcher;
 
-    public JsonBinder(JObject jObject)
+    public JsonBinder(JObject jObject, System.Action<System.Exception> catcher)
     {
         m_jsonObj = jObject;
+        m_catcher = catcher;
     }
 
-    public JsonBinder(JArray jArray)
+    public JsonBinder(JArray jArray, System.Action<System.Exception> catcher)
     {
         m_jsonObj = jArray;
+        m_catcher = catcher;
     }
 
     public void ApplyUpdate()
@@ -50,37 +53,163 @@ public class JsonBinder
 
     public void SetValue(string jsonPath, JToken value)
     {
-        StringBuilder strBuffer = new StringBuilder();
-        IList<string> pathPartList = new List<string>();
-        //1读取路径
-        for (int i = 0; i < jsonPath.Length; i++)
+        try
         {
-            char c = jsonPath[i];
-            if (c == '.')
+            StringBuilder strBuffer = new StringBuilder();
+            IList<string> pathPartList = new List<string>();
+            //1读取路径
+            for (int i = 0; i < jsonPath.Length; i++)
             {
-                string objkey = strBuffer.ToString();
-                strBuffer.Clear();
-                if (!string.IsNullOrEmpty(objkey))
+                char c = jsonPath[i];
+                if (c == '.')
                 {
+                    string objkey = strBuffer.ToString();
+                    strBuffer.Clear();
+                    if (!string.IsNullOrEmpty(objkey))
+                    {
+                        //记录路径
+                        string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
+                        pathPartList.Add(pathPart);
+                    }
+                }
+                else if (c == '[')
+                {
+                    string objkey = strBuffer.ToString();
+                    strBuffer.Clear();
+                    if (!string.IsNullOrEmpty(objkey))
+                    {
+                        //记录路径
+                        string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
+                        pathPartList.Add(pathPart);
+                    }
+                }
+                else if (c == ']')
+                {
+                    if (i + 1 < jsonPath.Length)
+                    {
+                        int arridx = int.Parse(strBuffer.ToString());
+                        strBuffer.Clear();
+                        //记录路径
+                        string pathPart = string.Format("[{0}]", arridx);
+                        pathPartList.Add(pathPart);
+                    }
+                }
+                else
+                {
+                    strBuffer.Append(c);
+                }
+            }
+            //2设置新值
+            {
+                string path = string.Join("", pathPartList);
+                JToken parentToken = m_jsonObj.SelectToken(path);
+                if (parentToken.Type == JTokenType.Object)
+                {
+                    string objkey = strBuffer.ToString();
+                    strBuffer.Clear();
+                    parentToken[objkey] = value;
                     //记录路径
                     string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
                     pathPartList.Add(pathPart);
                 }
-            }
-            else if (c == '[')
-            {
-                string objkey = strBuffer.ToString();
-                strBuffer.Clear();
-                if (!string.IsNullOrEmpty(objkey))
+                else if (parentToken.Type == JTokenType.Array)
                 {
+                    int arridx = int.Parse(strBuffer.ToString());
+                    strBuffer.Clear();
+                    parentToken[arridx] = value;
+                    //记录路径
+                    string pathPart = string.Format("[{0}]", arridx);
+                    pathPartList.Add(pathPart);
+                }
+            }
+            //3按照路径从下到上触发事件
+            while (pathPartList.Count > 0)
+            {
+                string path = string.Join("", pathPartList);
+                string templatePath = "";
+                List<int> arrParamList = new List<int>();
+                {
+                    Regex reg = new Regex(@"\[(\d+)\]");
+                    MatchCollection matchCollection = reg.Matches(path);
+                    foreach (Match match in matchCollection)
+                    {
+                        string arridx = match.Groups[1].Value;
+                        arrParamList.Add(int.Parse(arridx));
+                    }
+                    templatePath = reg.Replace(path, "[d]");
+                }
+                if (m_bindItemSet.ContainsKey(templatePath))
+                {
+                    BindActionItem bindItem = m_bindItemSet[templatePath];
+                    bindItem.ChangeRecordSet[path] = arrParamList.ToArray();
+                    break;
+                }
+                pathPartList.RemoveAt(pathPartList.Count - 1);
+            }
+        }
+        catch(System.Exception ex) { m_catcher(ex); }  
+    }
+
+    public void ForceUpdate(string jsonPath)
+    {
+        try
+        {
+            StringBuilder strBuffer = new StringBuilder();
+            IList<string> pathPartList = new List<string>();
+            //1读取路径
+            for (int i = 0; i < jsonPath.Length; i++)
+            {
+                char c = jsonPath[i];
+                if (c == '.')
+                {
+                    string objkey = strBuffer.ToString();
+                    strBuffer.Clear();
+                    if (!string.IsNullOrEmpty(objkey))
+                    {
+                        //记录路径
+                        string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
+                        pathPartList.Add(pathPart);
+                    }
+                }
+                else if (c == '[')
+                {
+                    string objkey = strBuffer.ToString();
+                    strBuffer.Clear();
+                    if (!string.IsNullOrEmpty(objkey))
+                    {
+                        //记录路径
+                        string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
+                        pathPartList.Add(pathPart);
+                    }
+                }
+                else if (c == ']')
+                {
+                    if (i + 1 < jsonPath.Length)
+                    {
+                        int arridx = int.Parse(strBuffer.ToString());
+                        strBuffer.Clear();
+                        //记录路径
+                        string pathPart = string.Format("[{0}]", arridx);
+                        pathPartList.Add(pathPart);
+                    }
+                }
+                else
+                {
+                    strBuffer.Append(c);
+                }
+            }
+            {
+                string path = string.Join("", pathPartList);
+                JToken parentToken = m_jsonObj.SelectToken(path);
+                if (parentToken.Type == JTokenType.Object)
+                {
+                    string objkey = strBuffer.ToString();
+                    strBuffer.Clear();
                     //记录路径
                     string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
                     pathPartList.Add(pathPart);
                 }
-            }
-            else if (c == ']')
-            {
-                if (i + 1 < jsonPath.Length)
+                else if (parentToken.Type == JTokenType.Array)
                 {
                     int arridx = int.Parse(strBuffer.ToString());
                     strBuffer.Clear();
@@ -89,156 +218,38 @@ public class JsonBinder
                     pathPartList.Add(pathPart);
                 }
             }
-            else
+            //3按照路径从下到上触发事件
+            while (pathPartList.Count > 0)
             {
-                strBuffer.Append(c);
-            }
-        }
-        //2设置新值
-        {
-            string path = string.Join("", pathPartList);
-            JToken parentToken = m_jsonObj.SelectToken(path);
-            if (parentToken.Type == JTokenType.Object)
-            {
-                string objkey = strBuffer.ToString();
-                strBuffer.Clear();
-                parentToken[objkey] = value;
-                //记录路径
-                string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
-                pathPartList.Add(pathPart);
-            }
-            else if (parentToken.Type == JTokenType.Array)
-            {
-                int arridx = int.Parse(strBuffer.ToString());
-                strBuffer.Clear();
-                parentToken[arridx] = value;
-                //记录路径
-                string pathPart = string.Format("[{0}]", arridx);
-                pathPartList.Add(pathPart);
-            }
-        }
-        //3按照路径从下到上触发事件
-        while (pathPartList.Count > 0)
-        {
-            string path = string.Join("", pathPartList);
-            string templatePath = "";
-            List<int> arrParamList = new List<int>();
-            {
-                Regex reg = new Regex(@"\[(\d+)\]");
-                MatchCollection matchCollection = reg.Matches(path);
-                foreach (Match match in matchCollection)
+                string path = string.Join("", pathPartList);
+                string templatePath = "";
+                List<int> arrParamList = new List<int>();
                 {
-                    string arridx = match.Groups[1].Value;
-                    arrParamList.Add(int.Parse(arridx));
+                    Regex reg = new Regex(@"\[(\d+)\]");
+                    MatchCollection matchCollection = reg.Matches(path);
+                    foreach (Match match in matchCollection)
+                    {
+                        string arridx = match.Groups[1].Value;
+                        arrParamList.Add(int.Parse(arridx));
+                    }
+                    templatePath = reg.Replace(path, "[d]");
                 }
-                templatePath = reg.Replace(path, "[d]");
+                if (m_bindItemSet.ContainsKey(templatePath))
+                {
+                    BindActionItem bindItem = m_bindItemSet[templatePath];
+                    bindItem.ChangeRecordSet[path] = arrParamList.ToArray();
+                    break;
+                }
+                pathPartList.RemoveAt(pathPartList.Count - 1);
             }
-            if (m_bindItemSet.ContainsKey(templatePath))
-            {
-                BindActionItem bindItem = m_bindItemSet[templatePath];
-                bindItem.ChangeRecordSet[path] = arrParamList.ToArray();
-                break;
-            }
-            pathPartList.RemoveAt(pathPartList.Count - 1);
         }
+        catch (System.Exception ex) { m_catcher(ex); }
     }
 
     public JToken GetValue(string jsonPath)
     {
         JToken value = m_jsonObj.SelectToken(jsonPath);
         return value;
-    }
-
-    public void ForceUpdate(string jsonPath)
-    {
-        StringBuilder strBuffer = new StringBuilder();
-        IList<string> pathPartList = new List<string>();
-        //1读取路径
-        for (int i = 0; i < jsonPath.Length; i++)
-        {
-            char c = jsonPath[i];
-            if (c == '.')
-            {
-                string objkey = strBuffer.ToString();
-                strBuffer.Clear();
-                if (!string.IsNullOrEmpty(objkey))
-                {
-                    //记录路径
-                    string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
-                    pathPartList.Add(pathPart);
-                }
-            }
-            else if (c == '[')
-            {
-                string objkey = strBuffer.ToString();
-                strBuffer.Clear();
-                if (!string.IsNullOrEmpty(objkey))
-                {
-                    //记录路径
-                    string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
-                    pathPartList.Add(pathPart);
-                }
-            }
-            else if (c == ']')
-            {
-                if (i + 1 < jsonPath.Length)
-                {
-                    int arridx = int.Parse(strBuffer.ToString());
-                    strBuffer.Clear();
-                    //记录路径
-                    string pathPart = string.Format("[{0}]", arridx);
-                    pathPartList.Add(pathPart);
-                }
-            }
-            else
-            {
-                strBuffer.Append(c);
-            }
-        }
-        {
-            string path = string.Join("", pathPartList);
-            JToken parentToken = m_jsonObj.SelectToken(path);
-            if (parentToken.Type == JTokenType.Object)
-            {
-                string objkey = strBuffer.ToString();
-                strBuffer.Clear();
-                //记录路径
-                string pathPart = pathPartList.Count > 0 ? string.Format(".{0}", objkey) : objkey;
-                pathPartList.Add(pathPart);
-            }
-            else if (parentToken.Type == JTokenType.Array)
-            {
-                int arridx = int.Parse(strBuffer.ToString());
-                strBuffer.Clear();
-                //记录路径
-                string pathPart = string.Format("[{0}]", arridx);
-                pathPartList.Add(pathPart);
-            }
-        }
-        //3按照路径从下到上触发事件
-        while (pathPartList.Count > 0)
-        {
-            string path = string.Join("", pathPartList);
-            string templatePath = "";
-            List<int> arrParamList = new List<int>();
-            {
-                Regex reg = new Regex(@"\[(\d+)\]");
-                MatchCollection matchCollection = reg.Matches(path);
-                foreach (Match match in matchCollection)
-                {
-                    string arridx = match.Groups[1].Value;
-                    arrParamList.Add(int.Parse(arridx));
-                }
-                templatePath = reg.Replace(path, "[d]");
-            }
-            if (m_bindItemSet.ContainsKey(templatePath))
-            {
-                BindActionItem bindItem = m_bindItemSet[templatePath];
-                bindItem.ChangeRecordSet[path] = arrParamList.ToArray();
-                break;
-            }
-            pathPartList.RemoveAt(pathPartList.Count - 1);
-        }
     }
 
     public void AddBind(string templatePath, System.Action<JToken, int[]> updateAction)

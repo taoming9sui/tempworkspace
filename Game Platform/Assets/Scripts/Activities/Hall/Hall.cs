@@ -14,14 +14,15 @@ public class Hall : GameActivity
     public GameObject tipModelObj;
     public AudioPlayer audioPlayer;
     public AudioMixer audioMixer;
+    public GameObject[] roomItemObjs;
     public LocalizationDictionary localDic;
-    public RoomItem[] roomItems;
 
     private IDictionary<string, float> m_updateTimerSet = new Dictionary<string, float>();
     private IList<RoomItemInfo> m_roomInfoList = new List<RoomItemInfo>();
     private IList<RoomItemInfo> m_pageRoomInfoList = new List<RoomItemInfo>();
     private int m_roomPageSize = 0;
     private int m_roomPageNo = 1;
+    private int m_selectedRoomItemIdx = -1;
     private string m_playerId = "";
     private string m_playerName = "";
     private int m_playerHeadNo = 0;
@@ -31,7 +32,7 @@ public class Hall : GameActivity
     private void Awake()
     {
         //初始化信息列表
-        m_roomPageSize = roomItems.Length;
+        m_roomPageSize = roomItemObjs.Length;
         //初始化计时器项目
         InitTimer();
     }
@@ -59,6 +60,7 @@ public class Hall : GameActivity
     }
     public override void OnDisconnect()
     {
+        DisconnectModel();
     }
     public override void OnConnect()
     {
@@ -88,8 +90,7 @@ public class Hall : GameActivity
                     case "Tip":
                         {
                             string resultCode = data.GetValue("Content").ToString();
-                            string text = localDic.GetLocalText(resultCode);
-                            this.TipModel(text);
+                            this.ReceiveResultTip(resultCode);
                         }
                         break;
                     case "ResponseHallInfo":
@@ -101,13 +102,13 @@ public class Hall : GameActivity
                     case "ResponsePlayerInfo":
                         {
                             JObject content = (JObject)data.GetValue("Content");
-                            this.UpdatePlayerInfo(content.ToString());
+                            this.ReceivePlayerInfo(content.ToString());
                         }
                         break;
                     case "ChangePlayerInfoSuccess":
                         {
                             JObject content = (JObject)data.GetValue("Content");
-                            this.UpdatePlayerInfo(content.ToString());
+                            this.ReceivePlayerInfo(content.ToString());
                         }
                         break;
                     case "InRoom":
@@ -166,11 +167,11 @@ public class Hall : GameActivity
     {
         GameObject modelObj = panelObj.transform.Find("createroom_model").gameObject;
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
-        modelDialog.ModelShow((code) =>
+        modelDialog.ModelShow((result) =>
         {
-            switch (code)
+            switch (result)
             {
-                case "confirm":
+                case ModelDialog.ModelResult.Confirm:
                     {
                         string caption = modelObj.transform.Find("model/caption_input").GetComponent<InputField>().text;
                         string password = modelObj.transform.Find("model/password_input").GetComponent<InputField>().text;
@@ -180,14 +181,36 @@ public class Hall : GameActivity
             }
         });
     }
-    public void TipModel(string tip)
+    public void DisconnectModel()
+    {
+        GameObject modelObj = panelObj.transform.Find("disconnect_model").gameObject;
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        modelDialog.ModelShow((result) =>
+        {
+            switch (result)
+            {
+                case ModelDialog.ModelResult.Confirm:
+                    {
+                        TryConnectAndLogin();
+                    }
+                    break;
+                case ModelDialog.ModelResult.Cancel:
+                    {
+                        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["MainTheme"].ActivityPrefab;
+                        GameManager.Instance.SetActivity(prefab);
+                    }
+                    break;
+            }
+        });
+    }
+    public void TipModel(string tipText)
     {
         //1对话框对象克隆
         GameObject modelObj = GameObject.Instantiate(tipModelObj, panelObj.transform);
         //2显示该克隆对象
         ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
         Text tip_text = modelObj.transform.Find("model/tip_text").GetComponent<Text>();
-        tip_text.text = tip;
+        tip_text.text = tipText;
         //3确定后移除该克隆
         modelDialog.ModelShow((code) =>
         {
@@ -202,29 +225,27 @@ public class Hall : GameActivity
         else
             SetRoomViewPage(m_roomPageNo - 1);
         //取消选择其它房间项
-        for (int i = 0; i < roomItems.Length; i++)
-            roomItems[i].Selected = false;
+        m_selectedRoomItemIdx = -1;
+        for (int i = 0; i < roomItemObjs.Length; i++)
+            roomItemObjs[i].GetComponent<Toggle>().isOn = false;
         //更新房间列表
-        UpdateRoomView();
+        UpdateRoomItemUI();
     }
-    public void RoomItemClicked(int number)
+    public void RoomItemToggle(Toggle toggle)
     {
-        //取消选择其它房间项
-        for (int i = 0; i < roomItems.Length; i++)
+        if (toggle.isOn)
         {
-            if (i != number)
-                roomItems[i].Selected = false;
-        }
-        if (roomItems[number].Selected)
-        {
-            //二次被点击
-            int roomItemNo = (m_roomPageNo - 1) * m_roomPageSize + number;
-            TryJoinRoom(m_roomInfoList[roomItemNo]);
-        }
-        else
-        {
-            //首次被点击
-            roomItems[number].Selected = true;
+            int no = toggle.GetComponent<CustomValue>().intValue;
+            if (m_selectedRoomItemIdx != no)
+            {
+                m_selectedRoomItemIdx = no;
+            }
+            else
+            {
+                //二次被点击
+                int roomItemNo = (m_roomPageNo - 1) * m_roomPageSize + no;
+                TryJoinRoom(m_roomInfoList[roomItemNo]);
+            }
         }
     }
     public void RoomFilterChanged()
@@ -232,7 +253,7 @@ public class Hall : GameActivity
         //得到过滤后的列表
         FilterRoomList();
         //更新房间列表
-        UpdateRoomView();
+        UpdateRoomItemUI();
     }
     public void ChangePlayerInfoButton()
     {
@@ -244,11 +265,11 @@ public class Hall : GameActivity
         playerid_text.text = m_playerId;
         playername_input.text = m_playerName;
         head_dropdown.SelectedIndex = m_playerHeadNo;
-        modelDialog.ModelShow((code) =>
+        modelDialog.ModelShow((result) =>
         {
-            switch (code)
+            switch (result)
             {
-                case "confirm":
+                case ModelDialog.ModelResult.Confirm:
                     {
                         string name = playername_input.text;
                         int headNo = (int)head_dropdown.SelectedValue;
@@ -297,10 +318,110 @@ public class Hall : GameActivity
         audioMixer.GetFloat("MasterVolume", out float masterVol);
         audioMixer.GetFloat("BGMVolume", out float bgmVol);
         audioMixer.GetFloat("SoundVolume", out float soundVol);
-        masterSlider.value = Mathf.Pow(10, masterVol / 20); 
+        masterSlider.value = Mathf.Pow(10, masterVol / 20);
         bgmSlider.value = Mathf.Pow(10, bgmVol / 20);
         soundSlider.value = Mathf.Pow(10, soundVol / 20);
         modelDialog.ModelShow();
+    }
+    #endregion
+
+    #region UI更新脚本
+    private void ClearChat()
+    {
+        Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
+        chat_text.text = "";
+        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
+    }
+    private void AddChat(string sender, string chat)
+    {
+        //添加一行聊天信息
+        Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
+        chat_text.text += string.Format("<color=#A52A2AFF>[{0}] </color>{1}\n", sender, chat);
+        //滚动条刷新到最底部
+        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
+        Scrollbar scrollbar = panelObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
+        StartCoroutine(DoAction_Delay(() =>
+        {
+            if (scrollbar.value < 0.2f || scrollbar.size > 0.5f)
+                scrollbar.value = 0;
+        }, 0.1f));
+    }
+    private void UpdateRoomItemUI()
+    {
+        //更新房间列表的显示
+
+        for (int i = 0; i < roomItemObjs.Length; i++)
+        {
+            GameObject roomItemObj = roomItemObjs[i];
+            roomItemObj.SetActive(false);
+            if (i < m_pageRoomInfoList.Count)
+            {
+                RoomItemInfo roomItemInfo = m_pageRoomInfoList[i];
+                if (roomItemInfo != null)
+                {
+                    roomItemObj.SetActive(true);
+
+                    Text game_text = roomItemObj.transform.Find("game_image/Text").GetComponent<Text>();
+                    Text status_text = roomItemObj.transform.Find("status_text").GetComponent<Text>();
+                    Text count_text = roomItemObj.transform.Find("count_image/Text").GetComponent<Text>();
+                    Text caption_text = roomItemObj.transform.Find("caption_image/Text").GetComponent<Text>();
+
+                    game_text.text = roomItemInfo.GameName;
+                    {
+                        string p1 = "";
+                        switch (roomItemInfo.Status)
+                        {
+                            case 1:
+                                p1 = string.Format("<color=#7CFC00FF>{0}</color>",
+                                    localDic.GetLocalText("text.hall.word_joinable"));
+                                break;
+                            case 2:
+                                p1 = string.Format("<color=#B22222FF>{0}</color>",
+                                    localDic.GetLocalText("text.hall.word_full"));
+                                break;
+                            case 3:
+                                p1 = string.Format("<color=#B22222FF>游戏中</color>",
+                                    localDic.GetLocalText("text.hall.word_playing"));
+                                break;
+                        }
+                        string p2 = roomItemInfo.HasPassword ? localDic.GetLocalText("text.hall.word_password") : "";
+                        status_text.text = string.Format("{0}  <color=#FFD700FF>{1}</color>", p1, p2);
+                    }
+                    count_text.text = roomItemInfo.Count + " / " + roomItemInfo.MaxCount;
+                    caption_text.text = roomItemInfo.Caption;
+                }
+            }
+        }
+    }
+    private void UpdateHallInfoUI(int playerCount)
+    {
+        Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/playercount_text").GetComponent<Text>();
+        playercount_text.text = playerCount.ToString();
+    }
+    private void UpdatePlayerInfoUI(string playerInfoStr)
+    {
+        //解析玩家信息JSON
+        JObject jsonObj = JObject.Parse(playerInfoStr);
+        m_playerId = jsonObj.GetValue("Id").ToString();
+        m_playerName = jsonObj.GetValue("Name").ToString();
+        m_playerPoint = (int)jsonObj.GetValue("Point");
+        m_playerHeadNo = (int)jsonObj.GetValue("HeadNo");
+        //更新UI界面
+        Image player_photo = panelObj.transform.Find("infopanel/player_photo").GetComponent<Image>();
+        Text playerid_text = panelObj.transform.Find("infopanel/playerid_text").GetComponent<Text>();
+        Text playername_text = panelObj.transform.Find("infopanel/playername_text").GetComponent<Text>();
+        Text playerpoint_text = panelObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
+        Texture2D texture = ResourceManager.Instance.Local.PlayerHeadTextures[m_playerHeadNo];
+        player_photo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+        playerid_text.text = m_playerId;
+        playername_text.text = m_playerName;
+        playerpoint_text.text = m_playerPoint.ToString();
+    }
+    private void UpdatePingUI(int ms)
+    {
+        //更新Ping显示
+        Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/ping_text").GetComponent<Text>();
+        playercount_text.text = ms < 0 ? localDic.GetLocalText("text.hall.ping_fail") : string.Format("{0}ms", ms);
     }
     #endregion
 
@@ -348,134 +469,6 @@ public class Hall : GameActivity
             this.RequestHallInfo();
         }
     }
-    private void ClearChat()
-    {
-        Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
-        chat_text.text = "";
-        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
-    }
-    private void SendLogout()
-    {
-        GameManager.Instance.PlayerLogout();
-    }
-    private void LogoutSuccess()
-    {
-        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["MainTheme"].ActivityPrefab;
-        GameManager.Instance.SetActivity(prefab);
-    }
-    private void SendChat(string chat)
-    {
-        if (chat != string.Empty)
-        {
-            //发送消息
-            JObject dataJson = new JObject();
-            dataJson.Add("Type", "Client_Hall");
-            JObject data = new JObject();
-            {
-                data.Add("Action", "HallChat");
-                data.Add("Chat", chat);
-            }
-            dataJson.Add("Data", data); ;
-            GameManager.Instance.SendMessage(dataJson);
-        }
-    }
-    private void SendCreateRoom(string caption, string password)
-    {
-        JObject createRoomJson = new JObject();
-        createRoomJson.Add("Type", "Client_Hall");
-        JObject data = new JObject();
-        {
-            data.Add("Action", "CreateRoom");
-            data.Add("GameId", "");
-            data.Add("Caption", caption);
-            data.Add("Password", password);
-        }
-        createRoomJson.Add("Data", data); ;
-        GameManager.Instance.SendMessage(createRoomJson);
-    }
-    private void ReceiveChat(string sender, string chat)
-    {
-        //添加一行聊天信息
-        Text chat_text = panelObj.transform.Find("chatpanel/chat_textarea/Text").GetComponent<Text>();
-        chat_text.text += string.Format("<color=#A52A2AFF>[{0}] </color>{1}\n", sender, chat);
-        //滚动条刷新到最底部
-        chat_text.gameObject.GetComponent<ContentSizeFitter>().SetLayoutVertical();
-        Scrollbar scrollbar = panelObj.transform.Find("chatpanel/chat_scroll").GetComponent<Scrollbar>();
-        StartCoroutine(DoAction_Delay(() => {
-            if (scrollbar.value < 0.2f || scrollbar.size > 0.5f)
-                scrollbar.value = 0;
-        }, 0.1f));
-    }
-    private void RequestPlayerInfo()
-    {
-        JObject requestJson = new JObject();
-        requestJson.Add("Type", "Client_Hall");
-        JObject data = new JObject();
-        {
-            data.Add("Action", "RequestPlayerInfo");
-        }
-        requestJson.Add("Data", data); ;
-        GameManager.Instance.SendMessage(requestJson);
-    }
-    private void UpdatePlayerInfo(string playerInfoStr)
-    {
-        //解析玩家信息JSON
-        JObject jsonObj = JObject.Parse(playerInfoStr);
-        m_playerId = jsonObj.GetValue("Id").ToString();
-        m_playerName = jsonObj.GetValue("Name").ToString();
-        m_playerPoint = (int)jsonObj.GetValue("Point");
-        m_playerHeadNo = (int)jsonObj.GetValue("HeadNo");
-        //更新UI界面
-        Image player_photo = panelObj.transform.Find("infopanel/player_photo").GetComponent<Image>();
-        Text playerid_text = panelObj.transform.Find("infopanel/playerid_text").GetComponent<Text>();
-        Text playername_text = panelObj.transform.Find("infopanel/playername_text").GetComponent<Text>();
-        Text playerpoint_text = panelObj.transform.Find("infopanel/playerpoint_text").GetComponent<Text>();
-        Texture2D texture = ResourceManager.Instance.Local.PlayerHeadTextures[m_playerHeadNo];
-        player_photo.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-        playerid_text.text = m_playerId;
-        playername_text.text = m_playerName;
-        playerpoint_text.text = m_playerPoint.ToString();
-    }
-    private void SendChangePlayerInfo(string name, int headNo)
-    {
-        JObject requestJson = new JObject();
-        requestJson.Add("Type", "Client_Hall");
-        JObject data = new JObject();
-        {
-            data.Add("Action", "ChangePlayerInfo");
-            data.Add("Name", name);
-            data.Add("HeadNo", headNo);
-        }
-        requestJson.Add("Data", data); ;
-        GameManager.Instance.SendMessage(requestJson);
-    }
-    private void RequestHallInfo()
-    {
-        //Ping服务器
-        GameManager.Instance.Ping((dt) =>
-        {
-            //更新Ping显示
-            Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/ping_text").GetComponent<Text>();
-            playercount_text.text = dt < 0 ? localDic.GetLocalText("text.hall.ping_fail") : string.Format("{0}ms", dt);
-        });
-        //获取大厅信息
-        JObject requestJson = new JObject();
-        requestJson.Add("Type", "Client_Hall");
-        JObject data = new JObject();
-        {
-            data.Add("Action", "RequestHallInfo");
-        }
-        requestJson.Add("Data", data); ;
-        GameManager.Instance.SendMessage(requestJson);
-    }
-    private void ReceiveHallInfo(string roomListStr, int roomCount, int playerCount)
-    {
-        //更新玩家数显示
-        Text playercount_text = panelObj.transform.Find("roompanel/right/statuspanel/playercount_text").GetComponent<Text>();
-        playercount_text.text = playerCount.ToString();
-        //更新房间列表
-        UpdateRoomList(roomListStr);
-    }
     private void UpdateRoomList(string roomListStr)
     {
         JArray jsonArr = JArray.Parse(roomListStr);
@@ -506,7 +499,7 @@ public class Hall : GameActivity
         //得到过滤后的列表
         FilterRoomList();
         //更新房间列表
-        UpdateRoomView();
+        UpdateRoomItemUI();
     }
     private void FilterRoomList()
     {
@@ -549,25 +542,6 @@ public class Hall : GameActivity
             }
         }
     }
-    private void UpdateRoomView()
-    {
-        //更新房间列表的显示
-        for (int i = 0; i < roomItems.Length; i++)
-        {
-            RoomItem roomItem = roomItems[i];
-            roomItem.SetVisiblity(false);
-
-            if (i < m_pageRoomInfoList.Count)
-            {
-                RoomItemInfo roomItemInfo = m_pageRoomInfoList[i];
-                if (roomItemInfo != null)
-                {
-                    roomItem.SetVisiblity(true);
-                    roomItem.SetRoomInfo(roomItemInfo.GameName, roomItemInfo.Caption, roomItemInfo.HasPassword, roomItemInfo.Status, roomItemInfo.Count, roomItemInfo.MaxCount);
-                }
-            }
-        }
-    }
     private void SetRoomViewPage(int pageNo)
     {
         //检查页数是否超出范围
@@ -589,11 +563,11 @@ public class Hall : GameActivity
             caption_text.text = info.Caption;
             game_text.text = info.GameName;
             password_input.text = "";
-            modelDialog.ModelShow((code) =>
+            modelDialog.ModelShow((result) =>
             {
-                switch (code)
+                switch (result)
                 {
-                    case "confirm":
+                    case ModelDialog.ModelResult.Confirm:
                         {
                             string password = password_input.text;
                             SendJoinRoom(info, password);
@@ -608,6 +582,47 @@ public class Hall : GameActivity
             SendJoinRoom(info, "");
         }
     }
+    private void TryConnectAndLogin()
+    {
+        GameManager.Instance.SocketConnect();
+        GameManager.Instance.PlayerLogin();
+    }
+
+    #region 客户端接口和响应
+    private void SendLogout()
+    {
+        GameManager.Instance.PlayerLogout();
+    }
+    private void SendChat(string chat)
+    {
+        if (chat != string.Empty)
+        {
+            //发送消息
+            JObject dataJson = new JObject();
+            dataJson.Add("Type", "Client_Hall");
+            JObject data = new JObject();
+            {
+                data.Add("Action", "HallChat");
+                data.Add("Chat", chat);
+            }
+            dataJson.Add("Data", data); ;
+            GameManager.Instance.SendMessage(dataJson);
+        }
+    }
+    private void SendCreateRoom(string caption, string password)
+    {
+        JObject createRoomJson = new JObject();
+        createRoomJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "CreateRoom");
+            data.Add("GameId", "");
+            data.Add("Caption", caption);
+            data.Add("Password", password);
+        }
+        createRoomJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(createRoomJson);
+    }
     private void SendJoinRoom(RoomItemInfo info, string password)
     {
         JObject joinRoomJson = new JObject();
@@ -621,6 +636,68 @@ public class Hall : GameActivity
         joinRoomJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(joinRoomJson);
     }
+    private void SendChangePlayerInfo(string name, int headNo)
+    {
+        JObject requestJson = new JObject();
+        requestJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "ChangePlayerInfo");
+            data.Add("Name", name);
+            data.Add("HeadNo", headNo);
+        }
+        requestJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(requestJson);
+    }
+    private void RequestPlayerInfo()
+    {
+        JObject requestJson = new JObject();
+        requestJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "RequestPlayerInfo");
+        }
+        requestJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(requestJson);
+    }
+    private void RequestHallInfo()
+    {
+        //Ping服务器
+        GameManager.Instance.Ping((dt) =>
+        {
+            UpdatePingUI(dt);
+        });
+        //获取大厅信息
+        JObject requestJson = new JObject();
+        requestJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "RequestHallInfo");
+        }
+        requestJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(requestJson);
+    }
+
+    private void ReceiveChat(string sender, string chat)
+    {
+        AddChat(sender, chat);
+    }
+    private void ReceiveHallInfo(string roomListStr, int roomCount, int playerCount)
+    {
+        //更新大厅UI显示
+        UpdateHallInfoUI(playerCount);
+        //更新房间列表
+        UpdateRoomList(roomListStr);
+    }
+    private void ReceivePlayerInfo(string playerInfoStr)
+    {
+        UpdatePlayerInfoUI(playerInfoStr);
+    }
+    private void ReceiveResultTip(string resultCode)
+    {
+        string tipText = localDic.GetLocalText(resultCode);
+        TipModel(tipText);
+    }
     private void JoinRoomSuccess(string gameId, string roomId)
     {
         //加入成功 跳转游戏活动
@@ -628,12 +705,19 @@ public class Hall : GameActivity
         GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet[gameinfo.ActivityId].ActivityPrefab;
         GameManager.Instance.SetActivity(prefab);
     }
+    private void LogoutSuccess()
+    {
+        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet["MainTheme"].ActivityPrefab;
+        GameManager.Instance.SetActivity(prefab);
+    }
+    #endregion
+
+
     private IEnumerator DoAction_Delay(System.Action action, float delay)
     {
         yield return new WaitForSeconds(delay);
         action();
     }
-
     #region 工具类
     private class RoomItemInfo
     {

@@ -176,13 +176,17 @@ public class GameManager : MonoBehaviour
     }
     public void PlayerLogin(string playerId, string password)
     {
+        //1保存用于登陆的凭据 方便重连
+        m_playerId = playerId;
+        m_password = password;
+        //2
         JObject loginJson = new JObject();
         loginJson.Add("Type", "Client_Center");
         JObject data = new JObject();
         {
             data.Add("Action", "Login");
-            data.Add("PlayerId", playerId);
-            data.Add("Password", password);
+            data.Add("PlayerId", m_playerId);
+            data.Add("Password", m_password);
         }
         loginJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(loginJson);

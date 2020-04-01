@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public partial class Wolfman_P8 : GameActivity
 {
-
     #region 枚举类
     private enum PublicProcessState
     {
@@ -60,12 +59,15 @@ public partial class Wolfman_P8 : GameActivity
     {
         Default, GoDead,
         Defender_Defend_Begin, Defender_Defend_End,
-        Prophet_Foresee_Begin, Prophet_Foresee_End
+        Prophet_Foresee_Begin, Prophet_Foresee_End,
+        Wolfman_Kill_Begin, Wolfman_Kill_End
     }
     private enum IdentityFunctionType
     {
         Default,
-        Prophet_ForeseeLog
+        Prophet_ForeseeLog,
+        Wolfman_BodyLanguage,
+        Wolfman_Whisper
     }
     private enum GameTipType
     {
@@ -85,6 +87,11 @@ public partial class Wolfman_P8 : GameActivity
         Speak_Begin, Speak_Abandon, Speak_End,
         LastWord_Begin, LastWord_Abandon, LastWord_End,
         Square_Vote_Report, LastNight_Report, GameOverLog_Report
+    }
+    private enum BodyLanguageType
+    {
+        Default,
+        Nod, LOL
     }
     private enum GameOverLogType
     {
@@ -152,7 +159,10 @@ public partial class Wolfman_P8 : GameActivity
         }
         modelViewObj.Add("PlayerProperty", playerProperty);
         //构建模型视图绑定器
-        m_modelViewBinder = new JsonBinder(modelViewObj);
+        m_modelViewBinder = new JsonBinder(modelViewObj, (ex) =>
+        {
+            Debug.LogError(ex.StackTrace);
+        });
     }
     #endregion
 
@@ -239,10 +249,26 @@ public partial class Wolfman_P8 : GameActivity
                     IdentityActionDecideCommand(ActionDecisionType.Prophet_Foresee_Abandon, -1);
                 }
                 break;
+            case "Wolfman_Kill_Excute":
+                {
+                    int targetSeatNo = m_voteTargetSeatNo;
+                    if (targetSeatNo == -1)
+                    {
+                        string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_needtarget_modeltip");
+                        TipModel(text);
+                    }
+                    else
+                    {
+                        IdentityActionDecideCommand(ActionDecisionType.Wolfman_Kill_Excute, targetSeatNo);
+                    }
+                }
+                break;
         }
     }
-    public void IdentityFunctionButton(string function)
+    public void IdentityFunctionButton(string paramStr)
     {
+        string[] paramArrs = paramStr.Split(';');
+        string function = paramArrs[0];
         switch (function)
         {
             case "Prophet_ForeseeLog":
@@ -250,12 +276,60 @@ public partial class Wolfman_P8 : GameActivity
                     IdentityFunctionCommand(IdentityFunctionType.Prophet_ForeseeLog, new JObject());
                 }
                 break;
+            case "Wolfman_BodyLanguage":
+                {
+                    JObject parms = new JObject();
+                    {
+                        string type = paramArrs[1];
+                        switch (type)
+                        {
+                            case "Nod":
+                                parms.Add("BodyLanguageType", (int)BodyLanguageType.Nod);
+                                break;
+                            case "LOL":
+                                parms.Add("BodyLanguageType", (int)BodyLanguageType.LOL);
+                                break;
+                        }
+                    }
+                    IdentityFunctionCommand(IdentityFunctionType.Wolfman_BodyLanguage, parms);
+                }
+                break;
+        }
+    }
+    public void IdentityFunctionInput(InputField inputField)
+    {
+        //1
+        if (!Input.GetKeyDown(KeyCode.Return))
+            return;
+        string inputText = inputField.text;
+        inputField.text = "";
+        inputField.Select();
+        inputField.ActivateInputField();
+
+        //2
+        CustomValue valueObj = inputField.gameObject.GetComponent<CustomValue>();
+        string function = valueObj.stringValue;
+        switch (function)
+        {
+            case "Wolfman_Whisper":
+                {
+
+                    string whisper = inputText.Length > 2 ?
+                        inputText.Substring(0, 2) :
+                        inputText;
+                    JObject parms = new JObject();
+                    {
+                        parms.Add("Whisper", whisper);
+                    }
+                    IdentityFunctionCommand(IdentityFunctionType.Wolfman_Whisper, parms);
+                }
+                break;
         }
     }
     #endregion
 
     #region UI界面更新
-    private enum UILogType { None, Tip, Judge };
+    private enum UILogType { None, Tip, Judge, Wolfman };
     private enum SeatUIMarkType { Default, Selected, Ready, Speaking, DisConnected };
     private void ClearGameLog()
     {
@@ -282,6 +356,17 @@ public partial class Wolfman_P8 : GameActivity
                 {
                     System.Text.StringBuilder builder = new System.Text.StringBuilder();
                     string title = localDic.GetLocalText("text.wolfman_p8.logtitle_judge");
+                    builder.AppendLine(title);
+                    builder.Append(logText);
+                    GameObject messageObj = message_container.NewItem(commonLogItemPrefab);
+                    Text textObj = messageObj.transform.Find("Text").GetComponent<Text>();
+                    textObj.text = builder.ToString();
+                }
+                break;
+            case UILogType.Wolfman:
+                {
+                    System.Text.StringBuilder builder = new System.Text.StringBuilder();
+                    string title = localDic.GetLocalText("text.wolfman_p8.logtitle_wolfman");
                     builder.AppendLine(title);
                     builder.Append(logText);
                     GameObject messageObj = message_container.NewItem(commonLogItemPrefab);
@@ -504,7 +589,7 @@ public partial class Wolfman_P8 : GameActivity
         villager_panel.SetActive(identityType == GameIdentityType.Villager);
         wolfman_panel.SetActive(identityType == GameIdentityType.Wolfman);
         prophet_panel.SetActive(identityType == GameIdentityType.Prophet);
-        hunter_panel.SetActive(identityType ==  GameIdentityType.Hunter);
+        hunter_panel.SetActive(identityType == GameIdentityType.Hunter);
         defender_panel.SetActive(identityType == GameIdentityType.Defender);
         witch_panel.SetActive(identityType == GameIdentityType.Witch);
         GameObject currentPanel = null;
@@ -552,7 +637,7 @@ public partial class Wolfman_P8 : GameActivity
             GameObject defender_defend_panel = process_panel.transform.Find("defender_defend_panel").gameObject;
             {
                 bool flag = currentAction == CurrentActionType.Defender_Defend;
-                defender_defend_panel.SetActive(flag); 
+                defender_defend_panel.SetActive(flag);
                 if (flag)
                 {
                     float seconds = GetWaitSeconds(waitTimeStamp);
@@ -568,6 +653,17 @@ public partial class Wolfman_P8 : GameActivity
                 {
                     float seconds = GetWaitSeconds(waitTimeStamp);
                     CountdownBar countdown_bar = prophet_foresee_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
+                    countdown_bar.StartCountdown(seconds);
+                }
+            }
+            GameObject wolfman_kill_panel = process_panel.transform.Find("wolfman_kill_panel").gameObject;
+            {
+                bool flag = currentAction == CurrentActionType.Wolfman_Kill;
+                wolfman_kill_panel.SetActive(flag);
+                if (flag)
+                {
+                    float seconds = GetWaitSeconds(waitTimeStamp);
+                    CountdownBar countdown_bar = wolfman_kill_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
                     countdown_bar.StartCountdown(seconds);
                 }
             }
@@ -665,7 +761,7 @@ public partial class Wolfman_P8 : GameActivity
                 content.Add("FunctionType", (int)functionType);
                 content.Add("Params", parms);
             }
-            data.Add("Content", content);      
+            data.Add("Content", content);
         }
         cmdJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(cmdJson);
@@ -744,7 +840,7 @@ public partial class Wolfman_P8 : GameActivity
                 break;
             case GameTipType.CommonModel:
                 {
-                    string u_text = (string)parms.GetValue("Text"); 
+                    string u_text = (string)parms.GetValue("Text");
                     string text = localDic.GetLocalText(u_text);
                     TipModel(text);
                 }
@@ -791,6 +887,20 @@ public partial class Wolfman_P8 : GameActivity
             case JudgeAnnounceType.Prophet_Foresee_Abandon:
                 {
                     string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_foresee_abandon_response");
+                    AddGameLog(UILogType.Judge, text);
+                }
+                break;
+            case JudgeAnnounceType.Wolfman_Kill_Excute:
+                {
+                    int targetSeatNo = (int)parms.GetValue("SeatNo");
+                    string template = localDic.GetLocalText("template.wolfman_p8.actiondecide_kill_excute_response");
+                    string text = string.Format(template, targetSeatNo + 1);
+                    AddGameLog(UILogType.Judge, text);
+                }
+                break;
+            case JudgeAnnounceType.Wolfman_Kill_Abandon:
+                {
+                    string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_kill_abandon_response");
                     AddGameLog(UILogType.Judge, text);
                 }
                 break;
@@ -853,6 +963,38 @@ public partial class Wolfman_P8 : GameActivity
                         }
                     }
                     InfoModel(title, sb.ToString());
+                }
+                break;
+            case IdentityFunctionType.Wolfman_Whisper:
+                {
+                    string whisper = (string)resultDetail.GetValue("Whisper");
+                    int seatNo = (int)resultDetail.GetValue("SeatNo");
+                    string noTemplate = localDic.GetLocalText("template.wolfman_p8.word_seatno");
+                    string noText = string.Format(noTemplate, seatNo + 1);
+                    string text = string.Format(
+                        "<color=#FF0033>{0}</color> ----- <color=#FF3300>{1}</color>", noText, whisper);
+                    AddGameLog(UILogType.Wolfman, text);
+                }
+                break;
+            case IdentityFunctionType.Wolfman_BodyLanguage:
+                {
+                    BodyLanguageType bodyLanguageType = (BodyLanguageType)(int)resultDetail.GetValue("BodyLanguageType");
+                    int seatNo = (int)resultDetail.GetValue("SeatNo");
+                    string noTemplate = localDic.GetLocalText("template.wolfman_p8.word_seatno");
+                    string noText = string.Format(noTemplate, seatNo + 1);
+                    string bodyLanguageText = "";
+                    switch (bodyLanguageType)
+                    {
+                        case BodyLanguageType.LOL:
+                            bodyLanguageText = localDic.GetLocalText("text.wolfman_p8.word_lol");
+                            break;
+                        case BodyLanguageType.Nod:
+                            bodyLanguageText = localDic.GetLocalText("text.wolfman_p8.word_nod");
+                            break;
+                    }
+                    string text = string.Format(
+                        "<color=#FF0033>{0}</color> ----- <color=#FF3300>{1}</color>", noText, bodyLanguageText);
+                    AddGameLog(UILogType.Wolfman, text);
                 }
                 break;
         }
@@ -978,6 +1120,10 @@ public partial class Wolfman_P8 : GameActivity
                 UpdateVoteTargetMark();
                 break;
             case IdentityTranslateType.Prophet_Foresee_Begin:
+                m_nowVoting = true;
+                UpdateVoteTargetMark();
+                break;
+            case IdentityTranslateType.Wolfman_Kill_Begin:
                 m_nowVoting = true;
                 UpdateVoteTargetMark();
                 break;

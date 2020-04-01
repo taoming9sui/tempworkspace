@@ -64,7 +64,6 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Activities\GameActivity.cs" />
     <Compile Include="Assets\Scripts\Activities\Hall\Hall.cs" />
-    <Compile Include="Assets\Scripts\Activities\Hall\RoomItem.cs" />
     <Compile Include="Assets\Scripts\Activities\MainTheme\MainTheme.cs" />
     <Compile Include="Assets\Scripts\Activities\Wolfman_P8\Wolfman_P8.cs" />
     <Compile Include="Assets\Scripts\Activities\Wolfman_P8\Wolfman_P8_Logic.cs" />
