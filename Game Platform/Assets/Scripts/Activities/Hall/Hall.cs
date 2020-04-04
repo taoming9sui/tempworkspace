@@ -584,8 +584,9 @@ public class Hall : GameActivity
     }
     private void TryConnectAndLogin()
     {
-        GameManager.Instance.SocketConnect();
-        GameManager.Instance.PlayerLogin();
+        GameManager.Instance.SocketConnect(()=> {
+            GameManager.Instance.PlayerLogin();
+        });      
     }
 
     #region 客户端接口和响应

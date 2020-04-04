@@ -38,7 +38,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private enum ActionIntentionType
         {
-            Default, Defend, Foresee, Kill, Poison, Save, Vote, Revenge
+            Default, Abandon, Defend, Foresee, Kill, Poison, Save, Vote, Revenge
         }
         private enum GameIdentityType
         {
@@ -65,7 +65,8 @@ namespace GamePlatformServer.GameServer.GameModuels
             Default, GoDead,
             Defender_Defend_Begin, Defender_Defend_End,
             Prophet_Foresee_Begin, Prophet_Foresee_End,
-            Wolfman_Kill_Begin, Wolfman_Kill_End
+            Wolfman_Kill_Begin, Wolfman_Kill_End,
+            Witch_Magic_Begin, Witch_Magic_End,
         }
         private enum IdentityFunctionType
         {
@@ -212,7 +213,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         {
             public bool Poison = true;
             public bool Antidote = true;
-            public int ForeseeSeatNo = -1;
+            public int PremonitionNo = -1;
             public Witch()
             {
                 IdentityType = GameIdentityType.Witch;
@@ -308,6 +309,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                         Witch witch = (Witch)identity;
                         identityJObj.Add("Antidote", witch.Antidote);
                         identityJObj.Add("Poison", witch.Poison);
+                        identityJObj.Add("PremonitionNo", witch.PremonitionNo);
                     }
                     break;
             }
@@ -450,6 +452,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 {
                     case BaseFunctionType.GameReady:
                         {
+                            //读JSON
                             bool isReady = (bool)parms.GetValue("IsReady");
                             seat.isReady = isReady;
                             //车准备好了
@@ -480,6 +483,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                         break;
                     case BaseFunctionType.SetIdentityExpection:
                         {
+                            //读JSON
                             GameIdentityType expectionType = (GameIdentityType)(int)parms.GetValue("IdentityExpection");
                             seat.IdentityExpection = expectionType;
                         }
@@ -520,6 +524,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                         {
                             if(seat.Identity.IdentityType == GameIdentityType.Wolfman)
                             {
+                                //读JSON
+                                string whisper = (string)parms.GetValue("Whisper");
                                 //0筛选条件
                                 Wolfman wolfman = (Wolfman)seat.Identity;
                                 if (wolfman.CurrentAction != CurrentActionType.Wolfman_Kill)
@@ -540,7 +546,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                                     return true;
                                 }));
                                 //3返回悄悄话
-                                string whisper = (string)parms.GetValue("Whisper");
                                 if (whisper.Length > 2)
                                     whisper = whisper.Substring(0, 2);
                                 foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
@@ -560,6 +565,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                         {
                             if (seat.Identity.IdentityType == GameIdentityType.Wolfman)
                             {
+                                //读JSON
+                                int bodyLanguageType = (int)parms.GetValue("BodyLanguageType");
                                 //0筛选条件
                                 Wolfman wolfman = (Wolfman)seat.Identity;
                                 if (wolfman.CurrentAction != CurrentActionType.Wolfman_Kill)
@@ -576,7 +583,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                                     return true;
                                 }));
                                 //2返回悄悄话
-                                int bodyLanguageType = (int)parms.GetValue("BodyLanguageType");
                                 foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
                                 {
                                     JObject details = new JObject();
@@ -606,6 +612,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             if (seat.Identity.CurrentAction != CurrentActionType.Defender_Defend)
                                 return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
                             Defender defender = (Defender)seat.Identity;
                             //条件:不能连续守同一个人
                             if (defender.LastDefendNo == targetSeatNo)
@@ -625,7 +633,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             }
                             //抉择结束 确定守卫意图
-                            defender.CurrentAction = CurrentActionType.Default;
                             defender.Intention.IntentionType = ActionIntentionType.Defend;
                             defender.Intention.TargetSeatNo = targetSeat.SeatNo;
                         }
@@ -636,10 +643,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             if (seat.Identity.CurrentAction != CurrentActionType.Defender_Defend)
                                 return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
                             //守卫不做动作
                             Defender defender = (Defender)seat.Identity;
-                            defender.CurrentAction = CurrentActionType.Default;
-                            defender.Intention.IntentionType = ActionIntentionType.Default;
+                            defender.Intention.IntentionType = ActionIntentionType.Abandon;
                         }
                         break;
                     case ActionDecisionType.Prophet_Foresee_Excute:
@@ -647,6 +655,8 @@ namespace GamePlatformServer.GameServer.GameModuels
                             if (seat.Identity.IdentityType != GameIdentityType.Prophet)
                                 return;
                             if (seat.Identity.CurrentAction != CurrentActionType.Prophet_Foresee)
+                                return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
                                 return;
                             Prophet prophet  = (Prophet)seat.Identity;
                             PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
@@ -675,7 +685,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             }
                             //抉择结束 确定先知意图
-                            prophet.CurrentAction = CurrentActionType.Default;
                             prophet.Intention.IntentionType = ActionIntentionType.Foresee;
                             prophet.Intention.TargetSeatNo = targetSeat.SeatNo;
                         }
@@ -686,10 +695,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             if (seat.Identity.CurrentAction != CurrentActionType.Prophet_Foresee)
                                 return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
                             //先知不做动作
                             Prophet prophet = (Prophet)seat.Identity;
-                            prophet.CurrentAction = CurrentActionType.Default;
-                            prophet.Intention.IntentionType = ActionIntentionType.Default;
+                            prophet.Intention.IntentionType = ActionIntentionType.Abandon;
                         }
                         break;
                     case ActionDecisionType.Wolfman_Kill_Excute:
@@ -698,9 +708,55 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 return;
                             if (seat.Identity.CurrentAction != CurrentActionType.Wolfman_Kill)
                                 return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
                             Wolfman wolfman = (Wolfman)seat.Identity;
                             PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
                             //条件:不能刀死人
+                            if (targetSeat.Identity.isDead)
+                            {
+                                JObject parms = new JObject();
+                                parms.Add("Text", "text.wolfman_p8.actiondecide_deadtarget_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms);
+                                return;
+                            }
+                            //裁判通知玩家
+                            {
+                                JObject parms = new JObject();
+                                {
+                                    parms.Add("SeatNo", targetSeat.SeatNo);
+                                }
+                                ReturnJudgeAnnounce(seat.PlayerId, JudgeAnnounceType.Wolfman_Kill_Excute, parms);
+                            }
+                            //抉择结束 确定狼人意图
+                            wolfman.Intention.IntentionType = ActionIntentionType.Kill;
+                            wolfman.Intention.TargetSeatNo = targetSeat.SeatNo;
+                        }
+                        break;
+                    case ActionDecisionType.Witch_Magic_Save:
+                        {
+                            if (seat.Identity.IdentityType != GameIdentityType.Witch)
+                                return;
+                            if (seat.Identity.CurrentAction != CurrentActionType.Witch_Magic)
+                                return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
+                            Witch witch = (Witch)seat.Identity;
+                            if (!witch.Antidote)
+                                return;
+                            if (witch.PremonitionNo == -1)
+                                return;
+                            
+                            PlayerSeat targetSeat = m_playerSeats[witch.PremonitionNo];
+                            //条件:不能自救
+                            if (targetSeat.SeatNo == seat.SeatNo)
+                            {
+                                JObject parms1 = new JObject();
+                                parms1.Add("Text", "text.wolfman_p8.actiondecide_save_self_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms1);
+                                return;
+                            }
+                            //条件:不能救死人
                             if (targetSeat.Identity.isDead)
                             {
                                 JObject parms1 = new JObject();
@@ -708,16 +764,48 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 ReturnGameTip(playerId, GameTipType.CommonModel, parms1);
                                 return;
                             }
-                            //裁判消息
-                            JObject parms2 = new JObject();
+                            //抉择结束 确定女巫救人意图
+                            witch.Intention.IntentionType = ActionIntentionType.Save;
+                            witch.Intention.TargetSeatNo = targetSeat.SeatNo;
+                        }
+                        break;
+                    case ActionDecisionType.Witch_Magic_Poison:
+                        {
+                            if (seat.Identity.IdentityType != GameIdentityType.Witch)
+                                return;
+                            if (seat.Identity.CurrentAction != CurrentActionType.Witch_Magic)
+                                return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
+                            Witch witch = (Witch)seat.Identity;
+                            if (!witch.Poison)
+                                return;
+
+                            PlayerSeat targetSeat = m_playerSeats[targetSeatNo];
+                            //条件:不能毒死人
+                            if (targetSeat.Identity.isDead)
                             {
-                                parms2.Add("SeatNo", targetSeat.SeatNo);
+                                JObject parms1 = new JObject();
+                                parms1.Add("Text", "text.wolfman_p8.actiondecide_deadtarget_modeltip");
+                                ReturnGameTip(playerId, GameTipType.CommonModel, parms1);
+                                return;
                             }
-                            ReturnJudgeAnnounce(seat.PlayerId, JudgeAnnounceType.Wolfman_Kill_Excute, parms2);
-                            //抉择结束 确定狼人意图
-                            wolfman.CurrentAction = CurrentActionType.Default;
-                            wolfman.Intention.IntentionType = ActionIntentionType.Kill;
-                            wolfman.Intention.TargetSeatNo = targetSeat.SeatNo;
+                            //抉择结束 确定女巫毒人意图
+                            witch.Intention.IntentionType = ActionIntentionType.Poison;
+                            witch.Intention.TargetSeatNo = targetSeat.SeatNo;
+                        }
+                        break;
+                    case ActionDecisionType.Witch_Magic_Abandon:
+                        {
+                            if (seat.Identity.IdentityType != GameIdentityType.Witch)
+                                return;
+                            if (seat.Identity.CurrentAction != CurrentActionType.Witch_Magic)
+                                return;
+                            if (seat.Identity.Intention.IntentionType != ActionIntentionType.Default)
+                                return;
+                            //女巫不做动作
+                            Witch witch = (Witch)seat.Identity;
+                            witch.Intention.IntentionType = ActionIntentionType.Abandon;
                         }
                         break;
                 }
@@ -1096,7 +1184,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
             BroadGameloopProcess(GameloopProcessState.NightCloseEye, changeArray);
         }
-        private void DefenderDefend_Begin()
+        private void DefenderDefend_Begin(int seconds)
         {
             //1列举出守卫玩家
             IList<PlayerSeat> defenderSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
@@ -1113,10 +1201,13 @@ namespace GamePlatformServer.GameServer.GameModuels
             //2切换当前动作-》守卫抉择
             foreach (PlayerSeat defenderSeat in defenderSeats)
             {
-                long waitTimeStamp = DateTime.UtcNow.AddSeconds(10).Ticks;
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(seconds).Ticks;
                 defenderSeat.WaitTimestamp = waitTimeStamp;
+
                 Defender defender = (Defender)defenderSeat.Identity;
                 defender.CurrentAction = CurrentActionType.Defender_Defend;
+                defender.Intention.IntentionType = ActionIntentionType.Default;
+                defender.Intention.TargetSeatNo = -1;
             }
             //3客户端同步更新消息
             foreach (PlayerSeat defenderSeat in defenderSeats)
@@ -1146,7 +1237,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 {
                     Defender defender = (Defender)seat.Identity;
                     count++;
-                    if (defender.CurrentAction == CurrentActionType.Default)
+                    if (defender.Intention.IntentionType != ActionIntentionType.Default)
                         okCount++;
                 }
             }
@@ -1200,9 +1291,10 @@ namespace GamePlatformServer.GameServer.GameModuels
                     JObject parms = new JObject();
                     ReturnJudgeAnnounce(defenderSeat.PlayerId, JudgeAnnounceType.Defender_Defend_Abandon, parms);
                 }
-                //重置意图
-                intention.TargetSeatNo = -1;
-                intention.IntentionType = ActionIntentionType.Default;
+                //重置意图状态
+                defender.CurrentAction = CurrentActionType.Default;
+                defender.Intention.IntentionType = ActionIntentionType.Default;
+                defender.Intention.TargetSeatNo = -1;
             }
             //3客户端同步更新消息
             foreach (PlayerSeat defenderSeat in defenderSeats)
@@ -1217,7 +1309,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 ReturnIdentityTranslate(defenderSeat.PlayerId, IdentityTranslateType.Defender_Defend_End, changeArray);
             }
         }
-        private void ProphetForesee_Begin()
+        private void ProphetForesee_Begin(int seconds)
         {
             //1列举出先知玩家
             IList<PlayerSeat> prophetSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
@@ -1234,10 +1326,12 @@ namespace GamePlatformServer.GameServer.GameModuels
             //2切换当前动作-》先知验人
             foreach (PlayerSeat prophetSeat in prophetSeats)
             {
-                long waitTimeStamp = DateTime.UtcNow.AddSeconds(10).Ticks;
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(seconds).Ticks;
                 prophetSeat.WaitTimestamp = waitTimeStamp;
                 Prophet prophet = (Prophet)prophetSeat.Identity;
                 prophet.CurrentAction = CurrentActionType.Prophet_Foresee;
+                prophet.Intention.IntentionType = ActionIntentionType.Default;
+                prophet.Intention.TargetSeatNo = -1;
             }
             //3客户端同步更新消息
             foreach (PlayerSeat prophetSeat in prophetSeats)
@@ -1267,7 +1361,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 {
                     Prophet prophet = (Prophet)seat.Identity;
                     count++;
-                    if (prophet.CurrentAction == CurrentActionType.Default)
+                    if (prophet.Intention.IntentionType != ActionIntentionType.Default)
                         okCount++;
                 }
             }
@@ -1321,8 +1415,9 @@ namespace GamePlatformServer.GameServer.GameModuels
                     ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Prophet_Foresee_Abandon, parms);
                 }
                 //重置意图
-                intention.TargetSeatNo = -1;
-                intention.IntentionType = ActionIntentionType.Default;
+                prophet.CurrentAction = CurrentActionType.Default;
+                prophet.Intention.IntentionType = ActionIntentionType.Default;
+                prophet.Intention.TargetSeatNo = -1;
             }
             //3客户端同步更新消息
             foreach (PlayerSeat prophetSeat in prophetSeats)
@@ -1337,7 +1432,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 ReturnIdentityTranslate(prophetSeat.PlayerId, IdentityTranslateType.Prophet_Foresee_End, changeArray);
             }
         }
-        private void WolfmanKill_Begin()
+        private void WolfmanKill_Begin(int seconds)
         {
             //1列举出狼人玩家
             IList<PlayerSeat> wolfmanSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
@@ -1354,10 +1449,12 @@ namespace GamePlatformServer.GameServer.GameModuels
             //2切换当前动作-》狼人谋杀
             foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
             {
-                long waitTimeStamp = DateTime.UtcNow.AddSeconds(15).Ticks;
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(seconds).Ticks;
                 wolfmanSeat.WaitTimestamp = waitTimeStamp;
                 Wolfman wolfman = (Wolfman)wolfmanSeat.Identity;
                 wolfman.CurrentAction = CurrentActionType.Wolfman_Kill;
+                wolfman.Intention.IntentionType = ActionIntentionType.Default;
+                wolfman.Intention.TargetSeatNo = -1;
                 //HARDCODE 三次密语机会
                 wolfman.WhisperTime = 3;
             }
@@ -1382,7 +1479,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         {
             return false;
         }
-        private void WolfmanKill_End()
+        private void WolfmanKill_End(out int wolfmanKillSeatNo)
         {
             //1列举出狼人玩家
             IList<PlayerSeat> wolfmanSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
@@ -1396,7 +1493,8 @@ namespace GamePlatformServer.GameServer.GameModuels
 
                 return true;
             }));
-            //2狼人所作意图 增加flag
+            //2统计狼人所作投票 重置意图
+            IDictionary<int, int> m_wolfmanVoteCount = new Dictionary<int, int>();
             foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
             {
                 Wolfman wolfman = (Wolfman)wolfmanSeat.Identity;
@@ -1406,10 +1504,9 @@ namespace GamePlatformServer.GameServer.GameModuels
                     int seatNo = intention.TargetSeatNo;
                     //
                     PlayerSeat targetSeat = m_playerSeats[seatNo];
-                    OperationFlag flag = new OperationFlag();
-                    flag.FlagType = OperationFlagType.Kill;
-                    flag.SourceSeatNo = wolfmanSeat.SeatNo;
-                    targetSeat.Identity.FlagList.Add(flag);
+                    if (m_wolfmanVoteCount.ContainsKey(seatNo))
+                        m_wolfmanVoteCount[seatNo] = 0;
+                    m_wolfmanVoteCount[seatNo]++;
                 }
                 else
                 {
@@ -1417,10 +1514,42 @@ namespace GamePlatformServer.GameServer.GameModuels
                     ReturnJudgeAnnounce(wolfmanSeat.PlayerId, JudgeAnnounceType.Wolfman_Kill_Abandon, parms);
                 }
                 //重置意图
-                intention.TargetSeatNo = -1;
-                intention.IntentionType = ActionIntentionType.Default;
+                wolfman.CurrentAction = CurrentActionType.Default;
+                wolfman.Intention.IntentionType = ActionIntentionType.Default;
+                wolfman.Intention.TargetSeatNo = -1;
             }
-            //3客户端同步更新消息
+            //3选出最终被杀的玩家 增加flag
+            Random random = new Random();
+            IList<int> killNoList = new List<int>();
+            int maxVoteCount = 0;
+            foreach(KeyValuePair<int, int> kv in m_wolfmanVoteCount)
+            {
+                int seatNo = kv.Key;
+                int voteCount = kv.Value;
+
+                if (voteCount > maxVoteCount)
+                {
+                    maxVoteCount = voteCount;
+                    killNoList.Clear();
+                    killNoList.Add(seatNo);
+                }
+                else if(voteCount == maxVoteCount)
+                {
+                    killNoList.Add(seatNo);
+                }
+            }
+            int killNo = -1;
+            if(killNoList.Count > 0)
+            {
+                killNo = killNoList[(int)(killNoList.Count * random.NextDouble())];
+                //上flag
+                PlayerSeat killedSeat = m_playerSeats[killNo];
+                OperationFlag flag = new OperationFlag();
+                flag.FlagType = OperationFlagType.Kill;
+                killedSeat.Identity.FlagList.Add(flag);
+            }
+            wolfmanKillSeatNo = killNo;
+            //4客户端同步更新消息
             foreach (PlayerSeat wolfmanSeat in wolfmanSeats)
             {
                 JArray changeArray = new JArray();
@@ -1431,6 +1560,155 @@ namespace GamePlatformServer.GameServer.GameModuels
                     changeArray.Add(change1);
                 }
                 ReturnIdentityTranslate(wolfmanSeat.PlayerId, IdentityTranslateType.Wolfman_Kill_End, changeArray);
+            }
+        }
+        private void WitchMagic_Begin(int seconds, int premonitionNo)
+        {
+            //1列举出女巫玩家
+            IList<PlayerSeat> witchSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是女巫的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Witch)
+                    return false;
+
+                return true;
+            }));
+            //2切换当前动作-》女巫魔法
+            foreach (PlayerSeat witchSeat in witchSeats)
+            {
+                long waitTimeStamp = DateTime.UtcNow.AddSeconds(seconds).Ticks;
+                witchSeat.WaitTimestamp = waitTimeStamp;
+                Witch witch = (Witch)witchSeat.Identity;
+
+                witch.CurrentAction = CurrentActionType.Witch_Magic;
+                witch.Intention.IntentionType = ActionIntentionType.Default;
+                witch.Intention.TargetSeatNo = -1;
+                //如果女巫有解药 则可以获取到被害消息
+                if (witch.Antidote)
+                {
+                    witch.PremonitionNo = premonitionNo;
+                }
+                else
+                {
+                    witch.PremonitionNo = -1;
+                }
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat witchSeat in witchSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.WaitTimestamp");
+                    change1.Add("Value", witchSeat.WaitTimestamp);
+                    changeArray.Add(change1);
+                    JObject change2 = new JObject();
+                    change2.Add("JPath", "PlayerProperty.Identity");
+                    change2.Add("Value", GetIdentityJObject(witchSeat.Identity));
+                    changeArray.Add(change2);
+                }
+                ReturnIdentityTranslate(witchSeat.PlayerId, IdentityTranslateType.Witch_Magic_Begin, changeArray);
+            }
+        }
+        private bool WitchMagic_Wait()
+        {
+            //等待所有女巫做出选择 或者时间结束
+            int count = 0;
+            int okCount = 0;
+            foreach (PlayerSeat seat in m_playerSeats)
+            {
+                if (seat.Identity.IdentityType == GameIdentityType.Witch)
+                {
+                    Witch witch = (Witch)seat.Identity;
+                    count++;
+                    if (witch.Intention.IntentionType != ActionIntentionType.Default)
+                        okCount++;
+                }
+            }
+
+            if (count == okCount)
+                return true;
+            return false;
+        }
+        private void WitchMagic_End()
+        {
+            //1列举出女巫玩家
+            IList<PlayerSeat> witchSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                //排除掉不是女巫的玩家
+                if (seat.Identity.IdentityType != GameIdentityType.Witch)
+                    return false;
+
+                return true;
+            }));
+            //2读取女巫所作意图 增加flag 返回响应
+            foreach (PlayerSeat witchSeat in witchSeats)
+            {
+                Witch witch = (Witch)witchSeat.Identity;
+                ActionIntention intention = witch.Intention;
+                if (intention.IntentionType == ActionIntentionType.Save)
+                {
+                    int seatNo = intention.TargetSeatNo;
+                    //消耗解药
+                    witch.Antidote = false;
+                    //
+                    PlayerSeat targetSeat = m_playerSeats[seatNo];
+                    OperationFlag flag = new OperationFlag();
+                    flag.FlagType = OperationFlagType.Save;
+                    flag.SourceSeatNo = witchSeat.SeatNo;
+                    targetSeat.Identity.FlagList.Add(flag);
+
+                    JObject parms = new JObject();
+                    {
+                        parms.Add("SeatNo", seatNo);
+                    }
+                    ReturnJudgeAnnounce(witchSeat.PlayerId, JudgeAnnounceType.Witch_Magic_Save, parms);
+                }
+                else if(intention.IntentionType == ActionIntentionType.Poison)
+                {
+                    int seatNo = intention.TargetSeatNo;
+                    //消耗毒药
+                    witch.Poison = false;
+                    //
+                    PlayerSeat targetSeat = m_playerSeats[seatNo];
+                    OperationFlag flag = new OperationFlag();
+                    flag.FlagType = OperationFlagType.Poison;
+                    flag.SourceSeatNo = witchSeat.SeatNo;
+                    targetSeat.Identity.FlagList.Add(flag);
+
+                    JObject parms = new JObject();
+                    {
+                        parms.Add("SeatNo", seatNo);
+                    }
+                    ReturnJudgeAnnounce(witchSeat.PlayerId, JudgeAnnounceType.Witch_Magic_Poison, parms);
+                }
+                else
+                {
+                    JObject parms = new JObject();
+                    ReturnJudgeAnnounce(witchSeat.PlayerId, JudgeAnnounceType.Witch_Magic_Abandon, parms);
+                }
+                //重置意图状态
+                witch.CurrentAction = CurrentActionType.Default;
+                witch.Intention.IntentionType = ActionIntentionType.Default;
+                witch.Intention.TargetSeatNo = -1;
+            }
+            //3客户端同步更新消息
+            foreach (PlayerSeat witchSeat in witchSeats)
+            {
+                JArray changeArray = new JArray();
+                {
+                    JObject change1 = new JObject();
+                    change1.Add("JPath", "PlayerProperty.Identity");
+                    change1.Add("Value", GetIdentityJObject(witchSeat.Identity));
+                    changeArray.Add(change1);
+                }
+                ReturnIdentityTranslate(witchSeat.PlayerId, IdentityTranslateType.Witch_Magic_End, changeArray);
             }
         }
         private IEnumerator<int> JudgeMainLoop()
@@ -1447,6 +1725,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                     yield return 0;
                 }
                 //所有人已就绪 等待3秒...
+                //HARDCODE 3秒
                 GameStartPrepare();
                 stopwatch.Restart();
                 while (stopwatch.ElapsedMilliseconds < 3000)
@@ -1454,6 +1733,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 //游戏正式开始
                 GameStart();
                 //分配身份 10秒钟确认时间
+                //HARDCODE 10秒
                 DistributeIdentity();
                 stopwatch.Restart();
                 while (stopwatch.ElapsedMilliseconds < 10000)
@@ -1468,25 +1748,34 @@ namespace GamePlatformServer.GameServer.GameModuels
                     while (stopwatch.ElapsedMilliseconds < 3000)
                         yield return 0;
                     //守卫行动
-                    DefenderDefend_Begin();
+                    //HARDCODE 20秒
+                    DefenderDefend_Begin(20);
                     stopwatch.Restart();
-                    while (stopwatch.ElapsedMilliseconds < 10000 && !DefenderDefend_Wait())
+                    while (stopwatch.ElapsedMilliseconds < 20 * 1000 && !DefenderDefend_Wait())
                         yield return 0;
                     DefenderDefend_End();
                     //预言家行动
-                    ProphetForesee_Begin();
+                    //HARDCODE 20秒
+                    ProphetForesee_Begin(20);
                     stopwatch.Restart();
-                    while (stopwatch.ElapsedMilliseconds < 10000 && !ProphetForesee_Wait())
+                    while (stopwatch.ElapsedMilliseconds < 20 * 1000 && !ProphetForesee_Wait())
                         yield return 0;
                     ProphetForesee_End();
                     //狼人行动
-                    WolfmanKill_Begin();
+                    //HARDCODE 30秒
+                    int wolfmanKillSeatNo = -1;
+                    WolfmanKill_Begin(30);
                     stopwatch.Restart();
-                    while (stopwatch.ElapsedMilliseconds < 15000 && !WolfmanKill_Wait())
+                    while (stopwatch.ElapsedMilliseconds < 30 * 1000 && !WolfmanKill_Wait())
                         yield return 0;
-                    WolfmanKill_End();
+                    WolfmanKill_End(out wolfmanKillSeatNo);
                     //女巫行动
-
+                    //HARDCODE 20秒
+                    WitchMagic_Begin(20, wolfmanKillSeatNo);
+                    stopwatch.Restart();
+                    while (stopwatch.ElapsedMilliseconds < 20 * 1000 && !WitchMagic_Wait())
+                        yield return 0;
+                    WitchMagic_End();
                     //白天请睁眼
 
                     //猎人行动

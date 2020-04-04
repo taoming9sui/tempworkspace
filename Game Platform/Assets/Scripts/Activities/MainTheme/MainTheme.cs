@@ -168,12 +168,7 @@ public class MainTheme : GameActivity
         else
         {
             ConnectingModel(true);
-            StartCoroutine(DoAction_Delay(() =>
-            {
-                GameManager.Instance.SocketConnect();
-                if (GameManager.Instance.HasConnection)
-                    callBack();
-            }, 0.1f));
+            GameManager.Instance.SocketConnect(callBack);
         }
     }
     private void SendLogin()
@@ -181,8 +176,8 @@ public class MainTheme : GameActivity
         GameObject login_panel = panelObj.transform.Find("login").gameObject;
         string playerId = login_panel.transform.Find("playerid_input").GetComponent<InputField>().text;
         string password = login_panel.transform.Find("password_input").GetComponent<InputField>().text;
-        TryConnect(() => {
-            //尝试登录
+        TryConnect(() =>
+        {
             GameManager.Instance.PlayerLogin(playerId, password);
         });
     }
@@ -195,7 +190,8 @@ public class MainTheme : GameActivity
         string repeat = register_panel.transform.Find("repeat_input").GetComponent<InputField>().text;
         if(password == repeat)
         {
-            TryConnect(() => {
+            TryConnect(() =>
+            {
                 //尝试注册
                 JObject registerJson = new JObject();
                 registerJson.Add("Type", "Client_Center");

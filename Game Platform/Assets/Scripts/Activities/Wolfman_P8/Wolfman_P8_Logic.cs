@@ -33,7 +33,7 @@ public partial class Wolfman_P8 : GameActivity
     }
     private enum ActionIntentionType
     {
-        Default, Defend, Foresee, Kill, Poison, Save, Vote, Revenge
+        Default, Abandon, Defend, Foresee, Kill, Poison, Save, Vote, Revenge
     }
     private enum GameIdentityType
     {
@@ -60,7 +60,8 @@ public partial class Wolfman_P8 : GameActivity
         Default, GoDead,
         Defender_Defend_Begin, Defender_Defend_End,
         Prophet_Foresee_Begin, Prophet_Foresee_End,
-        Wolfman_Kill_Begin, Wolfman_Kill_End
+        Wolfman_Kill_Begin, Wolfman_Kill_End,
+        Witch_Magic_Begin, Witch_Magic_End,
     }
     private enum IdentityFunctionType
     {
@@ -189,14 +190,25 @@ public partial class Wolfman_P8 : GameActivity
         parms.Add("IsReady", false);
         BaseFunctionCommand(BaseFunctionType.GameReady, parms);
     }
-    public void SelectVoteTargetButton(int selectNo)
+    public void SelectVoteTargetButton(Toggle toggle)
     {
-        if (m_voteTargetSeatNo != selectNo)
-            m_voteTargetSeatNo = selectNo;
+        if (toggle.isOn)
+        {
+            if (m_nowVoting)
+            {
+                CustomValue valueObj = toggle.transform.parent.GetComponent<CustomValue>();
+                int seatNo = valueObj.intValue;
+                m_voteTargetSeatNo = seatNo;
+            }
+            else
+            {
+                toggle.isOn = false;
+            }
+        }
         else
+        {
             m_voteTargetSeatNo = -1;
-
-        UpdateVoteTargetMark();
+        }
     }
     public void IdentitySelectToggle(Toggle toggle)
     {
@@ -227,7 +239,7 @@ public partial class Wolfman_P8 : GameActivity
                 break;
             case "Defender_Defend_Abandon":
                 {
-                    IdentityActionDecideCommand(ActionDecisionType.Defender_Defend_Abandon, -1);
+                    IdentityActionDecideCommand(ActionDecisionType.Defender_Defend_Abandon);
                 }
                 break;
             case "Prophet_Foresee_Excute":
@@ -246,7 +258,7 @@ public partial class Wolfman_P8 : GameActivity
                 break;
             case "Prophet_Foresee_Abandon":
                 {
-                    IdentityActionDecideCommand(ActionDecisionType.Prophet_Foresee_Abandon, -1);
+                    IdentityActionDecideCommand(ActionDecisionType.Prophet_Foresee_Abandon);
                 }
                 break;
             case "Wolfman_Kill_Excute":
@@ -261,6 +273,39 @@ public partial class Wolfman_P8 : GameActivity
                     {
                         IdentityActionDecideCommand(ActionDecisionType.Wolfman_Kill_Excute, targetSeatNo);
                     }
+                }
+                break;
+            case "Witch_Magic_Save":
+                {
+                    int targetSeatNo = m_voteTargetSeatNo;
+                    if (targetSeatNo == -1)
+                    {
+                        string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_needtarget_modeltip");
+                        TipModel(text);
+                    }
+                    else
+                    {
+                        IdentityActionDecideCommand(ActionDecisionType.Witch_Magic_Save, targetSeatNo);
+                    }
+                }
+                break;
+            case "Witch_Magic_Poison":
+                {
+                    int targetSeatNo = m_voteTargetSeatNo;
+                    if (targetSeatNo == -1)
+                    {
+                        string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_needtarget_modeltip");
+                        TipModel(text);
+                    }
+                    else
+                    {
+                        IdentityActionDecideCommand(ActionDecisionType.Witch_Magic_Poison, targetSeatNo);
+                    }
+                }
+                break;
+            case "Witch_Magic_Abandon":
+                {
+                    IdentityActionDecideCommand(ActionDecisionType.Witch_Magic_Abandon);
                 }
                 break;
         }
@@ -330,7 +375,7 @@ public partial class Wolfman_P8 : GameActivity
 
     #region UI界面更新
     private enum UILogType { None, Tip, Judge, Wolfman };
-    private enum SeatUIMarkType { Default, Selected, Ready, Speaking, DisConnected };
+    private enum SeatUIMarkType { Default, Ready, Speaking, DisConnected };
     private void ClearGameLog()
     {
         VerticalContainer message_container = panelObj.transform.Find("middle/message_container").GetComponent<VerticalContainer>();
@@ -408,29 +453,20 @@ public partial class Wolfman_P8 : GameActivity
     }
     private void UpdateVoteTargetMark()
     {
-        int no = m_voteTargetSeatNo;
-        if (!m_nowVoting)
-        {
-            no = -1;
-        }
         for (int i = 0; i < playerSeatObjs.Length; i++)
         {
-            int seatNo = i;
-            GameObject seatObj = playerSeatObjs[seatNo];
-            SetPlayerSeatStateMark(seatObj, SeatUIMarkType.Selected, seatNo == no);
+            GameObject seatObj = playerSeatObjs[i];
+            Toggle selected_toggle = seatObj.transform.Find("selected_toggle").GetComponent<Toggle>();
+            selected_toggle.isOn = false;
         }
     }
     private void SetPlayerSeatStateMark(GameObject seatObj, SeatUIMarkType markType, bool show)
     {
-        GameObject selected_mark = seatObj.transform.Find("status_panel/selected_mark").gameObject;
         GameObject ready_mark = seatObj.transform.Find("status_panel/ready_mark").gameObject;
         GameObject speaking_mark = seatObj.transform.Find("status_panel/speaking_mark").gameObject;
         GameObject disconnected_mark = seatObj.transform.Find("status_panel/disconnected_mark").gameObject;
         switch (markType)
         {
-            case SeatUIMarkType.Selected:
-                selected_mark.SetActive(show);
-                break;
             case SeatUIMarkType.Ready:
                 ready_mark.SetActive(show);
                 break;
@@ -548,10 +584,9 @@ public partial class Wolfman_P8 : GameActivity
             startprepare_panel.SetActive(flag);
             if (flag)
             {
-                Text info_text = startprepare_panel.transform.Find("info_text").GetComponent<Text>();
+                Text expection_text = startprepare_panel.transform.Find("expection_text").GetComponent<Text>();
                 string u_name = GetIdentityExpectionName(m_identitySelect);
-                string templateText = localDic.GetLocalText("template.wolfman_p8.gamepreparestart_info");
-                info_text.text = string.Format(templateText, localDic.GetLocalText(u_name));
+                expection_text.text = string.Format("<color=#FFFF66>【{0}】</color>", localDic.GetLocalText(u_name));
 
                 CountdownBar countdown_bar = startprepare_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
                 countdown_bar.StartCountdown(3f);
@@ -592,26 +627,43 @@ public partial class Wolfman_P8 : GameActivity
         hunter_panel.SetActive(identityType == GameIdentityType.Hunter);
         defender_panel.SetActive(identityType == GameIdentityType.Defender);
         witch_panel.SetActive(identityType == GameIdentityType.Witch);
+
         GameObject currentPanel = null;
         switch (identityType)
         {
             case GameIdentityType.Villager:
-                currentPanel = villager_panel;
+                {
+                    currentPanel = villager_panel;
+                }
                 break;
             case GameIdentityType.Wolfman:
-                currentPanel = wolfman_panel;
+                {
+                    currentPanel = wolfman_panel;
+                }
                 break;
             case GameIdentityType.Prophet:
-                currentPanel = prophet_panel;
+                {
+                    currentPanel = prophet_panel;
+                }
                 break;
             case GameIdentityType.Hunter:
-                currentPanel = hunter_panel;
+                {
+                    currentPanel = hunter_panel;
+                }
                 break;
             case GameIdentityType.Defender:
-                currentPanel = defender_panel;
+                {
+                    currentPanel = defender_panel;
+                }
                 break;
             case GameIdentityType.Witch:
-                currentPanel = witch_panel;
+                {
+                    bool antidote = (bool)identityJObj.GetValue("Antidote");
+                    bool poison = (bool)identityJObj.GetValue("Poison");
+                    witch_panel.transform.Find("antidote_flag").gameObject.SetActive(antidote);
+                    witch_panel.transform.Find("poison_flag").gameObject.SetActive(poison);
+                    currentPanel = witch_panel;
+                }
                 break;
         }
         if (currentPanel != null)
@@ -667,16 +719,45 @@ public partial class Wolfman_P8 : GameActivity
                     countdown_bar.StartCountdown(seconds);
                 }
             }
+            GameObject witch_magic_panel = process_panel.transform.Find("witch_magic_panel").gameObject;
+            {
+                bool flag = currentAction == CurrentActionType.Witch_Magic;
+                witch_magic_panel.SetActive(flag);
+                if (flag)
+                {
+                    float seconds = GetWaitSeconds(waitTimeStamp);
+                    CountdownBar countdown_bar = witch_magic_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
+                    countdown_bar.StartCountdown(seconds);
+
+                    bool antidote = (bool)identityJObj.GetValue("Antidote");
+                    bool poison = (bool)identityJObj.GetValue("Poison");
+                    int premonitionNo = (int)identityJObj.GetValue("PremonitionNo");
+
+                    GameObject save_panel = witch_magic_panel.transform.Find("save_panel").gameObject;
+                    bool save_panel_flag = antidote && premonitionNo != -1;
+                    save_panel.SetActive(save_panel_flag);
+                    if (save_panel_flag)
+                    {
+                        Text premonition_text = save_panel.transform.Find("premonition_text").GetComponent<Text>();
+                        string playerno_template = localDic.GetLocalText("template.wolfman_p8.word_playerno");
+                        string text = string.Format(playerno_template, premonitionNo + 1);
+                        premonition_text.text = text;
+                    }
+
+                    GameObject poison_panel = witch_magic_panel.transform.Find("poison_panel").gameObject;
+                    bool poison_panel_flag = poison;
+                    poison_panel.SetActive(poison_panel_flag);
+                }
+            }
             GameObject checkidentity_panel = process_panel.transform.Find("checkidentity_panel").gameObject;
             {
                 bool flag = gameloopProcess == GameloopProcessState.CheckIdentity && currentAction == CurrentActionType.Default;
                 checkidentity_panel.SetActive(flag);
                 if (flag)
                 {
-                    Text info_text = checkidentity_panel.transform.Find("info_text").GetComponent<Text>();
+                    Text expection_text = checkidentity_panel.transform.Find("expection_text").GetComponent<Text>();
                     string u_name = GetIdentityName(identityType);
-                    string templateText = localDic.GetLocalText("template.wolfman_p8.checkidentity_info");
-                    info_text.text = string.Format(templateText, localDic.GetLocalText(u_name));
+                    expection_text.text = string.Format("<color=#FFFF66>【{0}】</color>", localDic.GetLocalText(u_name));
 
                     float seconds = GetWaitSeconds(waitTimeStamp);
                     CountdownBar countdown_bar = checkidentity_panel.transform.Find("countdown_bar").GetComponent<CountdownBar>();
@@ -783,7 +864,7 @@ public partial class Wolfman_P8 : GameActivity
         cmdJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(cmdJson);
     }
-    private void IdentityActionDecideCommand(ActionDecisionType decisionType, int targetSeatNo)
+    private void IdentityActionDecideCommand(ActionDecisionType decisionType, int targetSeatNo = -1)
     {
         JObject cmdJson = new JObject();
         cmdJson.Add("Type", "Client_Room");
@@ -901,6 +982,28 @@ public partial class Wolfman_P8 : GameActivity
             case JudgeAnnounceType.Wolfman_Kill_Abandon:
                 {
                     string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_kill_abandon_response");
+                    AddGameLog(UILogType.Judge, text);
+                }
+                break;
+            case JudgeAnnounceType.Witch_Magic_Save:
+                {
+                    int targetSeatNo = (int)parms.GetValue("SeatNo");
+                    string template = localDic.GetLocalText("template.wolfman_p8.actiondecide_magic_save_response");
+                    string text = string.Format(template, targetSeatNo + 1);
+                    AddGameLog(UILogType.Judge, text);
+                }
+                break;
+            case JudgeAnnounceType.Witch_Magic_Poison:
+                {
+                    int targetSeatNo = (int)parms.GetValue("SeatNo");
+                    string template = localDic.GetLocalText("template.wolfman_p8.actiondecide_magic_poison_response");
+                    string text = string.Format(template, targetSeatNo + 1);
+                    AddGameLog(UILogType.Judge, text);
+                }
+                break;
+            case JudgeAnnounceType.Witch_Magic_Abandon:
+                {
+                    string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_magic_abandon_response");
                     AddGameLog(UILogType.Judge, text);
                 }
                 break;
@@ -1124,6 +1227,10 @@ public partial class Wolfman_P8 : GameActivity
                 UpdateVoteTargetMark();
                 break;
             case IdentityTranslateType.Wolfman_Kill_Begin:
+                m_nowVoting = true;
+                UpdateVoteTargetMark();
+                break;
+            case IdentityTranslateType.Witch_Magic_Begin:
                 m_nowVoting = true;
                 UpdateVoteTargetMark();
                 break;

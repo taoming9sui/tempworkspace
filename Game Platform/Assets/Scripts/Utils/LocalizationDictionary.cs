@@ -19,13 +19,13 @@ public class LocalizationDictionary : MonoBehaviour
 
     public string GetLocalText(string universalText)
     {
-        string localText = "";
+        string localText;
         //从通用语-》本地语
         if(m_dictionary.TryGetValue(universalText, out localText))
         {
             return localText;
         }
-        return "";
+        return universalText;
     }
 
     [ContextMenu("Sort Items")]

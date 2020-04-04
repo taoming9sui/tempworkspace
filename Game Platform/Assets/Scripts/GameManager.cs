@@ -8,7 +8,7 @@ using WebSocketSharp;
 public class GameManager : MonoBehaviour
 {
     static public GameManager Instance;
-    public bool HasConnection { get { return m_websocket == null ? false : m_websocket.IsAlive; } }
+    public bool HasConnection { get { return m_playersocket == null ? false : m_playersocket.IsAlive; } }
 
     public string serverIP = "localhost";
     public int serverPort = 8888;
@@ -17,11 +17,10 @@ public class GameManager : MonoBehaviour
     public GameActivity currentActivity;
     public Camera defaultCamera;
 
-    private WebSocket m_websocket = null;
+    private PlayerSocket m_playersocket = null;
     private string m_playerId = "";
     private string m_password = "";
     private ConcurrentQueue<System.Action> m_invokeQueue = new ConcurrentQueue<System.Action>();
-
 
     private void Awake()
     {
@@ -41,11 +40,11 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        if (m_websocket != null)
+        if (m_playersocket != null)
         {
-            if (m_websocket.IsAlive)
+            if (m_playersocket.IsAlive)
             {
-                m_websocket.Close();
+                m_playersocket.Close();
             }
         }
     }
@@ -62,7 +61,7 @@ public class GameManager : MonoBehaviour
             action();
         }
     }
-    private void M_websocket_OnOpen(object sender, System.EventArgs e)
+    private void M_playersocket_OnOpen(object sender, System.EventArgs e)
     {
         PushInvoke(() =>
         {
@@ -74,7 +73,7 @@ public class GameManager : MonoBehaviour
             catch(System.Exception ex) { Debug.LogError(ex); }
         });
     }
-    private void M_websocket_OnMessage(object sender, MessageEventArgs e)
+    private void M_playersocket_OnMessage(object sender, MessageEventArgs e)
     {
         PushInvoke(() =>
         {
@@ -90,7 +89,7 @@ public class GameManager : MonoBehaviour
             catch (System.Exception ex) { Debug.LogError(ex); }
         });
     }
-    private void M_websocket_OnClose(object sender, CloseEventArgs e)
+    private void M_playersocket_OnClose(object sender, CloseEventArgs e)
     {
         PushInvoke(() =>
         {
@@ -102,7 +101,7 @@ public class GameManager : MonoBehaviour
             catch (System.Exception ex) { Debug.LogError(ex); }
         });
     }
-    private void M_websocket_OnError(object sender, ErrorEventArgs e)
+    private void M_playersocket_OnError(object sender, ErrorEventArgs e)
     {
         try
         {
@@ -130,6 +129,24 @@ public class GameManager : MonoBehaviour
         else
             callback(-1);
     }
+    private IEnumerator WaitConnect(PlayerSocket playersocket, System.Action callback)
+    {
+        float t = 0f;
+        float delayTime = (float)playersocket.WaitTime.TotalSeconds;
+        bool success = true;
+        while (!playersocket.IsAlive)
+        {
+            t += Time.deltaTime;
+            if (t > delayTime)
+            {
+                success = false;
+                break;
+            }
+            yield return 0;
+        }
+        if(success)
+            callback();
+    }
 
     #region 对外调用
     public void QuitGame()
@@ -153,20 +170,24 @@ public class GameManager : MonoBehaviour
         this.currentActivity = activity;
         activity.OnActivityEnabled(param);
     }
-    public bool SocketConnect()
+    public void SocketConnect(System.Action callback = null)
     {
-        if (m_websocket != null)
-            if (m_websocket.IsAlive)
-                return true;
+        if (m_playersocket != null)
+        {
+            if (m_playersocket.IsAlive)
+            {
+                if(callback != null) callback();
+                return;
+            }
+        }
 
-        m_websocket = new WebSocket(string.Format("ws://{0}:{1}/{2}", serverIP, serverPort, serverPath));
-        m_websocket.OnOpen += M_websocket_OnOpen;
-        m_websocket.OnClose += M_websocket_OnClose;
-        m_websocket.OnMessage += M_websocket_OnMessage;
-        m_websocket.OnError += M_websocket_OnError;
-        m_websocket.Connect();
-
-        return m_websocket.IsAlive;
+        m_playersocket = new PlayerSocket(string.Format("ws://{0}:{1}/{2}", serverIP, serverPort, serverPath));
+        m_playersocket.OnOpen += M_playersocket_OnOpen;
+        m_playersocket.OnClose += M_playersocket_OnClose;
+        m_playersocket.OnMessage += M_playersocket_OnMessage;
+        m_playersocket.OnError += M_playersocket_OnError;
+        m_playersocket.ConnectAsync();
+        if(callback != null) StartCoroutine(WaitConnect(m_playersocket, callback));
     }
     public void Ping(System.Action<int> callback)
     {
@@ -217,14 +238,14 @@ public class GameManager : MonoBehaviour
     }
     public void SendMessage(JObject jsonData)
     {
-        if (m_websocket != null)
+        if (m_playersocket != null)
         {
-            if (m_websocket.IsAlive)
+            if (m_playersocket.IsAlive)
             {
 #if DEBUG
                 Debug.Log(jsonData.ToString());
 #endif
-                m_websocket.Send(jsonData.ToString());
+                m_playersocket.Send(jsonData.ToString());
             }
         }
     }

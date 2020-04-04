@@ -80,6 +80,8 @@
     <Compile Include="Assets\Scripts\Utils\CustomValue.cs" />
     <Compile Include="Assets\Scripts\Utils\JsonBinder.cs" />
     <Compile Include="Assets\Scripts\Utils\LocalizationDictionary.cs" />
+    <Compile Include="Assets\Scripts\Utils\PlayerSocket.cs" />
+    <Compile Include="Assets\Scripts\Utils\SecurityHelper.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\client_publicdefinitions.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\public_definitions.cs" />
     <Compile Include="Assets\TeamSpeak\Code\Definitions\public_errors.cs" />
