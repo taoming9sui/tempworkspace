@@ -1504,7 +1504,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                     int seatNo = intention.TargetSeatNo;
                     //
                     PlayerSeat targetSeat = m_playerSeats[seatNo];
-                    if (m_wolfmanVoteCount.ContainsKey(seatNo))
+                    if (!m_wolfmanVoteCount.ContainsKey(seatNo))
                         m_wolfmanVoteCount[seatNo] = 0;
                     m_wolfmanVoteCount[seatNo]++;
                 }
