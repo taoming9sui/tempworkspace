@@ -55,6 +55,8 @@ public class Hall : GameActivity
         RequestHallInfo();
         //请求玩家信息
         RequestPlayerInfo();
+        //询问玩家是否已在一个房间中
+        RequestInRoomInfo();
         //播放bgm
         audioPlayer.PlayBGM("HallBGM1");
     }
@@ -105,6 +107,12 @@ public class Hall : GameActivity
                             this.ReceivePlayerInfo(content.ToString());
                         }
                         break;
+                    case "ResponseInRoomInfo":
+                        {
+                            JObject content = (JObject)data.GetValue("Content");
+                            this.RejoinRoomModel((string)content.GetValue("GameId"));
+                        }
+                        break;
                     case "ChangePlayerInfoSuccess":
                         {
                             JObject content = (JObject)data.GetValue("Content");
@@ -117,6 +125,7 @@ public class Hall : GameActivity
                             this.JoinRoomSuccess((string)content.GetValue("GameId"), (string)content.GetValue("RoomId"));
                         }
                         break;
+
                 }
             }
             else if (type == "Server_Center")
@@ -323,6 +332,38 @@ public class Hall : GameActivity
         soundSlider.value = Mathf.Pow(10, soundVol / 20);
         modelDialog.ModelShow();
     }
+
+    public void RejoinRoomModel(string gameId) {
+        GameObject modelObj = panelObj.transform.Find("rejoinroom_model").gameObject;
+        ModelDialog modelDialog = modelObj.GetComponent<ModelDialog>();
+        modelDialog.ModelShow((result) =>
+        {
+            switch (result)
+            {
+                case ModelDialog.ModelResult.Confirm:
+                    {
+                        // 跳转游戏活动
+                        ResourceManager.GameInfo gameinfo = ResourceManager.Instance.Local.GameInfoSet[gameId];
+                        GameObject prefab = ResourceManager.Instance.Local.ActivityInfoSet[gameinfo.ActivityId].ActivityPrefab;
+                        GameManager.Instance.SetActivity(prefab);
+                    }
+                    break;
+                case ModelDialog.ModelResult.Cancel:
+                    {
+                        // 离开房间
+                        JObject requestJson = new JObject();
+                        requestJson.Add("Type", "Client_Hall");
+                        JObject data = new JObject();
+                        {
+                           data.Add("Action", "LeaveRoom");
+                        }
+                        requestJson.Add("Data", data); ;
+                        GameManager.Instance.SendMessage(requestJson);
+                    }
+                    break;
+            }
+        });
+    }
     #endregion
 
     #region UI更新脚本
@@ -354,9 +395,10 @@ public class Hall : GameActivity
         {
             GameObject roomItemObj = roomItemObjs[i];
             roomItemObj.SetActive(false);
-            if (i < m_pageRoomInfoList.Count)
+            int j = m_roomPageSize * (m_roomPageNo - 1) + i;
+            if (j < m_pageRoomInfoList.Count)
             {
-                RoomItemInfo roomItemInfo = m_pageRoomInfoList[i];
+                RoomItemInfo roomItemInfo = m_pageRoomInfoList[j];
                 if (roomItemInfo != null)
                 {
                     roomItemObj.SetActive(true);
@@ -584,9 +626,10 @@ public class Hall : GameActivity
     }
     private void TryConnectAndLogin()
     {
-        GameManager.Instance.SocketConnect(()=> {
+        GameManager.Instance.SocketConnect(this, () =>
+        {
             GameManager.Instance.PlayerLogin();
-        });      
+        });
     }
 
     #region 客户端接口和响应
@@ -661,10 +704,21 @@ public class Hall : GameActivity
         requestJson.Add("Data", data); ;
         GameManager.Instance.SendMessage(requestJson);
     }
+    private void RequestInRoomInfo()
+    {
+        JObject requestJson = new JObject();
+        requestJson.Add("Type", "Client_Hall");
+        JObject data = new JObject();
+        {
+            data.Add("Action", "RequestInRoomInfo");
+        }
+        requestJson.Add("Data", data); ;
+        GameManager.Instance.SendMessage(requestJson);
+    }
     private void RequestHallInfo()
     {
         //Ping服务器
-        GameManager.Instance.Ping((dt) =>
+        GameManager.Instance.Ping(this, (dt) =>
         {
             UpdatePingUI(dt);
         });

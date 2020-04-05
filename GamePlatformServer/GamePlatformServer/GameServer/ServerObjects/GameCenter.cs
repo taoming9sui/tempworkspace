@@ -411,12 +411,16 @@ namespace GamePlatformServer.GameServer.ServerObjects
                         case "RequestPlayerInfo":
                             PlayerRequestPlayerInfo(player);
                             break;
+                        case "RequestInRoomInfo":
+                            PlayerRequestInRoomInfo(player);
+                            break;
                         case "ChangePlayerInfo":
                             PlayerChangePlayerInfo(player, jsonObj.GetValue("Name").ToString(), (int)jsonObj.GetValue("HeadNo"));
                             break;
                         case "HallChat":
                             PlayerHallChat(player, jsonObj.GetValue("Chat").ToString());
                             break;
+
                     }
                 }            
 
@@ -681,6 +685,23 @@ namespace GamePlatformServer.GameServer.ServerObjects
             content.Add("RoomCount", m_roomSet.Count);
             jsonObj.Add("Content", content);
             HallResponse(player, jsonObj.ToString());
+        }
+        private void PlayerRequestInRoomInfo(CenterPlayer player)
+        {
+            if (player.InRoomId != null)
+            {
+                CenterRoom room = null;
+                //获取当前房间GameID
+                if (m_roomSet.TryGetValue(player.InRoomId, out room)){
+                    //构建JSON并返回
+                    JObject jsonObj = new JObject();
+                    jsonObj.Add("Action", "ResponseInRoomInfo");
+                    JObject content = new JObject();
+                    content.Add("GameId", room.GameId);
+                    jsonObj.Add("Content", content);
+                    HallResponse(player, jsonObj.ToString());
+                }
+            }
         }
         private void PlayerChangePlayerInfo(CenterPlayer player, string name, int iconNo)
         {

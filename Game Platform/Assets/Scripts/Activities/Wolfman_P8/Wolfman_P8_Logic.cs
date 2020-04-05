@@ -277,16 +277,7 @@ public partial class Wolfman_P8 : GameActivity
                 break;
             case "Witch_Magic_Save":
                 {
-                    int targetSeatNo = m_voteTargetSeatNo;
-                    if (targetSeatNo == -1)
-                    {
-                        string text = localDic.GetLocalText("text.wolfman_p8.actiondecide_needtarget_modeltip");
-                        TipModel(text);
-                    }
-                    else
-                    {
-                        IdentityActionDecideCommand(ActionDecisionType.Witch_Magic_Save, targetSeatNo);
-                    }
+                    IdentityActionDecideCommand(ActionDecisionType.Witch_Magic_Save);
                 }
                 break;
             case "Witch_Magic_Poison":
@@ -899,6 +890,32 @@ public partial class Wolfman_P8 : GameActivity
             string text = localDic.GetLocalText("text.wolfman_p8.newjoin_logtip");
             AddGameLog(UILogType.Tip, text);
         }
+        //设置投票状态
+        CurrentActionType currentAction = 
+            (CurrentActionType)(int)m_modelViewBinder.GetValue("PlayerProperty.Identity.CurrentAction");
+        switch (currentAction)
+        {
+            case CurrentActionType.Defender_Defend:
+                m_nowVoting = true;
+                UpdateVoteTargetMark();
+                break;
+            case CurrentActionType.Prophet_Foresee:
+                m_nowVoting = true;
+                UpdateVoteTargetMark();
+                break;
+            case CurrentActionType.Wolfman_Kill:
+                m_nowVoting = true;
+                UpdateVoteTargetMark();
+                break;
+            case CurrentActionType.Witch_Magic:
+                m_nowVoting = true;
+                UpdateVoteTargetMark();
+                break;
+            default:
+                m_nowVoting = false;
+                UpdateVoteTargetMark();
+                break;
+        }
     }
     private void ReceiveGameTip(GameTipType tipType, JObject parms)
     {
@@ -1216,21 +1233,24 @@ public partial class Wolfman_P8 : GameActivity
             m_modelViewBinder.SetValue(jPath, value);
         }
 
-        switch (translateType)
+        //设置投票状态
+        CurrentActionType currentAction =
+            (CurrentActionType)(int)m_modelViewBinder.GetValue("PlayerProperty.Identity.CurrentAction");
+        switch (currentAction)
         {
-            case IdentityTranslateType.Defender_Defend_Begin:
+            case CurrentActionType.Defender_Defend:
                 m_nowVoting = true;
                 UpdateVoteTargetMark();
                 break;
-            case IdentityTranslateType.Prophet_Foresee_Begin:
+            case CurrentActionType.Prophet_Foresee:
                 m_nowVoting = true;
                 UpdateVoteTargetMark();
                 break;
-            case IdentityTranslateType.Wolfman_Kill_Begin:
+            case CurrentActionType.Wolfman_Kill:
                 m_nowVoting = true;
                 UpdateVoteTargetMark();
                 break;
-            case IdentityTranslateType.Witch_Magic_Begin:
+            case CurrentActionType.Witch_Magic:
                 m_nowVoting = true;
                 UpdateVoteTargetMark();
                 break;

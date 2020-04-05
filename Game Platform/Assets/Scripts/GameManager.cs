@@ -170,7 +170,7 @@ public class GameManager : MonoBehaviour
         this.currentActivity = activity;
         activity.OnActivityEnabled(param);
     }
-    public void SocketConnect(System.Action callback = null)
+    public void SocketConnect(MonoBehaviour monoBehaviour, System.Action callback = null)
     {
         if (m_playersocket != null)
         {
@@ -187,13 +187,14 @@ public class GameManager : MonoBehaviour
         m_playersocket.OnMessage += M_playersocket_OnMessage;
         m_playersocket.OnError += M_playersocket_OnError;
         m_playersocket.ConnectAsync();
-        if(callback != null) StartCoroutine(WaitConnect(m_playersocket, callback));
+        if(callback != null)
+            monoBehaviour.StartCoroutine(WaitConnect(m_playersocket, callback));
     }
-    public void Ping(System.Action<int> callback)
+    public void Ping(MonoBehaviour monoBehaviour, System.Action<int> callback)
     {
         Ping ping = new Ping(serverIP);
         //HARDCODE 最高3s延迟
-        StartCoroutine(WaitPing(ping, 3f, callback));
+        monoBehaviour.StartCoroutine(WaitPing(ping, 3f, callback));
     }
     public void PlayerLogin(string playerId, string password)
     {

@@ -153,11 +153,6 @@ public class MainTheme : GameActivity
     }
     #endregion
 
-    private IEnumerator DoAction_Delay(System.Action action, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        action();
-    }
     private void TryConnect(System.Action callBack)
     {
         bool connected = GameManager.Instance.HasConnection;
@@ -168,7 +163,7 @@ public class MainTheme : GameActivity
         else
         {
             ConnectingModel(true);
-            GameManager.Instance.SocketConnect(callBack);
+            GameManager.Instance.SocketConnect(this, callBack);
         }
     }
     private void SendLogin()

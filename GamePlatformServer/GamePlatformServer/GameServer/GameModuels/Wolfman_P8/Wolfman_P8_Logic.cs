@@ -420,7 +420,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             if (m_playerMapper.TryGetValue(playerId, out seat))
             {
                 //1设置座位状态
-                seat.Connected = false;
+                seat.Connected = true;
                 //2公布消息
                 JObject parms = new JObject();
                 {
