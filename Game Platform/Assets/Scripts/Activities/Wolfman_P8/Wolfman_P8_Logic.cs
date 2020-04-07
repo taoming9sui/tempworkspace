@@ -41,11 +41,15 @@ public partial class Wolfman_P8 : GameActivity
     }
     private enum OperationFlagType
     {
-        Default, Poison, Save, Defend, Kill, BanishTicket
+        Default, Poisoned, Saved, Defended, Killed, BanishTicket
     }
     private enum OperationResultType
     {
         Default, Saved, Defended, Poisoned, Killed, Banned, Revenged
+    }
+    private enum DeathCauseType
+    {
+        Default, Killed, Poison, Overdose, Shot, Banish
     }
     private enum BaseFunctionType
     {
@@ -507,6 +511,7 @@ public partial class Wolfman_P8 : GameActivity
         {
             JObject gamePropertyJObj = (JObject)m_modelViewBinder.GetValue("GameProperty");
             JObject playerPropertyJObj = (JObject)m_modelViewBinder.GetValue("PlayerProperty");
+            UpdateBackgroundUI(gamePropertyJObj);
             UpdateBottomUI(gamePropertyJObj, playerPropertyJObj);
         });
         //玩家状态
@@ -588,7 +593,7 @@ public partial class Wolfman_P8 : GameActivity
             bool flag = publicProcess == PublicProcessState.GameLoop;
             GameObject gamecontrol_panel = panelObj.transform.Find("bottom/gamecontrol_panel").gameObject;
             gamecontrol_panel.SetActive(flag);
-            //身份界面切换
+            //切换 标题/身份牌/当前操作流程 的显示
             UpdateCaptionUI(gamePropertyJObj);
             UpdateIdentityUI(playerPropertyJObj);
             UpdateProcessUI(gamePropertyJObj, playerPropertyJObj);
@@ -747,7 +752,7 @@ public partial class Wolfman_P8 : GameActivity
                 if (flag)
                 {
                     Text expection_text = checkidentity_panel.transform.Find("expection_text").GetComponent<Text>();
-                    string u_name = GetIdentityName(identityType);
+                    string u_name = GetIdentityUName(identityType);
                     expection_text.text = string.Format("<color=#FFFF66>【{0}】</color>", localDic.GetLocalText(u_name));
 
                     float seconds = GetWaitSeconds(waitTimeStamp);
@@ -788,7 +793,33 @@ public partial class Wolfman_P8 : GameActivity
                 nightcloseeye_caption.GetComponent<Text>().text = text;
             }
         }
+        GameObject dayopeneye_caption = caption_panel.transform.Find("dayopeneye_caption").gameObject;
+        {
+            bool flag = gameloopProcess == GameloopProcessState.DayOpenEye;
+            dayopeneye_caption.SetActive(flag);
+            if (flag)
+            {
+                string templateText = localDic.GetLocalText("template.wolfman_p8.dayopeneye_caption");
+                string text = string.Format(templateText, dayNumber);
+                dayopeneye_caption.GetComponent<Text>().text = text;
+            }
+        }
+    }
+    private void UpdateBackgroundUI(JObject gamePropertyJObj)
+    {
+        DayTime dayTime = (DayTime)(int)gamePropertyJObj.GetValue("DayTime");
+        GameObject background = panelObj.transform.Find("background").gameObject;
 
+        GameObject day_image = background.transform.Find("day_image").gameObject;
+        {
+            bool flag = dayTime == DayTime.Day;
+            day_image.SetActive(flag);
+        }
+        GameObject night_image = background.transform.Find("night_image").gameObject;
+        {
+            bool flag = dayTime == DayTime.Night;
+            night_image.SetActive(flag);
+        }
     }
     #endregion
 
@@ -951,12 +982,12 @@ public partial class Wolfman_P8 : GameActivity
         {
             case JudgeAnnounceType.Foresee_Result:
                 {
-                    GameIdentityType identityType = (GameIdentityType)(int)parms.GetValue("IdentityType");
-                    string u_idName = GetIdentityName(identityType);
-                    string identityName = localDic.GetLocalText(u_idName);
+                    IdentityCamp campType = (IdentityCamp)(int)parms.GetValue("Camp");
+                    string u_campName = GetCampUName(campType);
+                    string campName = localDic.GetLocalText(u_campName);
                     int seatNo = (int)parms.GetValue("SeatNo");
                     string template = localDic.GetLocalText("template.wolfman_p8.foresee_result_announce");
-                    string text = string.Format(template, seatNo + 1, identityName);
+                    string text = string.Format(template, seatNo + 1, campName);
                     AddGameLog(UILogType.Judge, text);
                 }
                 break;
@@ -1024,6 +1055,34 @@ public partial class Wolfman_P8 : GameActivity
                     AddGameLog(UILogType.Judge, text);
                 }
                 break;
+            case JudgeAnnounceType.LastNight_Report:
+                {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    JArray deadReports = (JArray)parms.GetValue("DeadReports");
+                    if(deadReports.Count > 0)
+                    {
+                        string text1 = localDic.GetLocalText("text.wolfman_p8.someonedead_logtip");
+                        sb.AppendLine(text1);
+                        string template = "----- <color=#ff0000>{0}</color> {1}";
+                        string deathWord = localDic.GetLocalText("text.wolfman_p8.word_death");
+                        string seatNoTemplate = localDic.GetLocalText("template.wolfman_p8.word_seatno");
+                        foreach (JToken token in deadReports)
+                        {
+                            JObject item = (JObject)token;
+                            int seatNo = (int)item.GetValue("SeatNo");
+                            string noText = string.Format(seatNoTemplate, seatNo + 1);
+                            string text2 = string.Format(template, noText, deathWord);
+                            sb.AppendLine(text2);
+                        }
+                    }
+                    else
+                    {
+                        string text1 = localDic.GetLocalText("text.wolfman_p8.peacefulnight_logtip");
+                        sb.Append(text1);
+                    }
+                    AddGameLog(UILogType.Judge, sb.ToString());
+                }
+                break;
         }
     }
     private void ReceiveSeatChange(SeatChangeType changeType, JArray changeArray)
@@ -1068,12 +1127,12 @@ public partial class Wolfman_P8 : GameActivity
                         {
                             JObject logItem = (JObject)jToken;
                             int seatNo = (int)logItem.GetValue("SeatNo");
-                            GameIdentityType identityType = (GameIdentityType)(int)logItem.GetValue("IdentityType");
+                            IdentityCamp campType = (IdentityCamp)(int)logItem.GetValue("Camp");
                             string noText = string.Format(noTemplate, seatNo + 1);
-                            string u_identityName = GetIdentityName(identityType);
-                            string idText = localDic.GetLocalText(u_identityName);
+                            string u_campName = GetCampUName(campType);
+                            string campName = localDic.GetLocalText(u_campName);
                             string lineText = string.Format(
-                                "<color=#FF0033>{0}</color> =====> <color=#FF3300>【{1}】</color>", noText, idText);
+                                "<color=#FF0033>{0}</color> =====> <color=#FF3300>【{1}】</color>", noText, campName);
                             sb.AppendLine(lineText);
                         }
                         if (foreseeLogs.Count == 0)
@@ -1203,7 +1262,7 @@ public partial class Wolfman_P8 : GameActivity
             case GameloopProcessState.CheckIdentity:
                 {
                     GameIdentityType identityType = (GameIdentityType)(int)m_modelViewBinder.GetValue("PlayerProperty.Identity.IdentityType");
-                    string u_name = GetIdentityName(identityType);
+                    string u_name = GetIdentityUName(identityType);
                     string templateText = localDic.GetLocalText("template.wolfman_p8.checkidentity_logjudge");
                     string text = string.Format(templateText, localDic.GetLocalText(u_name));
                     AddGameLog(UILogType.Judge, text);
@@ -1289,7 +1348,7 @@ public partial class Wolfman_P8 : GameActivity
         }
         return u_name;
     }
-    private string GetIdentityName(GameIdentityType identityType)
+    private string GetIdentityUName(GameIdentityType identityType)
     {
         string u_name = "";
         switch (identityType)
@@ -1311,6 +1370,20 @@ public partial class Wolfman_P8 : GameActivity
                 break;
             case GameIdentityType.Witch:
                 u_name = "text.wolfman_p8.word_witch";
+                break;
+        }
+        return u_name;
+    }
+    private string GetCampUName(IdentityCamp campType)
+    {
+        string u_name = "";
+        switch (campType)
+        {
+            case IdentityCamp.Villager:
+                u_name = "text.wolfman_p8.word_wolfmancamp";
+                break;
+            case IdentityCamp.Wolfman:
+                u_name = "text.wolfman_p8.word_villagercamp";
                 break;
         }
         return u_name;

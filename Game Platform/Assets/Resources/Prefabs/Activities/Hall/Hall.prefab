@@ -1104,6 +1104,8 @@ MonoBehaviour:
     localText: "\u6240\u6709"
   - unisersalText: text.hall.ping_fail
     localText: "\u5931\u8D25"
+  - unisersalText: text.hall.tip_quickjoinfailed
+    localText: "\u5C1A\u65E0\u53EF\u7528\u623F\u95F4\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5"
   - unisersalText: text.hall.word_full
     localText: "\u5DF2\u6EE1"
   - unisersalText: text.hall.word_joinable
@@ -7824,6 +7826,17 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: ButtonClick
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 7054508060301121500}
+        m_MethodName: QuickJoinButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!1 &3779322743280805692

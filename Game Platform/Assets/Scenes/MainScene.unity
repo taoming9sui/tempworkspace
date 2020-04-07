@@ -276,7 +276,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5ac9cc43f487f544990448ff4dff493, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverIP: 182.138.91.10
+  serverIP: 127.0.0.1
   serverPort: 8888
   serverPath: Fuck
   activitiesObj: {fileID: 435409685}

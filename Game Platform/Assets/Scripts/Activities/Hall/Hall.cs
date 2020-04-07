@@ -364,6 +364,57 @@ public class Hall : GameActivity
             }
         });
     }
+    public void QuickJoinButton() {
+        //更新房间列表
+        RequestHallInfo();
+        //筛选快速加入房间
+        StartCoroutine(DoAction_Delay(() =>
+        {
+            string gameId = "";
+            RoomItemInfo quickJoinRoom = null;
+            int currentCount = 0;
+            {
+                DropdownHandler filtergame_dropdown = panelObj.transform.Find("roompanel/right/filterpanel/filtergame_dropdown").GetComponent<DropdownHandler>();
+                ResourceManager.GameInfo gameInfo = (ResourceManager.GameInfo)filtergame_dropdown.SelectedValue;
+                if (gameInfo != null)
+                    gameId = gameInfo.GameId;
+            }
+
+            foreach (RoomItemInfo roomInfo in m_roomInfoList)
+            {
+                if (roomInfo.HasPassword)
+                    continue;
+
+                if (roomInfo.Status == 2)
+                    continue;
+
+                if (roomInfo.Status == 3)
+                    continue;
+
+                if (!string.IsNullOrEmpty(gameId))
+                {
+                    if (!roomInfo.GameId.Equals(gameId))
+                        continue;
+                }
+                //筛选人数最多的房间
+                if (roomInfo.Count > currentCount)
+                {
+                    currentCount = roomInfo.Count;
+                    quickJoinRoom = roomInfo;
+                }
+            }
+            if (quickJoinRoom != null)
+            {
+                TryJoinRoom(quickJoinRoom);
+            }
+            else
+            {
+                string tipText = localDic.GetLocalText("text.hall.tip_quickjoinfailed");
+                TipModel(tipText);
+            }
+        }, 0.5f));
+
+    }
     #endregion
 
     #region UI更新脚本
