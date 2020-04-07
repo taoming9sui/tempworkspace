@@ -46,11 +46,15 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private enum OperationFlagType
         {
-            Default, Poison, Save, Defend, Kill, BanishTicket
+            Default, Poisoned, Saved, Defended, Killed, BanishTicket
         }
         private enum OperationResultType
         {
             Default, Saved, Defended, Poisoned, Killed, Banned, Revenged
+        }
+        private enum DeathCauseType
+        {
+            Default, Killed, Poison, Overdose, Shot, Banish
         }
         private enum BaseFunctionType
         {
@@ -156,6 +160,7 @@ namespace GamePlatformServer.GameServer.GameModuels
             public GameIdentityType IdentityType = GameIdentityType.Default;
             public CurrentActionType CurrentAction = CurrentActionType.Default;
             public bool isDead = false;
+            public DeathCauseType DeathCause = DeathCauseType.Default;
             public IdentityCamp GameCamp =  IdentityCamp.Default;
             public ActionIntention Intention = new ActionIntention();
             public IList<OperationFlag> FlagList = new List<OperationFlag>();
@@ -185,7 +190,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         }
         private class Prophet : GameIdentity
         {
-            public IDictionary<int, GameIdentityType> ForeseeLog = new Dictionary<int, GameIdentityType>();
+            public IDictionary<int, IdentityCamp> ForeseeLog = new Dictionary<int, IdentityCamp>();
             public Prophet()
             {
                 IdentityType = GameIdentityType.Prophet;
@@ -506,11 +511,11 @@ namespace GamePlatformServer.GameServer.GameModuels
                                 JObject details = new JObject();
                                 {
                                     JArray logs = new JArray();
-                                    foreach (KeyValuePair<int, GameIdentityType> kv in prophet.ForeseeLog)
+                                    foreach (KeyValuePair<int, IdentityCamp> kv in prophet.ForeseeLog)
                                     {
                                         JObject logItem = new JObject();
                                         logItem.Add("SeatNo", kv.Key);
-                                        logItem.Add("IdentityType", (int)kv.Value);
+                                        logItem.Add("Camp", (int)kv.Value);
                                         logs.Add(logItem);
                                     }
                                     details.Add("ForeseeLogs", logs);
@@ -892,6 +897,18 @@ namespace GamePlatformServer.GameServer.GameModuels
             jsonObj.Add("Content", content);
             SendMessage(playerId, jsonObj.ToString());
         }
+        private void BroadJudgeAnnounce(JudgeAnnounceType announceType, JObject parms)
+        {
+            JObject jsonObj = new JObject();
+            jsonObj.Add("Action", "JudgeAnnounce");
+            JObject content = new JObject();
+            {
+                content.Add("AnnounceType", (int)announceType);
+                content.Add("Params", parms);
+            }
+            jsonObj.Add("Content", content);
+            BroadMessage(jsonObj.ToString());
+        }
         private void ReturnBaseFunctionResult(string playerId, BaseFunctionType functionType, JObject resultDetail, JArray modelViewChange)
         {
             JObject jsonObj = new JObject();
@@ -981,6 +998,8 @@ namespace GamePlatformServer.GameServer.GameModuels
             }
             m_isPlaying = false;
             m_publicProcess = PublicProcessState.PlayerReady;
+            m_dayNumber = 1;
+            m_dayTime = DayTime.Day;
             //2广播重置信息
             {
                 JArray playerSeatArray = GetPlayerSeatJArray();
@@ -1067,8 +1086,8 @@ namespace GamePlatformServer.GameServer.GameModuels
             Random random = new Random();
             //1定义身份池
             List<GameIdentityType> identityPool = new List<GameIdentityType>{
-                GameIdentityType.Villager, GameIdentityType.Villager,
-                GameIdentityType.Wolfman, GameIdentityType.Wolfman,
+                GameIdentityType.Villager,
+                GameIdentityType.Wolfman, GameIdentityType.Wolfman, GameIdentityType.Wolfman,
                 GameIdentityType.Prophet,
                 GameIdentityType.Hunter,
                 GameIdentityType.Defender,
@@ -1172,6 +1191,7 @@ namespace GamePlatformServer.GameServer.GameModuels
         private void NightCloseEye()
         {
             //1设置变量
+            m_dayTime = DayTime.Night;
             m_gameloopProcess = GameloopProcessState.NightCloseEye;
             //2发送消息
             JArray changeArray = new JArray();
@@ -1273,7 +1293,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                     //
                     PlayerSeat targetSeat = m_playerSeats[seatNo];
                     OperationFlag flag = new OperationFlag();
-                    flag.FlagType = OperationFlagType.Defend;
+                    flag.FlagType = OperationFlagType.Defended;
                     flag.SourceSeatNo = defenderSeat.SeatNo;
                     targetSeat.Identity.FlagList.Add(flag);
                     //
@@ -1400,13 +1420,13 @@ namespace GamePlatformServer.GameServer.GameModuels
                     ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Prophet_Foresee_Excute, parms1);
                     //
                     PlayerSeat targetSeat = m_playerSeats[seatNo];
-                    GameIdentityType identityType = targetSeat.Identity.IdentityType;
+                    IdentityCamp camp = targetSeat.Identity.GameCamp;
                     JObject parms2 = new JObject();
                     {
                         parms2.Add("SeatNo", seatNo);
-                        parms2.Add("IdentityType", (int)identityType);
+                        parms2.Add("Camp", (int)camp);
                     }
-                    prophet.ForeseeLog[seatNo] = identityType;
+                    prophet.ForeseeLog[seatNo] = camp;
                     ReturnJudgeAnnounce(prophetSeat.PlayerId, JudgeAnnounceType.Foresee_Result, parms2);
                 }
                 else
@@ -1545,7 +1565,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                 //上flag
                 PlayerSeat killedSeat = m_playerSeats[killNo];
                 OperationFlag flag = new OperationFlag();
-                flag.FlagType = OperationFlagType.Kill;
+                flag.FlagType = OperationFlagType.Killed;
                 killedSeat.Identity.FlagList.Add(flag);
             }
             wolfmanKillSeatNo = killNo;
@@ -1660,7 +1680,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                     //
                     PlayerSeat targetSeat = m_playerSeats[seatNo];
                     OperationFlag flag = new OperationFlag();
-                    flag.FlagType = OperationFlagType.Save;
+                    flag.FlagType = OperationFlagType.Saved;
                     flag.SourceSeatNo = witchSeat.SeatNo;
                     targetSeat.Identity.FlagList.Add(flag);
 
@@ -1678,7 +1698,7 @@ namespace GamePlatformServer.GameServer.GameModuels
                     //
                     PlayerSeat targetSeat = m_playerSeats[seatNo];
                     OperationFlag flag = new OperationFlag();
-                    flag.FlagType = OperationFlagType.Poison;
+                    flag.FlagType = OperationFlagType.Poisoned;
                     flag.SourceSeatNo = witchSeat.SeatNo;
                     targetSeat.Identity.FlagList.Add(flag);
 
@@ -1711,6 +1731,175 @@ namespace GamePlatformServer.GameServer.GameModuels
                 ReturnIdentityTranslate(witchSeat.PlayerId, IdentityTranslateType.Witch_Magic_End, changeArray);
             }
         }
+        private void SettleWolfmanKill(out int[] killedSeatNos)
+        {
+            //结算狼人刀人结果
+            IList<int> killedSeatNoList = new List<int>();
+            //1列举出所有活人
+            IList<PlayerSeat> aliveSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                return true;
+            }));
+            //2根据Flag 结算出刀人结果
+            foreach(PlayerSeat aliveSeat in aliveSeats)
+            {
+                GameIdentity identity = aliveSeat.Identity;
+                bool killed = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Killed);
+                bool denfened = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Defended);
+                bool saved = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Saved);
+                if(killed && !(denfened || saved))
+                {
+                    killedSeatNoList.Add(aliveSeat.SeatNo);
+                }
+            }
+            //3结算死亡
+            foreach(int killedSeatNo in killedSeatNoList)
+            {
+                GameIdentity identity = m_playerSeats[killedSeatNo].Identity;
+                identity.isDead = true;
+                identity.DeathCause = DeathCauseType.Killed;
+            }
+            killedSeatNos = killedSeatNoList.ToArray();
+        }
+        private void SettleWitchPoison(out int[] poisonSeatNos)
+        {
+            //结算女巫下毒结果
+            IList<int> poisonSeatNoList = new List<int>();
+            //1列举出所有活人
+            IList<PlayerSeat> aliveSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                return true;
+            }));
+            //2根据Flag 结算出下毒结果
+            foreach (PlayerSeat aliveSeat in aliveSeats)
+            {
+                GameIdentity identity = aliveSeat.Identity;
+                bool poisoned = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Poisoned);
+                if (poisoned)
+                {
+                    poisonSeatNoList.Add(aliveSeat.SeatNo);
+                }
+            }
+            //3结算死亡
+            foreach (int poisonSeatNo in poisonSeatNoList)
+            {
+                GameIdentity identity = m_playerSeats[poisonSeatNo].Identity;
+                identity.isDead = true;
+                identity.DeathCause = DeathCauseType.Poison;
+            }
+            poisonSeatNos = poisonSeatNoList.ToArray();
+        }
+        private void SettleWitchOverdose(out int[] overdoseSeatNos)
+        {
+            //结算女巫奶穿结果
+            IList<int> overdoseSeatNoList = new List<int>();
+            //1列举出所有活人
+            IList<PlayerSeat> aliveSeats = new List<PlayerSeat>(m_playerSeats.Where((seat) =>
+            {
+                //排除掉死亡的玩家
+                if (seat.Identity.isDead)
+                    return false;
+                return true;
+            }));
+            //2根据Flag 结算出奶穿结果
+            foreach (PlayerSeat aliveSeat in aliveSeats)
+            {
+                GameIdentity identity = aliveSeat.Identity;
+                bool killed = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Killed);
+                bool denfened = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Defended);
+                bool saved = identity.FlagList.Any(flag => flag.FlagType == OperationFlagType.Saved);
+                if (killed && denfened && saved)
+                {
+                    overdoseSeatNoList.Add(aliveSeat.SeatNo);
+                }
+            }
+            //3结算死亡
+            foreach (int overdoseSeatNo in overdoseSeatNoList)
+            {
+                GameIdentity identity = m_playerSeats[overdoseSeatNo].Identity;
+                identity.isDead = true;
+                identity.DeathCause = DeathCauseType.Overdose;
+            }
+            overdoseSeatNos = overdoseSeatNoList.ToArray();
+        }
+        private void DayOpenEye()
+        {
+            //1设置变量
+            m_dayTime = DayTime.Day;
+            m_dayNumber++;
+            m_gameloopProcess = GameloopProcessState.DayOpenEye;
+            //2发送消息
+            JArray changeArray = new JArray();
+            {
+                JObject gameProperty = GetGamePropertyJObject();
+                JArray playerSeatArray = GetPlayerSeatJArray();
+
+                JObject change1 = new JObject();
+                change1.Add("JPath", "GameProperty");
+                change1.Add("Value", gameProperty);
+                changeArray.Add(change1);
+
+                JObject change12 = new JObject();
+                change12.Add("JPath", "PlayerSeatArray");
+                change12.Add("Value", playerSeatArray);
+                changeArray.Add(change12);
+            }
+            BroadGameloopProcess(GameloopProcessState.DayOpenEye, changeArray);
+        }
+        private void AnnounceLastNightReport(int[] deadSeatNos)
+        {
+            //广播昨晚的死亡情况
+            JObject parms = new JObject();
+            {
+                JArray deadReports = new JArray();
+                foreach(int deadSeatNo in deadSeatNos)
+                {
+                    JObject item = new JObject();
+                    item.Add("SeatNo", deadSeatNo);
+                    deadReports.Add(item);
+                }
+                parms.Add("DeadReports", deadReports);
+            }
+            BroadJudgeAnnounce(JudgeAnnounceType.LastNight_Report, parms);
+        }
+        private void ClearOperationFlags()
+        {
+            //清空被操作Flag
+            foreach (PlayerSeat playerSeat in m_playerSeats)
+                playerSeat.Identity.FlagList.Clear();
+        }
+        private bool CheckGameOver()
+        {
+            //检查当前状况下 游戏是否结束
+            IDictionary<IdentityCamp, int> campAliveCount = new Dictionary<IdentityCamp, int>();
+            //1统计各个阵营存活人数
+            foreach(PlayerSeat seat in m_playerSeats)
+            {
+                GameIdentity identity = seat.Identity;
+                IdentityCamp camp = identity.GameCamp;
+                if(camp != IdentityCamp.Default)
+                {
+                    if (!campAliveCount.ContainsKey(camp))
+                        campAliveCount[camp] = 0;
+                    campAliveCount[camp]++;
+                }
+            }
+            //2仅当剩下一个阵营存活时 游戏结束
+            int campCount = 0;
+            foreach(KeyValuePair<IdentityCamp, int> kv in campAliveCount)
+            {
+                int aliveCount = kv.Value;
+                if (aliveCount > 0)
+                    campCount++;
+            }
+            return campCount <= 1;
+        }
         private IEnumerator<int> JudgeMainLoop()
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -1739,7 +1928,6 @@ namespace GamePlatformServer.GameServer.GameModuels
                 while (stopwatch.ElapsedMilliseconds < 10000)
                     yield return 0;
                 //开始初夜循环
-                m_dayNumber = 1;
                 while (true)
                 {
                     //天黑请闭眼
@@ -1762,13 +1950,17 @@ namespace GamePlatformServer.GameServer.GameModuels
                         yield return 0;
                     ProphetForesee_End();
                     //狼人行动
-                    //HARDCODE 30秒
                     int wolfmanKillSeatNo = -1;
-                    WolfmanKill_Begin(30);
-                    stopwatch.Restart();
-                    while (stopwatch.ElapsedMilliseconds < 30 * 1000 && !WolfmanKill_Wait())
-                        yield return 0;
-                    WolfmanKill_End(out wolfmanKillSeatNo);
+                    if (m_dayNumber > 1)
+                    {
+                        //按照规则 狼人初夜不能活动
+                        //HARDCODE 30秒
+                        WolfmanKill_Begin(30);
+                        stopwatch.Restart();
+                        while (stopwatch.ElapsedMilliseconds < 30 * 1000 && !WolfmanKill_Wait())
+                            yield return 0;
+                        WolfmanKill_End(out wolfmanKillSeatNo);
+                    }
                     //女巫行动
                     //HARDCODE 20秒
                     WitchMagic_Begin(20, wolfmanKillSeatNo);
@@ -1776,13 +1968,33 @@ namespace GamePlatformServer.GameServer.GameModuels
                     while (stopwatch.ElapsedMilliseconds < 20 * 1000 && !WitchMagic_Wait())
                         yield return 0;
                     WitchMagic_End();
-                    //白天请睁眼
-
+                    //结算狼人刀人
+                    int[] killedSeatNos;
+                    SettleWolfmanKill(out killedSeatNos);
+                    if (CheckGameOver()) break;
+                    //结算女巫下毒
+                    int[] poisonSeatNos;
+                    SettleWitchPoison(out poisonSeatNos);
+                    if (CheckGameOver()) break;
+                    //结算女巫奶穿
+                    int[] overdoseSeatNos;
+                    SettleWitchOverdose(out overdoseSeatNos);
+                    if (CheckGameOver()) break;
+                    //HARDCODE 等待3秒
+                    stopwatch.Restart();
+                    while (stopwatch.ElapsedMilliseconds < 3000)
+                        yield return 0;
+                    //白天请睁眼 公布当晚结果
+                    ClearOperationFlags();
+                    DayOpenEye();
+                    AnnounceLastNightReport(killedSeatNos.Concat(poisonSeatNos).Concat(overdoseSeatNos).ToArray());
                     //猎人行动
 
                     //聚众发言
 
                     //聚众投票
+
+                    //被放逐者发表遗言
                     while (true)
                         yield return 0;
                     yield return 0;

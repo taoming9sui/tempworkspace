@@ -44,8 +44,13 @@ namespace GamePlatformServer.GameServer.ServerObjects
                 string md5_server = SecurityHelper.CreateMD5(code);
                 if(md5_client == md5_server)
                 {
+                    //合法连接
                     this.m_valid = true;
                     this.Send("Valid");
+                    GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
+                    eventArgs.Param1 = this;
+                    eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Socket_Connect;
+                    m_serverContainer.ClientAgent.PushMessage(eventArgs);
                 }
                 else
                 {
@@ -62,14 +67,18 @@ namespace GamePlatformServer.GameServer.ServerObjects
         /// <param name="e"></param>
         protected override void OnClose(CloseEventArgs e)
         {
-            try
+            if (m_valid)
             {
-                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
-                eventArgs.Param1 = this;
-                eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Socket_Disconnect;
-                m_serverContainer.ClientAgent.PushMessage(eventArgs);
+                try
+                {
+                    GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
+                    eventArgs.Param1 = this;
+                    eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Socket_Disconnect;
+                    m_serverContainer.ClientAgent.PushMessage(eventArgs);
+                }
+                catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
             }
-            catch (Exception ex) { LogHelper.LogError(ex.Message + "|" + ex.StackTrace); }
+
         }
 
 
@@ -80,11 +89,6 @@ namespace GamePlatformServer.GameServer.ServerObjects
         {
             try
             {
-                GameClientAgent.QueueEventArgs eventArgs = new GameClientAgent.QueueEventArgs();
-                eventArgs.Param1 = this;
-                eventArgs.Type = GameClientAgent.QueueEventArgs.MessageType.Socket_Connect;
-                m_serverContainer.ClientAgent.PushMessage(eventArgs);
-
                 if (!m_valid)
                 {
                     //需要验证 发送验证ID
